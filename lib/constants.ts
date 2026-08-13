@@ -27,6 +27,15 @@ export function titleCase(s: string): string {
     .join(" ");
 }
 
+// Strip old courier lists still stored in the DB, e.g.
+// "Parcel Pickup (JNT / SPX / GDEX)" -> "Parcel Pickup".
+export function cleanServiceName(s: string): string {
+  return s
+    .replace(/\(JNT\s*\/\s*SPX\s*\/\s*GDEX\)/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 // "RM4" not "RM04" / "RM4.00" — whole ringgit without leading or trailing zeros.
 export function formatRM(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "RM0";

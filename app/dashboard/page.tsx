@@ -6,7 +6,7 @@ import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import RoleBadge from "@/components/RoleBadge";
 import { JobRequest, Review, RunnerStatus, Service } from "@/lib/types";
-import { formatRM, OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
+import { cleanServiceName, formatRM, OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
 import { parseDeliverTo } from "@/components/RequestFields";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -676,7 +676,7 @@ export default function DashboardPage() {
     setServicesSaved(false);
     const cleaned = services
       .filter((s) => s.name.trim() !== "")
-      .map((s) => ({ ...s, name: titleCase(s.name.trim()) }));
+      .map((s) => ({ ...s, name: titleCase(cleanServiceName(s.name)) }));
     await updateProfile({ services: cleaned as unknown as ProfileRow["services"] });
     setServices(cleaned);
     setServicesSaved(true);
@@ -1182,6 +1182,7 @@ export default function DashboardPage() {
         const active = jobs.find((j) => j.status === "confirmed");
         if (!active) return null;
         const contact = active.requesterId ? contacts[active.requesterId] : undefined;
+        const noteData = parseNotes(active.notes ?? "");
         return (
           <div className="bg-white border-[1.5px] border-orange rounded-card p-4 mb-4 shadow-[0_10px_30px_-12px_rgba(232,93,44,0.4)]">
             <div className="flex items-center justify-between gap-2 mb-1">
@@ -1192,17 +1193,55 @@ export default function DashboardPage() {
                 Confirmed
               </span>
             </div>
-            <div className="text-[15px] font-bold font-display">{active.serviceType}</div>
+            <div className="text-[15px] font-bold font-display">{titleCase(active.serviceType)}</div>
             <div className="text-[12px] text-slate mt-1 leading-snug">
               {active.takeFrom} → {active.deliverTo}
             </div>
-            {active.notes && (
-              <div className="text-[11.5px] text-[#4B5250] italic mt-1">
-                &quot;{active.notes}&quot;
+            {noteData.services.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {noteData.services.map((s, i) => (
+                  <span
+                    key={i}
+                    className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#FDF3EE] text-orange border border-[#F5D5C4] whitespace-nowrap"
+                  >
+                    + {titleCase(s)}
+                  </span>
+                ))}
+              </div>
+            )}
+            {noteData.items.length > 0 && (
+              <div className="rounded-[10px] bg-[#F0F7F4] border border-[#D7EBE1] px-3 py-2 mt-2.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-teal mb-1.5">
+                  What to buy / pick up
+                </div>
+                <div className="space-y-1">
+                  {noteData.items.map((it, i) => (
+                    <div key={i} className="flex items-center justify-between gap-2 text-[12px]">
+                      <span className="text-ink font-medium break-words">{it.name}</span>
+                      <span className="font-mono text-teal whitespace-nowrap">
+                        {it.qty ? `×${it.qty}` : ""}
+                        {it.price ? ` · ${it.price}` : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {noteData.total && (
+              <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
+                <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
+                <span className="font-mono font-bold text-[14px] text-teal">{noteData.total}</span>
+              </div>
+            )}
+            {noteData.extra.length > 0 && (
+              <div className="text-[11.5px] text-[#4B5250] mt-2 space-y-0.5">
+                {noteData.extra.map((line, i) => (
+                  <div key={i} className="leading-snug break-words">{line}</div>
+                ))}
               </div>
             )}
             {contact?.name && (
-              <div className="text-[11px] font-mono text-slate mt-1.5">
+              <div className="text-[11px] font-mono text-slate mt-2">
                 Requested by {contact.name}
               </div>
             )}

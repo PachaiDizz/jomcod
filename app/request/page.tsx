@@ -13,7 +13,7 @@ import RequestFields, {
   totalCost,
   totalItemCount,
 } from "@/components/RequestFields";
-import { formatRM } from "@/lib/constants";
+import { cleanServiceName, formatRM } from "@/lib/constants";
 import { pricingLabel } from "@/lib/mockData";
 import { createJob, fetchRunners, getProfile } from "@/lib/queries";
 import type { RequestDetails } from "@/components/RequestFields";
@@ -85,7 +85,7 @@ function RequestForm() {
 
   const serviceOptions =
     runner && runner.services.length > 0
-      ? Array.from(new Set(runner.services.map((s) => s.name)))
+      ? Array.from(new Set(runner.services.map((s) => cleanServiceName(s.name))))
       : REQUEST_SERVICE_OPTIONS;
 
   const sendRequest = async () => {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { titleCase } from "@/lib/constants";
+import { cleanServiceName, titleCase } from "@/lib/constants";
 import { Runner, RunnerStatus } from "@/lib/types";
 import StatusPill from "./StatusPill";
 import { pricingDisplay, pricingLabel } from "@/lib/mockData";
@@ -130,7 +130,7 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
                       key={s.id}
                       className="text-[9.5px] bg-[#E4F3EC] text-teal border border-[#C9E3D6] px-1.5 py-0.5 rounded"
                     >
-                      {titleCase(s.name)}
+                      {titleCase(cleanServiceName(s.name))}
                     </span>
                   ))
                 ) : (
