@@ -90,7 +90,12 @@ function RequestForm() {
   const pricingFor = (serviceType: string) =>
     runner?.services.find((s) => cleanServiceName(s.name) === serviceType)?.pricing;
 
-  const estimate = runner ? estimateTotal(details, pricingFor) : 0;
+  // The dropdown defaults to the first service option before the user touches
+  // it — calculate against that effective choice so the total is never RM0.
+  const effectiveService = details.serviceType || serviceOptions[0];
+  const estimate = runner
+    ? estimateTotal({ ...details, serviceType: effectiveService }, pricingFor)
+    : 0;
 
   const sendRequest = async () => {
     setError("");

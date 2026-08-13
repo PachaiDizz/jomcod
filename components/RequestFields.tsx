@@ -415,7 +415,11 @@ export default function RequestFields({
     { value: "scheduled" as const, label: "📅 Scheduled" },
   ];
 
-  const grandTotal = pricingFor ? estimateTotal(details, pricingFor) : 0;
+  // Use the effective service type: the dropdown shows `selected` even before
+  // the user touches it, so the estimate must match that (not an empty string).
+  const grandTotal = pricingFor
+    ? estimateTotal({ ...details, serviceType: selected }, pricingFor)
+    : 0;
 
   return (
     <>

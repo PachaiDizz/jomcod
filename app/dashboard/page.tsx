@@ -904,6 +904,33 @@ export default function DashboardPage() {
                         </span>
                       </div>
                     </div>
+
+                    {parseNotes(job.notes ?? "").items.length > 0 && (
+                      <div className="rounded-[10px] bg-[#F0F7F4] border border-[#D7EBE1] px-3 py-2 mt-2.5">
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-teal mb-1.5">
+                          Items ordered
+                        </div>
+                        <div className="space-y-1">
+                          {parseNotes(job.notes ?? "").items.map((it, i) => (
+                            <div key={i} className="flex items-center justify-between gap-2 text-[12px]">
+                              <span className="text-ink font-medium break-words">{it.name}</span>
+                              <span className="font-mono text-teal whitespace-nowrap">
+                                {it.qty ? `×${it.qty}` : ""}
+                                {it.price ? ` · ${it.price}` : ""}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {parseNotes(job.notes ?? "").total && (
+                      <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2">
+                        <span className="text-[11.5px] font-semibold text-teal">You pay the runner</span>
+                        <span className="font-mono font-bold text-[14px] text-teal">
+                          {parseNotes(job.notes ?? "").total}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <span
                     className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
