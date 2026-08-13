@@ -263,8 +263,8 @@ community member rates the runner.
 │   ├── history/page.tsx      → past jobs (done/expired) for both roles
 │   ├── news/page.tsx         → live community news feed
 │   ├── settings/page.tsx     → profile (username, name, whatsapp, area) + availability
-│   └── admin/page.tsx        → admin panel (empty states for now)
-├── components/  TopNav, RoleBadge, Button, PhoneFrame, RunnerCard, StatusPill, InstallPrompt, TimePicker
+│   └── admin/page.tsx        → admin panel (real data)
+├── components/  TopNav, RoleBadge, Button, PhoneFrame, RunnerCard, StatusPill, InstallPrompt, TimePicker, JoinGuideModal, LoadingState
 ├── lib/
 │   ├── constants.ts          → SERVICE_PRESETS (shared service choices)
 │   ├── types.ts              → Runner, Service, JobRequest, Review, Pricing
@@ -274,6 +274,40 @@ community member rates the runner.
 ├── middleware.ts             → auth guard + onboarding + role routing
 └── .env.local                → Supabase URL + anon key
 ```
+
+---
+
+## 3.5 Live deployment (Vercel)
+
+**Live site:** https://jomcod-eta.vercel.app
+
+> The old `jomcod.vercel.app` deployment was on the 2nd GitHub account and is
+> **no longer used**. The live project now points at the **main account** repo
+> (`PachaiDizz/jomcod`) so Vercel's commit-author check passes.
+
+### Deployment facts
+- **Host:** Vercel (Hobby plan), auto-deploy from `main` on push
+- **Repo (deploy source):** `https://github.com/PachaiDizz/jomcod`
+- **Env vars in Vercel:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **To redeploy:** just `git push origin main` — Vercel builds automatically
+- **Domains:** production `jomcod-eta.vercel.app` (+ per-build preview URLs that can be ignored)
+
+### One-time config (already done)
+- **Supabase → Auth → URL Configuration → Redirect URLs:** `https://jomcod-eta.vercel.app/**`
+- **Google Cloud Console → Credentials → Web client:**
+  - Authorized redirect URI: `https://vjanzunjalhrghikqzsy.supabase.co/auth/v1/callback`
+  - Authorized JavaScript origins: `https://jomcod-eta.vercel.app`
+
+### If the site won't load / ERR_FAILED after a deploy
+- The PWA service worker was made **network-first** (`public/service-worker.js`, `v2`)
+  so stale builds are never served. After a big deploy, do **one hard-refresh**
+  (**Ctrl+Shift+R**) to install the new worker — normal navigation works after that.
+
+### Sign-up guide modal
+- `components/JoinGuideModal.tsx` — full "before you join" note (community purpose,
+  serving areas, how it works, safety reminders) shown as a **popup before sign-up**.
+- Remembered via `localStorage` (`jomcod_guide_ok`) so it only shows once per device.
+- Also removed the old inline note + checkbox from the signup form.
 
 ---
 

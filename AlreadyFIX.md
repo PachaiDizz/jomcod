@@ -129,6 +129,10 @@
 - Unapproved runners get an "Awaiting approval" banner on their dashboard and can't go "available".
 - `accept_job()` / `claim_broadcast()` / `set_availability()` enforce approval server-side.
 
+> **Current state:** the DB was wiped (factory reset) after the backfill ran, so the
+> backfill no longer matters — **every new runner now starts unapproved** and the admin
+> must approve them manually at `/admin` → Runners → **Approve**.
+
 ### Suspension
 - `profiles.is_suspended` column. Suspended accounts can't create requests, accept/claim jobs,
   or go available.
@@ -183,6 +187,7 @@
 - `lib/queries.ts` — notifications / reports / blocks / admin helpers; `fetchRunners` filters
   approved + blocked; `fetchJobById`
 - `components/LoadingState.tsx` — **new**
+- `components/JoinGuideModal.tsx` — **new** (sign-up guide popup, remembers via localStorage)
 - `components/TopNav.tsx` — Notifications link + unread badge
 - `app/notifications/page.tsx` — **new**
 - `app/job/[id]/page.tsx` — **new**
@@ -191,6 +196,8 @@
 - `app/dashboard/page.tsx` — approval banner, job-detail links, confirm-cancel
 - `app/history/page.tsx` — status filter tabs
 - `app/browse/page.tsx`, `app/settings/page.tsx` — loading skeletons
+- `public/service-worker.js` — **network-first** (stale builds never served; fixes ERR_FAILED)
+- `app/page.tsx` — sign-up guide modal, runner vs community role hint, WhatsApp validation
 
 ---
 
