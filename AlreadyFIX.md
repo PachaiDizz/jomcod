@@ -90,6 +90,11 @@
 - `isValidWhatsApp()` rejects invalid numbers on signup, onboarding and settings.
 - `waLink()` builds robust `wa.me` links from any stored format.
 
+> **Updated:** accepts **all** Malaysian mobile formats (010–019 prefixes), both
+> 10-digit (`012-3456789`) and **11-digit** (`011-1234-5678` → `+601112345678`),
+> with or without dashes / spaces / `+60` / `60`. Fixed in
+> `lib/constants.ts` `normalizeWhatsApp()` (was rejecting 11-digit `01X` numbers).
+
 ### Indexes
 - Added for real query patterns:
   - `jobs.requester_id`, `jobs.runner_id`, `jobs.status`, `jobs.created_at`
