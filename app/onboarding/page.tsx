@@ -63,24 +63,25 @@ export default function OnboardingPage() {
         schedule_to: scheduleTo,
       },
     });
-    if (!err) {
-      await upsertProfile({
-        role,
-        whatsapp: normalizedPhone,
-        area,
-        username,
-        sahabat,
-        no_rumah: noRumah,
-        block,
-        schedule_from: scheduleFrom,
-        schedule_to: scheduleTo,
-      });
-    }
-    setSaving(false);
     if (err) {
       setError(err.message);
+      setSaving(false);
       return;
     }
+    await upsertProfile({
+      role,
+      whatsapp: normalizedPhone,
+      area,
+      username,
+      sahabat,
+      no_rumah: noRumah,
+      block,
+      schedule_from: scheduleFrom,
+      schedule_to: scheduleTo,
+    });
+    await supabase.auth.refreshSession();
+    router.refresh();
+    setSaving(false);
     router.push("/dashboard");
   };
 
