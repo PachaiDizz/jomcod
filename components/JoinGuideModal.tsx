@@ -24,7 +24,7 @@ export default function JoinGuideModal({
 
         <div className="space-y-4 text-[13px] leading-relaxed text-ink">
           <p>
-            JomCOD is a small project connecting neighbours who need a helping
+            <b>JomCOD</b> is a small project connecting neighbours who need a helping
             hand with everyday errands.
           </p>
           <p>
@@ -32,7 +32,7 @@ export default function JoinGuideModal({
             <b>make it easier for our community to know who is available to help.</b>
           </p>
           <p>
-            Without JomCOD, it can be difficult to know:
+            Without <b>JomCOD</b>, it can be difficult to know:
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Who is currently a runner?</li>
@@ -42,7 +42,7 @@ export default function JoinGuideModal({
             <li>Who can I ask nearby?</li>
           </ul>
           <p>
-            JomCOD brings this information together in one place, so you can{" "}
+            <b>JomCOD</b> brings this information together in one place, so you can{" "}
             <b>see who&apos;s available, what they can help with, and get in touch with them
             more easily.</b>
           </p>
@@ -71,7 +71,7 @@ export default function JoinGuideModal({
           <div className="font-bold">A few gentle reminders</div>
           <ul className="list-disc pl-5 space-y-1.5">
             <li>
-              For now, JomCOD is only available in the areas above — we&apos;re
+              For now, <b>JomCOD</b> is only available in the areas above — we&apos;re
               keeping it <b>local and close-knit</b>.
             </li>
             <li>
@@ -80,7 +80,7 @@ export default function JoinGuideModal({
             </li>
             <li>
               Any payment is arranged <b>directly between you and the runner</b>.
-              JomCOD does not collect or process payments.
+              <b>JomCOD</b> does not collect or process payments.
             </li>
             <li>
               We don&apos;t run background checks, so please use your own judgement.
