@@ -7,7 +7,7 @@ import Button from "@/components/Button";
 import TimePicker from "@/components/TimePicker";
 import JoinGuideModal from "@/components/JoinGuideModal";
 import { createClient } from "@/lib/supabase/client";
-import { isValidWhatsApp, normalizeWhatsApp } from "@/lib/constants";
+import { AREA_OPTIONS, isValidWhatsApp, normalizeWhatsApp } from "@/lib/constants";
 import { fetchLandingStats } from "@/lib/queries";
 import type { LandingStats } from "@/lib/queries";
 
@@ -56,7 +56,6 @@ export default function LandingPage() {
     };
   }, []);
 
-  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -145,8 +144,8 @@ export default function LandingPage() {
       password,
       options: {
         data: {
-          full_name: name,
-          username: username || name,
+          full_name: username,
+          username,
           whatsapp: normalizedPhone,
           area,
           sahabat,
@@ -365,10 +364,6 @@ export default function LandingPage() {
             </div>
 
             <div className="mb-3.5">
-              <label className="text-xs font-semibold mb-1.5 block">Full name</label>
-              <input className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="mb-3.5">
               <label className="text-xs font-semibold mb-1.5 block">
                 Username <span className="text-slate font-normal">(shown to neighbours)</span>
               </label>
@@ -384,7 +379,16 @@ export default function LandingPage() {
             </div>
             <div className="mb-3.5">
               <label className="text-xs font-semibold mb-1.5 block">Area / Neighbourhood</label>
-              <input className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]" placeholder="e.g. Felda Desa Kencana" value={area} onChange={(e) => setArea(e.target.value)} />
+              <select
+                className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]"
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+              >
+                <option value="">Select your area…</option>
+                {AREA_OPTIONS.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+              </select>
               <div className="text-[10.5px] text-slate mt-1.5 mb-0">
                 Your delivery address (optional) — prefilled when you request a service.
               </div>
