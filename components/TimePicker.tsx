@@ -56,16 +56,14 @@ export default function TimePicker({
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-2 w-full bg-white border border-line rounded-[14px] shadow-[0_20px_40px_-20px_rgba(28,35,33,0.35)] p-3">
-          <div className="text-[11px] font-semibold text-slate mb-2">Set the time</div>
-
-          <div className="flex gap-1.5 mb-2">
+        <div className="absolute z-20 mt-1.5 w-full bg-white border border-line rounded-xl shadow-[0_20px_40px_-20px_rgba(28,35,33,0.35)] p-2.5">
+          <div className="flex gap-1 mb-1.5">
             {(["AM", "PM"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => setAmpm(m)}
-                className={`flex-1 py-1 rounded-full text-[11px] font-semibold border ${
+                className={`flex-1 py-0.5 rounded-full text-[10.5px] font-semibold border ${
                   ampm === m
                     ? "bg-teal text-white border-teal"
                     : "bg-paper text-slate border-line"
@@ -76,48 +74,35 @@ export default function TimePicker({
             ))}
           </div>
 
-          <div className="mb-1.5">
-            <div className="flex justify-between text-[10px] text-slate mb-0.5">
-              <span>Hour</span>
-              <span className="font-mono">{hour}</span>
+          <div className="flex items-center gap-2 text-[10px] text-slate">
+            <span className="w-11">{hourLabel}</span>
+            <div className="flex-1">
+              <input
+                type="range"
+                min={1}
+                max={12}
+                value={hour}
+                onChange={(e) => setHour(Number(e.target.value))}
+                className="w-full accent-[#E85D2C] h-1 mb-1"
+              />
+              <input
+                type="range"
+                min={0}
+                max={55}
+                step={5}
+                value={minute}
+                onChange={(e) => setMinute(Number(e.target.value))}
+                className="w-full accent-[#E85D2C] h-1"
+              />
             </div>
-            <input
-              type="range"
-              min={1}
-              max={12}
-              value={hour}
-              onChange={(e) => setHour(Number(e.target.value))}
-              className="w-full accent-[#E85D2C] h-1"
-            />
+            <button
+              type="button"
+              onClick={save}
+              className="shrink-0 bg-orange text-white rounded-[8px] px-2.5 py-1.5 text-[11px] font-semibold"
+            >
+              Set
+            </button>
           </div>
-
-          <div className="mb-2">
-            <div className="flex justify-between text-[10px] text-slate mb-0.5">
-              <span>Minutes</span>
-              <span className="font-mono">{String(minute).padStart(2, "0")}</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={55}
-              step={5}
-              value={minute}
-              onChange={(e) => setMinute(Number(e.target.value))}
-              className="w-full accent-[#E85D2C] h-1"
-            />
-          </div>
-
-          <div className="text-[10px] text-slate mb-1.5">
-            Time: <span className="font-mono text-ink">{hourLabel}</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={save}
-            className="w-full bg-orange text-white rounded-[10px] py-1.5 text-[12px] font-semibold"
-          >
-            Set {hourLabel}
-          </button>
         </div>
       )}
     </div>
