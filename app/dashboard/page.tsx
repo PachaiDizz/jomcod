@@ -1599,12 +1599,17 @@ export default function DashboardPage() {
                 <option>{OTHER_SERVICE}</option>
               </select>
               {isOther && (
-                <input
-                  className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px] mt-1.5"
-                  placeholder="Write your own service name"
-                  value={svc.name}
-                  onChange={(e) => updateService(svc.id, { name: e.target.value })}
-                />
+                <>
+                  <input
+                    className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px] mt-1.5"
+                    placeholder="Write your own service name"
+                    value={svc.name}
+                    onChange={(e) => updateService(svc.id, { name: e.target.value })}
+                  />
+                  <div className="text-[10.5px] text-slate mt-1">
+                    No courier names (JNT / SPX / GDEX) — those are just for parcel pickup details.
+                  </div>
+                </>
               )}
             </div>
             <div className="flex gap-2 items-start">

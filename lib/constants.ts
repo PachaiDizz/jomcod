@@ -28,10 +28,15 @@ export function titleCase(s: string): string {
 }
 
 // Strip old courier lists still stored in the DB, e.g.
-// "Parcel Pickup (JNT / SPX / GDEX)" -> "Parcel Pickup".
+// "Parcel Pickup (JNT / SPX / GDEX)" -> "Parcel Pickup", and any stray
+// courier names a runner typed into a custom service.
+const COURIER_NAMES =
+  /\b(JNT|SPX Express|SPX|GDEX|Ninja Van|Pos Laju|Poslaju|Flash|DHL|Best Express)\b/gi;
+
 export function cleanServiceName(s: string): string {
   return s
-    .replace(/\(JNT\s*\/\s*SPX\s*\/\s*GDEX\)/gi, "")
+    .replace(/\([^)]*(JNT|SPX|GDEX)[^)]*\)/gi, "")
+    .replace(COURIER_NAMES, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 }

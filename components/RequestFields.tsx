@@ -336,16 +336,20 @@ function CourierRows({
   const add = () => onChange([...couriers, { courier: "", qty: "" }]);
 
   return (
-    <div className="rounded-[12px] border border-line bg-white overflow-hidden">
-      <div className="grid grid-cols-[1fr_80px_auto] gap-1.5 px-3 pt-2.5 pb-1">
-        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide">Courier</span>
-        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide">Items</span>
+    <>
+      <div className="grid grid-cols-[1fr_80px_auto] gap-1.5 mb-1.5">
+        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
+          Courier
+        </span>
+        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
+          Items
+        </span>
         <span />
       </div>
       {couriers.map((c, i) => (
-        <div key={i} className="grid grid-cols-[1fr_80px_auto] gap-1.5 px-3 py-1">
+        <div key={i} className="grid grid-cols-[1fr_80px_auto] gap-1.5 mb-1.5">
           <select
-            className="bg-paper2 border border-line rounded-[8px] px-2.5 py-2 text-[13px] min-w-0"
+            className="bg-white border border-line rounded-[10px] px-3 py-2 text-[13px] min-w-0"
             value={c.courier}
             onChange={(e) => update(i, { courier: e.target.value })}
           >
@@ -356,7 +360,7 @@ function CourierRows({
           </select>
           <input
             inputMode="numeric"
-            className="bg-paper2 border border-line rounded-[8px] px-2 py-2 text-[13px] min-w-0 text-center"
+            className="bg-white border border-line rounded-[10px] px-2 py-2 text-[13px] min-w-0 text-center"
             placeholder="No."
             value={c.qty}
             onChange={(e) => update(i, { qty: e.target.value })}
@@ -371,16 +375,14 @@ function CourierRows({
           </button>
         </div>
       ))}
-      <div className="flex px-3 py-2 bg-paper2 border-t border-line">
-        <button
-          type="button"
-          onClick={add}
-          className="text-[12px] font-semibold text-teal hover:underline"
-        >
-          + Add another courier
-        </button>
-      </div>
-    </div>
+      <button
+        type="button"
+        onClick={add}
+        className="text-[12px] font-semibold text-teal hover:underline"
+      >
+        + Add another courier
+      </button>
+    </>
   );
 }
 
