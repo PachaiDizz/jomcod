@@ -53,6 +53,7 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const goToApp = (userRole?: string) => router.push("/dashboard");
 
@@ -112,6 +113,11 @@ export default function LandingPage() {
   const handleSignUp = async () => {
     setLoading(true);
     setError("");
+    if (!agreed) {
+      setError("Please read and tick the community guide before creating your account.");
+      setLoading(false);
+      return;
+    }
     const trimmedPhone = phone.trim();
     if (trimmedPhone && !isValidWhatsApp(trimmedPhone)) {
       setError("Enter a valid Malaysian WhatsApp number, e.g. 012-3456789.");
@@ -306,6 +312,54 @@ export default function LandingPage() {
             <div className="text-[12.5px] text-slate mb-4.5">
               Choose how you&apos;ll use it — you can be both later
             </div>
+
+            <div className="rounded-[14px] border border-teal/30 bg-teal/[0.06] px-4 py-3.5 mb-4">
+              <div className="text-[12px] font-bold text-ink mb-2">
+                📋 Please read this before joining
+              </div>
+              <p className="text-[11.5px] leading-relaxed text-slate mb-2">
+                <b className="text-ink">JomCOD is a community runner network</b> — neighbours
+                helping neighbours with small errands. It is <b className="text-ink">not</b> a
+                payment app or a marketplace.
+              </p>
+              <div className="text-[11.5px] leading-relaxed text-slate mb-2">
+                <div className="font-bold text-ink mb-1">📍 Currently serving:</div>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Felda Desa Kencana</li>
+                  <li>Felda Wilayah Sahabat</li>
+                </ul>
+              </div>
+              <div className="text-[11.5px] leading-relaxed text-slate mb-2">
+                <div className="font-bold text-ink mb-1">How it works:</div>
+                <ol className="list-decimal pl-4 space-y-0.5">
+                  <li>Find an available runner near you</li>
+                  <li>Send a request for your errand</li>
+                  <li>Runner accepts, you coordinate on WhatsApp</li>
+                  <li>Task done → rate your runner</li>
+                </ol>
+              </div>
+              <div className="text-[11.5px] leading-relaxed text-slate">
+                <div className="font-bold text-ink mb-1">Community rules:</div>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Only members in the areas above should join for now</li>
+                  <li>Be respectful — this is your own community</li>
+                  <li>Payments are arranged between you and the runner</li>
+                </ul>
+              </div>
+            </div>
+
+            <label className="flex items-start gap-2 mb-4 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-[#E85D2C]"
+              />
+              <span className="text-[11.5px] text-slate leading-snug">
+                I&apos;ve read the guide and I live in one of the areas above.
+              </span>
+            </label>
+
             {googleButton}
 
             <div className="grid grid-cols-2 gap-2.5 mb-4">
