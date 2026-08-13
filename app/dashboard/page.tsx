@@ -376,9 +376,19 @@ export default function DashboardPage() {
         setScheduleFrom(profile.schedule_from ?? "");
         setScheduleTo(profile.schedule_to ?? "");
         setApproved(profile.is_approved ?? true);
-        setServices(
-          Array.isArray(profile.services) ? (profile.services as Service[]) : []
-        );
+        const rawServices = Array.isArray(profile.services)
+          ? (profile.services as Service[])
+          : [];
+        const cleanedServices = rawServices.map((s) => ({
+          ...s,
+          name: cleanServiceName(s.name),
+        }));
+        setServices(cleanedServices);
+        if (
+          cleanedServices.some((s, i) => s.name !== rawServices[i]?.name)
+        ) {
+          updateProfile({ services: cleanedServices as unknown as ProfileRow["services"] });
+        }
       } else {
         // No profile row yet (account created before the trigger) — create one.
         await supabase.from("profiles").upsert({
