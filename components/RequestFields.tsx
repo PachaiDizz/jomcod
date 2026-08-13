@@ -268,31 +268,37 @@ function ItemRows({
   }, 0);
 
   return (
-    <div className="rounded-[12px] border border-line bg-white overflow-hidden">
-      <div className="grid grid-cols-[1fr_58px_78px_auto] gap-1.5 px-3 pt-2.5 pb-1">
-        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide">Item</span>
-        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide">Qty</span>
-        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide">RM</span>
+    <>
+      <div className="grid grid-cols-[1fr_58px_78px_auto] gap-1.5 mb-1.5">
+        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
+          Item
+        </span>
+        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
+          Qty
+        </span>
+        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
+          RM
+        </span>
         <span />
       </div>
       {items.map((it, i) => (
-        <div key={i} className="grid grid-cols-[1fr_58px_78px_auto] gap-1.5 px-3 py-1">
+        <div key={i} className="grid grid-cols-[1fr_58px_78px_auto] gap-1.5 mb-1.5">
           <input
-            className="bg-paper2 border border-line rounded-[8px] px-2.5 py-2 text-[13px] min-w-0"
+            className="bg-white border border-line rounded-[10px] px-3 py-2 text-[13px] min-w-0"
             placeholder="e.g. Rice 5kg"
             value={it.name}
             onChange={(e) => update(i, { name: e.target.value })}
           />
           <input
             inputMode="numeric"
-            className="bg-paper2 border border-line rounded-[8px] px-2 py-2 text-[13px] min-w-0 text-center"
+            className="bg-white border border-line rounded-[10px] px-2 py-2 text-[13px] min-w-0 text-center"
             placeholder="1"
             value={it.qty}
             onChange={(e) => update(i, { qty: e.target.value })}
           />
           <input
             inputMode="decimal"
-            className="bg-paper2 border border-line rounded-[8px] px-2 py-2 text-[13px] min-w-0 text-center"
+            className="bg-white border border-line rounded-[10px] px-2 py-2 text-[13px] min-w-0 text-center"
             placeholder="0.00"
             value={it.price}
             onChange={(e) => update(i, { price: e.target.value })}
@@ -307,7 +313,7 @@ function ItemRows({
           </button>
         </div>
       ))}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-paper2 border-t border-line">
+      <div className="flex items-center justify-between gap-2 mt-1.5">
         <button
           type="button"
           onClick={add}
@@ -319,7 +325,7 @@ function ItemRows({
           Subtotal: <b className="text-ink font-mono">{formatRM(subtotal)}</b>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
