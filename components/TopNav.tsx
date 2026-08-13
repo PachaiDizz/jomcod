@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { fetchJobsForRunner, fetchUnreadCount } from "@/lib/queries";
 import RoleBadge from "./RoleBadge";
+import JoinGuideModal from "./JoinGuideModal";
 
 const NAV = [
   { href: "/browse", label: "Browse" },
@@ -23,6 +24,7 @@ export default function TopNav() {
   const [role, setRole] = useState("");
   const [pendingJobs, setPendingJobs] = useState(0);
   const [unread, setUnread] = useState(0);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     const tick = () =>
@@ -145,6 +147,14 @@ export default function TopNav() {
           {signedIn && <RoleBadge role={role} />}
           {signedIn && (
             <button
+              onClick={() => setShowGuide(true)}
+              className="font-mono text-[11.5px] font-semibold text-slate border border-line rounded-full px-3 py-1.5 hover:bg-white transition-colors"
+            >
+              📋 Guide
+            </button>
+          )}
+          {signedIn && (
+            <button
               onClick={handleSignOut}
               className="font-mono text-[11.5px] font-semibold text-orange border border-orange/40 rounded-full px-3 py-1.5 hover:bg-orange hover:text-white transition-colors"
             >
@@ -182,6 +192,10 @@ export default function TopNav() {
             ))}
           </nav>
         </div>
+      )}
+
+      {showGuide && (
+        <JoinGuideModal onAccept={() => setShowGuide(false)} acceptLabel="Got it — close" />
       )}
     </header>
   );

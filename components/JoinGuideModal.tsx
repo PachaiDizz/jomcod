@@ -7,8 +7,10 @@ import Button from "@/components/Button";
 // blocks them again.
 export default function JoinGuideModal({
   onAccept,
+  acceptLabel = "I've read it — let me sign up",
 }: {
   onAccept: () => void;
+  acceptLabel?: string;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm">
@@ -112,7 +114,7 @@ export default function JoinGuideModal({
         </div>
 
         <div className="mt-5">
-          <Button onClick={onAccept}>I&apos;ve read it — let me sign up</Button>
+          <Button onClick={onAccept}>{acceptLabel}</Button>
         </div>
       </div>
     </div>
