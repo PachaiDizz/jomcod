@@ -49,40 +49,47 @@ export default function OnboardingPage() {
       return;
     }
     const normalizedPhone = trimmedPhone ? normalizeWhatsApp(trimmedPhone) : "";
-    const supabase = createClient();
-    const { error: err } = await supabase.auth.updateUser({
-      data: {
+    let supabase;
+    try {
+      supabase = createClient();
+      const { error: err } = await supabase.auth.updateUser({
+        data: {
+          role,
+          username: username || undefined,
+          whatsapp: normalizedPhone,
+          area,
+          sahabat,
+          no_rumah: noRumah,
+          block,
+          schedule_from: scheduleFrom,
+          schedule_to: scheduleTo,
+        },
+      });
+      if (err) {
+        setError(err.message);
+        setSaving(false);
+        return;
+      }
+      await upsertProfile({
         role,
-        username: username || undefined,
         whatsapp: normalizedPhone,
         area,
+        username,
         sahabat,
         no_rumah: noRumah,
         block,
         schedule_from: scheduleFrom,
         schedule_to: scheduleTo,
-      },
-    });
-    if (err) {
-      setError(err.message);
+      });
+      await supabase.auth.refreshSession();
+      router.refresh();
       setSaving(false);
-      return;
+      router.push("/dashboard");
+    } catch (e) {
+      console.error("Onboarding error:", e);
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setSaving(false);
     }
-    await upsertProfile({
-      role,
-      whatsapp: normalizedPhone,
-      area,
-      username,
-      sahabat,
-      no_rumah: noRumah,
-      block,
-      schedule_from: scheduleFrom,
-      schedule_to: scheduleTo,
-    });
-    await supabase.auth.refreshSession();
-    router.refresh();
-    setSaving(false);
-    router.push("/dashboard");
   };
 
   return (
