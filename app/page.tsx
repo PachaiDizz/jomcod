@@ -362,6 +362,14 @@ export default function LandingPage() {
 
             {googleButton}
 
+            <div className="mb-2">
+              <div className="text-xs font-semibold mb-1.5">I am signing up as a…</div>
+              <div className="text-[11px] text-slate mb-3">
+                🛵 Are you a runner who helps others? Choose <b className="text-ink">Runner</b>.
+                <br />🏠 Just need help with errands? Choose <b className="text-ink">Community</b>.
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-2.5 mb-4">
               <button
                 onClick={() => setRole("community")}
