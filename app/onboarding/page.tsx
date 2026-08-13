@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import TimePicker from "@/components/TimePicker";
@@ -10,7 +9,6 @@ import { upsertProfile } from "@/lib/queries";
 import { AREA_OPTIONS, isValidWhatsApp, normalizeWhatsApp } from "@/lib/constants";
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const [role, setRole] = useState<"community" | "runner">("community");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
@@ -52,7 +50,7 @@ export default function OnboardingPage() {
     let supabase;
     try {
       supabase = createClient();
-      const { error: err } = await supabase.auth.updateUser({
+      const { data: updated, error: err } = await supabase.auth.updateUser({
         data: {
           role,
           username: username || undefined,
@@ -66,11 +64,12 @@ export default function OnboardingPage() {
         },
       });
       if (err) {
-        setError(err.message);
+        setError(err.message || "Couldn't save your details. Please try again.");
         setSaving(false);
         return;
       }
-      await upsertProfile({
+
+      const { error: profileErr } = await upsertProfile({
         role,
         whatsapp: normalizedPhone,
         area,
@@ -81,10 +80,27 @@ export default function OnboardingPage() {
         schedule_from: scheduleFrom,
         schedule_to: scheduleTo,
       });
-      await supabase.auth.refreshSession();
-      router.refresh();
+      if (profileErr) {
+        setError(profileErr.message || "Couldn't save your profile. Please try again.");
+        setSaving(false);
+        return;
+      }
+
+      // Make sure the role is really on the session before navigating, so the
+      // middleware never bounces us back to onboarding.
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      const savedRole = refreshed?.user?.user_metadata?.role ?? updated.user?.user_metadata?.role;
+      if (savedRole !== role) {
+        setError("Your role didn't save. Please try again.");
+        setSaving(false);
+        return;
+      }
+
       setSaving(false);
-      router.push("/dashboard");
+      // Hard navigation — guarantees the middleware sees the fresh session
+      // cookie with the role (router.push can race with cookie updates in
+      // Next.js App Router and bounce straight back to onboarding).
+      window.location.href = "/dashboard";
     } catch (e) {
       console.error("Onboarding error:", e);
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");

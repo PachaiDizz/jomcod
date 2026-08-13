@@ -206,12 +206,12 @@ export async function upsertProfile(input: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { error: null };
 
   const metadata = user.user_metadata ?? {};
   const fullName = metadata.full_name ?? metadata.name ?? "";
 
-  await supabase.from("profiles").upsert({
+  const { error } = await supabase.from("profiles").upsert({
     id: user.id,
     full_name: fullName,
     username: input.username ?? metadata.username ?? null,
@@ -224,6 +224,7 @@ export async function upsertProfile(input: {
     schedule_from: input.schedule_from ?? metadata.schedule_from ?? null,
     schedule_to: input.schedule_to ?? metadata.schedule_to ?? null,
   });
+  return { error };
 }
 
 export async function getProfile(): Promise<ProfileRow | null> {
