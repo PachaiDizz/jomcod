@@ -34,7 +34,7 @@ function BroadcastForm() {
     block: "",
     receiverName: "",
     receiverPhone: "",
-    items: [{ name: "", qty: "", price: "" }],
+    items: [{ name: "", qty: "" }],
     itemsText: "",
     extraServices: [],
     deliveryTime: "asap",

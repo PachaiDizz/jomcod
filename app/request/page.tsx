@@ -10,8 +10,7 @@ import RequestFields, {
   buildDeliverTo,
   buildNotes,
   buildTakeFrom,
-  totalCost,
-  totalItemCount,
+  estimateTotal,
 } from "@/components/RequestFields";
 import { cleanServiceName, formatRM } from "@/lib/constants";
 import { pricingLabel } from "@/lib/mockData";
@@ -53,7 +52,7 @@ function RequestForm() {
     block: params.get("block") ?? "",
     receiverName: params.get("sign") ?? "",
     receiverPhone: "",
-    items: [{ name: "", qty: "", price: "" }],
+    items: [{ name: "", qty: "" }],
     itemsText: params.get("notes") ?? "",
     extraServices: [],
     deliveryTime: "asap",
@@ -88,6 +87,11 @@ function RequestForm() {
       ? Array.from(new Set(runner.services.map((s) => cleanServiceName(s.name))))
       : REQUEST_SERVICE_OPTIONS;
 
+  const pricingFor = (serviceType: string) =>
+    runner?.services.find((s) => cleanServiceName(s.name) === serviceType)?.pricing;
+
+  const estimate = runner ? estimateTotal(details, pricingFor) : 0;
+
   const sendRequest = async () => {
     setError("");
     if (!runner) return;
@@ -108,7 +112,7 @@ function RequestForm() {
       serviceType,
       takeFrom,
       deliverTo,
-      notes: buildNotes(details),
+      notes: buildNotes(details, estimate),
       runnerId: runner.id,
     });
     setSending(false);
@@ -194,7 +198,12 @@ function RequestForm() {
       <div className="text-[19px] font-bold mb-1 font-display">Request {runner.name}</div>
       <div className="text-[12.5px] text-slate mb-4.5">Fill in your errand details</div>
 
-      <RequestFields details={details} onChange={setDetails} serviceOptions={serviceOptions} />
+      <RequestFields
+        details={details}
+        onChange={setDetails}
+        serviceOptions={serviceOptions}
+        pricingFor={pricingFor}
+      />
 
       {error && (
         <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-3">
@@ -203,11 +212,11 @@ function RequestForm() {
       )}
 
       {firstService && (
-        <div className="bg-paper2 rounded-[10px] px-3.5 py-3 my-3.5">
+        <div className="bg-white border border-line rounded-[12px] px-3.5 py-3 my-3.5">
           <div className="flex justify-between items-center">
             <div>
               <div className="text-xs text-slate mb-1">{runner.name.split(" ")[0]}&apos;s pricing</div>
-              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white text-ink">
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-paper2 text-ink">
                 {pricingLabel(firstService.pricing.model)}
               </span>
             </div>
@@ -217,24 +226,6 @@ function RequestForm() {
                 : formatRM(firstService.pricing.price)}
             </span>
           </div>
-          {firstService.pricing.model === "per_item" &&
-            typeof firstService.pricing.price === "number" && (
-              <div className="text-[11.5px] text-teal font-semibold mt-1.5">
-                {(() => {
-                  const count = totalItemCount(details);
-                  return count > 0
-                    ? `${count} item${count === 1 ? "" : "s"} × ${formatRM(
-                        firstService.pricing.price
-                      )} = ${formatRM(count * firstService.pricing.price)} estimated`
-                    : "Per item — add your items above to see an estimate";
-                })()}
-              </div>
-            )}
-          {totalCost(details) > 0 && (
-            <div className="text-[12.5px] text-teal font-bold mt-2 pt-2 border-t border-line">
-              Total from items: {formatRM(totalCost(details))}
-            </div>
-          )}
           <div className="text-[11px] text-slate mt-1.5">
             You&apos;ll only pay after the job is done — no upfront payment needed.
           </div>

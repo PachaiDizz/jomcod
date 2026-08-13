@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatRM } from "@/lib/constants";
+import type { Pricing } from "@/lib/types";
 
 export const REQUEST_SERVICE_OPTIONS = [
   "Grocery Run",
@@ -12,7 +13,6 @@ export const REQUEST_SERVICE_OPTIONS = [
 export interface RequestItem {
   name: string;
   qty: string;
-  price: string;
 }
 
 export interface ParcelCourier {
@@ -47,7 +47,7 @@ export interface RequestDetails {
   preferredTime: string;
 }
 
-const emptyItem = (): RequestItem => ({ name: "", qty: "", price: "" });
+const emptyItem = (): RequestItem => ({ name: "", qty: "" });
 
 export const EMPTY_REQUEST_DETAILS: RequestDetails = {
   serviceType: "",
@@ -186,15 +186,11 @@ function itemsToText(items: RequestItem[]): string {
   const filled = items.filter((i) => i.name.trim() && i.qty.trim());
   if (filled.length === 0) return "";
   return filled
-    .map((i) => {
-      let s = `${i.name.trim()} ×${i.qty.trim()}`;
-      if (i.price.trim()) s += ` @ ${formatRM(Number(i.price))}`;
-      return s;
-    })
+    .map((i) => `${i.name.trim()} ×${i.qty.trim()}`)
     .join(", ");
 }
 
-export function buildNotes(d: RequestDetails): string {
+export function buildNotes(d: RequestDetails, estimate?: number | null): string {
   const lines: string[] = [];
 
   if (isItemListService(d.serviceType)) {
@@ -216,8 +212,7 @@ export function buildNotes(d: RequestDetails): string {
     }
   }
 
-  const total = totalCost(d);
-  if (total > 0) lines.push(`Total: ${formatRM(total)}`);
+  if (estimate && estimate > 0) lines.push(`Total: ${formatRM(estimate)}`);
 
   lines.push(`Needed By: ${neededBy(d)}`);
   return lines.join("\n");
@@ -231,18 +226,32 @@ export function totalItemCount(d: RequestDetails): number {
   return sum;
 }
 
-// Auto-sum calculator: qty × price per line, across every service.
-export function totalCost(d: RequestDetails): number {
-  let total = 0;
-  const lines: RequestItem[] = [
-    ...d.items,
-    ...d.extraServices.flatMap((e) => e.items),
-  ];
-  for (const i of lines) {
-    const qty = parseFloat(i.qty) || 0;
-    const price = parseFloat(i.price) || 0;
-    total += qty * price;
-  }
+// Auto-calculated from the RUNNER's pricing, not the items:
+// per_item  → total item count × price per item
+// flat_rate → the flat fee
+// custom    → can't auto-calc, skipped
+export function estimateTotal(
+  d: RequestDetails,
+  pricingFor: (serviceType: string) => Pricing | undefined
+): number {
+  const serviceCount = (items: RequestItem[]) =>
+    items.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0);
+
+  const linePrice = (serviceType: string, items: RequestItem[]): number => {
+    const p = pricingFor(serviceType);
+    if (!p) return 0;
+    if (p.model === "flat_rate" && typeof p.price === "number") return p.price;
+    if (p.model === "per_item" && typeof p.price === "number")
+      return serviceCount(items) * p.price;
+    return 0;
+  };
+
+  const total =
+    linePrice(d.serviceType, d.items) +
+    d.extraServices.reduce(
+      (sum, e) => sum + linePrice(e.serviceType, e.items),
+      0
+    );
   return Math.round(total * 100) / 100;
 }
 
@@ -261,28 +270,21 @@ function ItemRows({
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
   const add = () => onChange([...items, emptyItem()]);
 
-  const subtotal = items.reduce((sum, i) => {
-    const qty = parseFloat(i.qty) || 0;
-    const price = parseFloat(i.price) || 0;
-    return sum + qty * price;
-  }, 0);
+  const count = items.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0);
 
   return (
     <>
-      <div className="grid grid-cols-[1fr_58px_78px_auto] gap-1.5 mb-1.5">
+      <div className="grid grid-cols-[1fr_58px_auto] gap-1.5 mb-1.5">
         <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
           Item
         </span>
         <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
           Qty
         </span>
-        <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
-          RM
-        </span>
         <span />
       </div>
       {items.map((it, i) => (
-        <div key={i} className="grid grid-cols-[1fr_58px_78px_auto] gap-1.5 mb-1.5">
+        <div key={i} className="grid grid-cols-[1fr_58px_auto] gap-1.5 mb-1.5">
           <input
             className="bg-white border border-line rounded-[10px] px-3 py-2 text-[13px] min-w-0"
             placeholder="e.g. Rice 5kg"
@@ -295,13 +297,6 @@ function ItemRows({
             placeholder="1"
             value={it.qty}
             onChange={(e) => update(i, { qty: e.target.value })}
-          />
-          <input
-            inputMode="decimal"
-            className="bg-white border border-line rounded-[10px] px-2 py-2 text-[13px] min-w-0 text-center"
-            placeholder="0.00"
-            value={it.price}
-            onChange={(e) => update(i, { price: e.target.value })}
           />
           <button
             type="button"
@@ -322,7 +317,7 @@ function ItemRows({
           + Add item
         </button>
         <div className="text-[12px] text-slate">
-          Subtotal: <b className="text-ink font-mono">{formatRM(subtotal)}</b>
+          {count} item{count === 1 ? "" : "s"}
         </div>
       </div>
     </>
@@ -396,10 +391,12 @@ export default function RequestFields({
   details,
   onChange,
   serviceOptions = REQUEST_SERVICE_OPTIONS,
+  pricingFor,
 }: {
   details: RequestDetails;
   onChange: (d: RequestDetails) => void;
   serviceOptions?: string[];
+  pricingFor?: (serviceType: string) => Pricing | undefined;
 }) {
   const set = (patch: Partial<RequestDetails>) => onChange({ ...details, ...patch });
   const selected = details.serviceType || serviceOptions[0];
@@ -418,7 +415,7 @@ export default function RequestFields({
     { value: "scheduled" as const, label: "📅 Scheduled" },
   ];
 
-  const grandTotal = totalCost(details);
+  const grandTotal = pricingFor ? estimateTotal(details, pricingFor) : 0;
 
   return (
     <>
@@ -659,15 +656,19 @@ export default function RequestFields({
         </div>
       </div>
 
-      {/* Grand total calculator */}
-      {grandTotal > 0 && (
+      {/* Grand total calculator — from the runner's pricing */}
+      {pricingFor && (
         <div className="rounded-[12px] border-[1.5px] border-teal/30 bg-[#E4F3EC] px-3.5 py-3 mb-3.5">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[12px] font-semibold text-teal">Estimated total</div>
+            <div className="text-[12px] font-semibold text-teal">
+              You&apos;ll pay the runner
+            </div>
             <div className="font-mono font-bold text-[17px] text-teal">{formatRM(grandTotal)}</div>
           </div>
           <div className="text-[10.5px] text-slate mt-0.5">
-            Auto-calculated from item quantities and prices — both sides see this.
+            Auto-calculated from {totalItemCount(details)} item
+            {totalItemCount(details) === 1 ? "" : "s"} × the runner&apos;s service price — both
+            sides see this.
           </div>
         </div>
       )}
