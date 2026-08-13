@@ -1,6 +1,7 @@
-// JomCOD service worker — minimal cache-first strategy for core shell.
-// Bump CACHE_NAME whenever you deploy a new version so old caches get cleared.
-const CACHE_NAME = "jomrunner-cache-v1";
+// JomCOD service worker — network-first so deployed updates always load.
+// Cache is only used as an offline fallback, so stale builds never get served.
+// Bump CACHE_NAME whenever you make big changes to clear old caches.
+const CACHE_NAME = "jomcod-cache-v2";
 const CORE_ASSETS = [
   "/",
   "/index.html",
@@ -29,24 +30,27 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: try cache first (fast + offline-friendly), fall back to network,
-// and cache new same-origin GET requests as they come in.
+// Fetch: network first, then cache. Only same-origin GET requests are handled.
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  const { request } = event;
+  if (request.method !== "GET") return;
+  if (!request.url.startsWith(self.location.origin)) return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(event.request)
-        .then((response) => {
-          if (response.ok && event.request.url.startsWith(self.location.origin)) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match("/index.html"));
-    })
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() =>
+        caches.match(request).then(
+          (cached) =>
+            cached ||
+            caches.match("/index.html").then((home) => home || Response.error())
+        )
+      )
   );
 });
