@@ -192,7 +192,7 @@ export default function LandingPage() {
             can run this for you.
           </h1>
           <p className="text-[13.5px] text-[#C7CBC7] max-w-[440px] mt-3.5 leading-relaxed">
-            Groceries, parcel pickups from JNT / SPX / GDEX, or a quick errand — find a runner in
+            Groceries, parcel pickups, or a quick errand — find a runner in
             your area and chat with them directly on WhatsApp.
           </p>
           <div className="flex gap-6 mt-6 flex-wrap font-mono text-[11px] text-[#9AA09C]">
