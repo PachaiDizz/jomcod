@@ -117,7 +117,7 @@ function RequestForm() {
       serviceType,
       takeFrom,
       deliverTo,
-      notes: buildNotes(details, estimate),
+      notes: buildNotes({ ...details, serviceType: effectiveService }, estimate),
       runnerId: runner.id,
     });
     setSending(false);

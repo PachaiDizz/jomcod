@@ -89,7 +89,10 @@ function BroadcastForm() {
       serviceType,
       takeFrom: buildTakeFrom(details),
       deliverTo: deliver,
-      notes: buildNotes(details),
+      notes: buildNotes({
+        ...details,
+        serviceType: details.serviceType || REQUEST_SERVICE_OPTIONS[0],
+      }),
       runnerId: null,
     });
     setSending(false);
