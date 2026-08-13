@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import LoadingState from "@/components/LoadingState";
+import ItemList from "@/components/ItemList";
 import { titleCase, waLink } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -238,13 +239,11 @@ export default function JobDetailPage() {
             </div>
           )}
           {items.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {items.map((it, i) => (
-                <span key={i} className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#E4F3EC] text-teal whitespace-nowrap">
-                  {it}
-                </span>
-              ))}
-            </div>
+            <ItemList items={items.map((it) => {
+              const m = it.match(/^(.*?)\s*[×x*]\s*([\d.]+)\s*(?:@\s*(RM[\d.]+))?/i);
+              if (m) return { name: m[1]!.trim(), qty: m[2]!.trim(), price: m[3]?.trim() ?? "" };
+              return { name: it, qty: "", price: "" };
+            })} title="What to buy / pick up" />
           )}
           {total && (
             <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-1">

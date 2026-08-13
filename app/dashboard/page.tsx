@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import RoleBadge from "@/components/RoleBadge";
+import ItemList from "@/components/ItemList";
 import { JobRequest, Review, RunnerStatus, Service } from "@/lib/types";
 import { cleanServiceName, formatRM, OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
 import { parseDeliverTo } from "@/components/RequestFields";
@@ -1111,10 +1112,14 @@ export default function DashboardPage() {
                   {parseNotes(toast.job.notes ?? "").items.length > 0 && (
                     <span className="block mt-1.5 space-y-0.5">
                       {parseNotes(toast.job.notes ?? "").items.map((it, i) => (
-                        <span key={i} className="block text-[11px] text-ink">
-                          🛒 {it.name}
-                          {it.qty ? ` ×${it.qty}` : ""}
-                          {it.price ? ` · ${it.price}` : ""}
+                        <span key={i} className="flex items-center gap-1.5 text-[11px] text-ink">
+                          <span className="w-4 h-4 rounded-full bg-teal text-white text-[8.5px] font-bold flex items-center justify-center flex-shrink-0">
+                            {i + 1}
+                          </span>
+                          <span className="break-words min-w-0 flex-1">{it.name}</span>
+                          {it.qty && (
+                            <span className="font-mono font-bold text-teal whitespace-nowrap">×{it.qty}</span>
+                          )}
                         </span>
                       ))}
                     </span>
@@ -1257,24 +1262,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
-            {noteData.items.length > 0 && (
-              <div className="rounded-[10px] bg-[#F0F7F4] border border-[#D7EBE1] px-3 py-2 mt-2.5">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-teal mb-1.5">
-                  What to buy / pick up
-                </div>
-                <div className="space-y-1">
-                  {noteData.items.map((it, i) => (
-                    <div key={i} className="flex items-center justify-between gap-2 text-[12px]">
-                      <span className="text-ink font-medium break-words">{it.name}</span>
-                      <span className="font-mono text-teal whitespace-nowrap">
-                        {it.qty ? `×${it.qty}` : ""}
-                        {it.price ? ` · ${it.price}` : ""}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <ItemList items={noteData.items} title="What to buy / pick up" />
             {noteData.total && (
               <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
                 <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
@@ -1341,20 +1329,7 @@ export default function DashboardPage() {
                   <div className="text-[11.5px] text-slate mt-0.5 leading-snug">
                     {job.takeFrom} → {job.deliverTo}
                   </div>
-                  {bItems.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {bItems.map((it, i) => (
-                        <span
-                          key={i}
-                          className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/70 text-ink whitespace-nowrap"
-                        >
-                          {it.name}
-                          {it.qty ? ` ×${it.qty}` : ""}
-                          {it.price ? ` · ${it.price}` : ""}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <ItemList items={bItems} title="Items requested" />
                   <div className="text-[10px] font-mono text-slate mt-1.5">
                     Broadcast · open to all · expires in{" "}
                     {Math.max(0, 5 - Math.floor((Date.now() - job.createdAt) / 60000))}m
@@ -1514,21 +1489,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 )}
-                {/* Items chips */}
-                {items.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {items.map((it, i) => (
-                      <span
-                        key={i}
-                        className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#E4F3EC] text-teal whitespace-nowrap"
-                      >
-                        {it.name}
-                        {it.qty ? ` ×${it.qty}` : ""}
-                        {it.price ? ` · ${it.price}` : ""}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <ItemList items={items} title="What to buy / pick up" />
                 {total && (
                   <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
                     <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
