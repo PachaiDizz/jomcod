@@ -1081,6 +1081,17 @@ export default function DashboardPage() {
                       Open to all runners — first to accept wins.
                     </span>
                   )}
+                  {parseNotes(toast.job.notes ?? "").items.length > 0 && (
+                    <span className="block mt-1.5 space-y-0.5">
+                      {parseNotes(toast.job.notes ?? "").items.map((it, i) => (
+                        <span key={i} className="block text-[11px] text-ink">
+                          🛒 {it.name}
+                          {it.qty ? ` ×${it.qty}` : ""}
+                          {it.price ? ` · ${it.price}` : ""}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1293,7 +1304,9 @@ export default function DashboardPage() {
         </div>
         ) : (
         <div className="grid gap-2.5 mb-4 md:grid-cols-2 lg:grid-cols-3">
-          {live.map((job) => (
+          {live.map((job) => {
+            const bItems = parseNotes(job.notes ?? "").items;
+            return (
             <div key={job.id} className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3.5 py-3">
               <div className="flex justify-between items-start gap-2">
                 <div className="min-w-0">
@@ -1301,7 +1314,21 @@ export default function DashboardPage() {
                   <div className="text-[11.5px] text-slate mt-0.5 leading-snug">
                     {job.takeFrom} → {job.deliverTo}
                   </div>
-                  <div className="text-[10px] font-mono text-slate mt-1">
+                  {bItems.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {bItems.map((it, i) => (
+                        <span
+                          key={i}
+                          className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/70 text-ink whitespace-nowrap"
+                        >
+                          {it.name}
+                          {it.qty ? ` ×${it.qty}` : ""}
+                          {it.price ? ` · ${it.price}` : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="text-[10px] font-mono text-slate mt-1.5">
                     Broadcast · open to all · expires in{" "}
                     {Math.max(0, 5 - Math.floor((Date.now() - job.createdAt) / 60000))}m
                   </div>
@@ -1315,7 +1342,8 @@ export default function DashboardPage() {
                 ⚡ Claim this job
               </Button>
             </div>
-          ))}
+            );
+          })}
         </div>
         );
       })()}
