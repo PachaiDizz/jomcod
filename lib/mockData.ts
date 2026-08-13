@@ -1,3 +1,4 @@
+import { formatRM } from "./constants";
 import { PricingModel, Runner } from "./types";
 
 // Stand-in for the future database. No fake data — the app now reads real
@@ -23,7 +24,7 @@ export function pricingLabel(model: PricingModel): string {
 export function pricingDisplay(runner: Runner) {
   const first = runner.services[0];
   if (!first) return "—";
-  if (first.pricing.model === "flat_rate") return `RM${first.pricing.price}/trip`;
-  if (first.pricing.model === "per_item") return `RM${first.pricing.price}/item`;
+  if (first.pricing.model === "flat_rate") return `${formatRM(first.pricing.price)}/trip`;
+  if (first.pricing.model === "per_item") return `${formatRM(first.pricing.price)}/item`;
   return first.pricing.description ?? "custom";
 }

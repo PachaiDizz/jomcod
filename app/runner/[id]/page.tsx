@@ -7,6 +7,7 @@ import PhoneFrame from "@/components/PhoneFrame";
 import StatusPill from "@/components/StatusPill";
 import Button from "@/components/Button";
 import LoadingState from "@/components/LoadingState";
+import { formatRM, titleCase } from "@/lib/constants";
 import { pricingLabel } from "@/lib/mockData";
 import {
   blockUser,
@@ -169,7 +170,7 @@ export default function RunnerProfilePage() {
         runner.services.map((s) => (
           <div key={s.id} className="flex justify-between items-center py-2.5 border-b border-line text-[13px] last:border-b-0 gap-2">
             <span className="min-w-0">
-              {s.name}{" "}
+              {titleCase(s.name)}{" "}
               <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-paper2 text-ink whitespace-nowrap">
                 {pricingLabel(s.pricing.model)}
               </span>
@@ -177,7 +178,7 @@ export default function RunnerProfilePage() {
             <span className="font-mono whitespace-nowrap flex-shrink-0">
               {s.pricing.model === "custom"
                 ? s.pricing.description
-                : `RM${s.pricing.price}${s.pricing.model === "per_item" ? "/item" : "/trip"}`}
+                : `${formatRM(s.pricing.price)}${s.pricing.model === "per_item" ? "/item" : "/trip"}`}
             </span>
           </div>
         ))

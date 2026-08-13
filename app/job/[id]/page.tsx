@@ -50,6 +50,34 @@ function parseItems(notes: string): string[] {
   return items;
 }
 
+function parseNotesExtended(notes: string): {
+  services: string[];
+  items: string[];
+  total: string | null;
+  other: string[];
+} {
+  const services: string[] = [];
+  const items: string[] = [];
+  let total: string | null = null;
+  const other: string[] = [];
+  for (const line of notes.split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    const sm = t.match(/^Service:\s*(.+)$/i);
+    const im = t.match(/^Items:\s*(.+)$/i);
+    const tm = t.match(/^Total:\s*(.+)$/i);
+    if (sm) services.push(sm[1]!.trim());
+    else if (im) {
+      for (const part of im[1]!.split(",")) {
+        const p = part.trim();
+        if (p) items.push(p);
+      }
+    } else if (tm) total = tm[1]!.trim();
+    else if (!/^Needed By:/i.test(t)) other.push(t);
+  }
+  return { services, items, total, other };
+}
+
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [job, setJob] = useState<JobRequest | null>(null);
@@ -152,10 +180,7 @@ export default function JobDetailPage() {
     );
   }
 
-  const items = parseItems(job.notes ?? "");
-  const otherLines = (job.notes ?? "")
-    .split("\n")
-    .filter((l) => l.trim() && !/^Items:/i.test(l.trim()));
+  const { services, items, total, other: otherLines } = parseNotesExtended(job.notes ?? "");
 
   return (
     <PhoneFrame>
@@ -203,6 +228,15 @@ export default function JobDetailPage() {
             </span>
           </div>
 
+          {services.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {services.map((s, i) => (
+                <span key={i} className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#FDF3EE] text-orange border border-[#F5D5C4] whitespace-nowrap">
+                  + {s}
+                </span>
+              ))}
+            </div>
+          )}
           {items.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {items.map((it, i) => (
@@ -210,6 +244,12 @@ export default function JobDetailPage() {
                   {it}
                 </span>
               ))}
+            </div>
+          )}
+          {total && (
+            <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-1">
+              <span className="text-[12px] font-semibold text-teal">Estimated total</span>
+              <span className="font-mono font-bold text-[14px] text-teal">{total}</span>
             </div>
           )}
           {otherLines.length > 0 && (

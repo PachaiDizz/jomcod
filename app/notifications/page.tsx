@@ -9,15 +9,17 @@ import { fetchNotifications, markAllNotificationsRead } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
 import type { AppNotification } from "@/lib/types";
 
-const KIND_EMOJI: Record<string, string> = {
-  new_request: "🔔",
-  new_broadcast: "📣",
-  accepted: "✅",
-  done: "🎉",
-  expired: "⏳",
-  cancelled: "🚫",
-  declined: "🙅",
+const KIND_STYLE: Record<string, { emoji: string; tile: string; bar: string }> = {
+  new_request: { emoji: "🔔", tile: "bg-[#FDF3EE]", bar: "bg-orange" },
+  new_broadcast: { emoji: "📣", tile: "bg-[#FDF3EE]", bar: "bg-orange" },
+  accepted: { emoji: "✅", tile: "bg-[#E4F3EC]", bar: "bg-teal" },
+  done: { emoji: "🎉", tile: "bg-[#E4F3EC]", bar: "bg-teal" },
+  expired: { emoji: "⏳", tile: "bg-[#FDF6E3]", bar: "bg-[#8A6D00]" },
+  cancelled: { emoji: "🚫", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" },
+  declined: { emoji: "🙅", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" },
 };
+
+const KIND_FALLBACK = { emoji: "🔔", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" };
 
 function timeAgo(t: number): string {
   const s = Math.floor((Date.now() - t) / 1000);
@@ -85,16 +87,20 @@ export default function NotificationsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
           {notifs.map((n) => {
+            const style = KIND_STYLE[n.kind] ?? KIND_FALLBACK;
             const body = (
               <div
                 key={n.id}
-                className="bg-white border border-line rounded-[10px] px-3.5 py-3 flex items-start gap-2.5 hover:border-[#C4BB9F] transition-colors"
+                className="bg-white border border-line rounded-card px-3.5 py-3 flex items-start gap-3 hover:border-[#C4BB9F] hover:shadow-[0_8px_24px_-12px_rgba(28,35,33,0.15)] transition-all overflow-hidden relative"
               >
-                <span className="text-lg leading-none flex-shrink-0 mt-0.5">
-                  {KIND_EMOJI[n.kind] ?? "🔔"}
-                </span>
+                <div className={`absolute left-0 top-0 bottom-0 w-[3.5px] ${style.bar}`} />
+                <div
+                  className={`w-9 h-9 rounded-[10px] ${style.tile} flex items-center justify-center text-[17px] flex-shrink-0`}
+                >
+                  {style.emoji}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[12.5px] font-semibold text-ink break-words">{n.title}</div>
                   {n.body && (

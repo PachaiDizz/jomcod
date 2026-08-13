@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import RoleBadge from "@/components/RoleBadge";
-import { titleCase } from "@/lib/constants";
+import { parseDeliverTo } from "@/components/RequestFields";
+import { formatRM, titleCase } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { fetchJobsForRequester, fetchJobsForRunner, jobFromRow } from "@/lib/queries";
 import type { JobRequest } from "@/lib/types";
@@ -23,6 +24,28 @@ const JOB_LABELS: Record<JobRequest["status"], string> = {
   done: "Completed",
   expired: "Expired",
   cancelled: "Cancelled",
+};
+
+const JOB_BANDS: Record<JobRequest["status"], string> = {
+  pending: "bg-[#FDF6E3] border-[#F0E0A8]",
+  confirmed: "bg-[#FDEFE3] border-[#F5D5C4]",
+  done: "bg-[#E4F3EC] border-[#C8E6DA]",
+  expired: "bg-paper2 border-line",
+  cancelled: "bg-[#F3F3F3] border-line",
+};
+
+const serviceEmoji = (s: string): string => {
+  const t = s.toLowerCase();
+  if (t.includes("parcel")) return "📦";
+  if (t.includes("grocery") || t.includes("shop") || t.includes("buy")) return "🛒";
+  if (t.includes("food") || t.includes("takeaway")) return "🍔";
+  if (t.includes("document") || t.includes("delivery")) return "📄";
+  if (t.includes("bill") || t.includes("top") || t.includes("atm") || t.includes("bank")) return "🧾";
+  if (t.includes("petrol")) return "⛽";
+  if (t.includes("pharmacy")) return "💊";
+  if (t.includes("laundry")) return "🧺";
+  if (t.includes("queue") || t.includes("collect")) return "🎟️";
+  return "⚡";
 };
 
 export default function HistoryPage() {
@@ -159,19 +182,29 @@ export default function HistoryPage() {
         ) : (
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((job) => (
-          <div key={job.id} className="bg-white border border-line rounded-[10px] px-3.5 py-3">
-            <div className="flex justify-between items-start gap-2">
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold">{titleCase(job.serviceType)}</div>
-                <div className="text-[11.5px] text-slate mt-0.5 leading-snug">
-                  {job.takeFrom} → {job.deliverTo}
-                </div>
+          <div key={job.id} className="bg-white border border-line rounded-card overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div className={`px-3.5 py-2.5 flex items-center justify-between gap-2 border-b ${JOB_BANDS[job.status]}`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[17px] leading-none flex-shrink-0">
+                  {serviceEmoji(job.serviceType)}
+                </span>
+                <Link href={`/job/${job.id}`} className="text-[13.5px] font-bold font-display text-ink break-words hover:text-teal transition-colors">
+                  {titleCase(job.serviceType)}
+                </Link>
               </div>
               <span
                 className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
               >
                 {JOB_LABELS[job.status]}
               </span>
+            </div>
+            <div className="px-3.5 py-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-teal flex-shrink-0" />
+              <span className="text-[12px] font-semibold text-ink truncate flex-1">{job.takeFrom}</span>
+              <span className="text-teal font-bold flex-shrink-0">→</span>
+              <span className="text-[12px] font-semibold text-ink truncate flex-1 text-right">{job.deliverTo}</span>
+              <span className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
             </div>
             <div className="text-[10.5px] font-mono text-slate mt-2">
               {new Date(job.createdAt).toLocaleDateString("en-MY", {
@@ -185,14 +218,17 @@ export default function HistoryPage() {
             {role === "community" && job.status === "done" && job.runnerId && (
               <Link
                 href={(() => {
-                  const [sahabat = "", no = "", sign = ""] = job.deliverTo.split(" · ");
+                  const parsed = parseDeliverTo(job.deliverTo);
                   const q = new URLSearchParams({
                     runner: job.runnerId as string,
                     service: job.serviceType,
                     take: job.takeFrom,
-                    sahabat,
-                    no,
-                    sign,
+                    sahabat: parsed.sahabat,
+                    no: parsed.noRumah,
+                    unit: parsed.unit,
+                    block: parsed.block,
+                    area: parsed.deliveryArea,
+                    sign: parsed.receiverName,
                     notes: job.notes ?? "",
                   });
                   return `/request?${q.toString()}`;
@@ -202,6 +238,7 @@ export default function HistoryPage() {
                 🔄 Request again
               </Link>
             )}
+            </div>
           </div>
         ))}
         </div>

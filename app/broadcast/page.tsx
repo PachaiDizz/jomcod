@@ -28,11 +28,15 @@ function BroadcastForm() {
     couriers: [{ courier: "", qty: "" }],
     pickupLocation: "",
     deliveryArea: "",
-    houseNo: "",
+    sahabat: "",
+    noRumah: "",
+    unit: "",
+    block: "",
     receiverName: "",
     receiverPhone: "",
-    items: [{ name: "", qty: "" }],
+    items: [{ name: "", qty: "", price: "" }],
     itemsText: "",
+    extraServices: [],
     deliveryTime: "asap",
     preferredTime: "",
   });
@@ -57,8 +61,10 @@ function BroadcastForm() {
       if (!p) return;
       setDetails((prev) => ({
         ...prev,
-        deliveryArea: prev.deliveryArea || p.sahabat || "",
-        houseNo: prev.houseNo || (p.no_rumah ?? "") + (p.block ? `, Block ${p.block}` : ""),
+        deliveryArea: prev.deliveryArea || p.area || "",
+        sahabat: prev.sahabat || p.sahabat || "",
+        noRumah: prev.noRumah || p.no_rumah || "",
+        block: prev.block || p.block || "",
       }));
     });
   }, []);
@@ -71,10 +77,14 @@ function BroadcastForm() {
       return;
     }
     setSending(true);
-    const serviceType =
+    const baseService =
       details.serviceType === "Other"
         ? "Other Errand"
         : details.serviceType || REQUEST_SERVICE_OPTIONS[0];
+    const extraNames = details.extraServices.map((e) =>
+      e.serviceType === "Other" ? "Other Errand" : e.serviceType || ""
+    );
+    const serviceType = [baseService, ...extraNames].filter(Boolean).join(" + ");
     const res = await createJob({
       serviceType,
       takeFrom: buildTakeFrom(details),

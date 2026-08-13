@@ -10,8 +10,10 @@ import RequestFields, {
   buildDeliverTo,
   buildNotes,
   buildTakeFrom,
+  totalCost,
   totalItemCount,
 } from "@/components/RequestFields";
+import { formatRM } from "@/lib/constants";
 import { pricingLabel } from "@/lib/mockData";
 import { createJob, fetchRunners, getProfile } from "@/lib/queries";
 import type { RequestDetails } from "@/components/RequestFields";
@@ -44,12 +46,16 @@ function RequestForm() {
     serviceType: params.get("service") ?? "",
     couriers: [{ courier: "", qty: "" }],
     pickupLocation: params.get("take") ?? "",
-    deliveryArea: params.get("sahabat") ?? "",
-    houseNo: params.get("no") ?? "",
+    deliveryArea: params.get("area") ?? "",
+    sahabat: params.get("sahabat") ?? "",
+    noRumah: params.get("no") ?? "",
+    unit: params.get("unit") ?? "",
+    block: params.get("block") ?? "",
     receiverName: params.get("sign") ?? "",
     receiverPhone: "",
-    items: [{ name: "", qty: "" }],
+    items: [{ name: "", qty: "", price: "" }],
     itemsText: params.get("notes") ?? "",
+    extraServices: [],
     deliveryTime: "asap",
     preferredTime: "",
   });
@@ -64,13 +70,15 @@ function RequestForm() {
   // Prefill the delivery address from the user's saved profile when nothing
   // was passed in (e.g. from a re-request link).
   useEffect(() => {
-    if (params.get("sahabat") || params.get("no") || params.get("sign")) return;
+    if (params.get("area") || params.get("sahabat") || params.get("no") || params.get("sign")) return;
     getProfile().then((p) => {
       if (!p) return;
       setDetails((prev) => ({
         ...prev,
-        deliveryArea: prev.deliveryArea || p.sahabat || "",
-        houseNo: prev.houseNo || (p.no_rumah ?? "") + (p.block ? `, Block ${p.block}` : ""),
+        deliveryArea: prev.deliveryArea || p.area || "",
+        sahabat: prev.sahabat || p.sahabat || "",
+        noRumah: prev.noRumah || p.no_rumah || "",
+        block: prev.block || p.block || "",
       }));
     });
   }, []);
@@ -83,11 +91,15 @@ function RequestForm() {
   const sendRequest = async () => {
     setError("");
     if (!runner) return;
-    const serviceType =
+    const baseService =
       details.serviceType === "Other" ? "Other Errand" : details.serviceType || serviceOptions[0];
+    const extraNames = details.extraServices.map((e) =>
+      e.serviceType === "Other" ? "Other Errand" : e.serviceType || ""
+    );
+    const serviceType = [baseService, ...extraNames].filter(Boolean).join(" + ");
     const takeFrom = buildTakeFrom(details);
     const deliverTo = buildDeliverTo(details);
-    if (!buildTakeFrom(details) || !deliverTo) {
+    if (!takeFrom || !deliverTo) {
       setError("Please fill in pickup and delivery details.");
       return;
     }
@@ -202,7 +214,7 @@ function RequestForm() {
             <span className="font-mono font-bold text-[17px]">
               {firstService.pricing.model === "custom"
                 ? firstService.pricing.description
-                : `RM${firstService.pricing.price?.toFixed(2)}`}
+                : formatRM(firstService.pricing.price)}
             </span>
           </div>
           {firstService.pricing.model === "per_item" &&
@@ -211,13 +223,18 @@ function RequestForm() {
                 {(() => {
                   const count = totalItemCount(details);
                   return count > 0
-                    ? `${count} item${count === 1 ? "" : "s"} × RM${firstService.pricing.price} = RM${(
-                        count * firstService.pricing.price
-                      ).toFixed(2)} estimated`
+                    ? `${count} item${count === 1 ? "" : "s"} × ${formatRM(
+                        firstService.pricing.price
+                      )} = ${formatRM(count * firstService.pricing.price)} estimated`
                     : "Per item — add your items above to see an estimate";
                 })()}
               </div>
             )}
+          {totalCost(details) > 0 && (
+            <div className="text-[12.5px] text-teal font-bold mt-2 pt-2 border-t border-line">
+              Total from items: {formatRM(totalCost(details))}
+            </div>
+          )}
           <div className="text-[11px] text-slate mt-1.5">
             You&apos;ll only pay after the job is done — no upfront payment needed.
           </div>

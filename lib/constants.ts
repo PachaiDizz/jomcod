@@ -1,5 +1,5 @@
 export const SERVICE_PRESETS = [
-  "Parcel Pickup (JNT / SPX / GDEX)",
+  "Parcel Pickup",
   "Grocery Run",
   "Buy Groceries For Me",
   "Food Takeaway Pickup",
@@ -25,6 +25,14 @@ export function titleCase(s: string): string {
     .split(" ")
     .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
     .join(" ");
+}
+
+// "RM4" not "RM04" / "RM4.00" — whole ringgit without leading or trailing zeros.
+export function formatRM(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "RM0";
+  const rounded = Math.round(value * 100) / 100;
+  const fixed = rounded.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+  return `RM${fixed}`;
 }
 
 // Normalize Malaysian WhatsApp numbers to +60XXXXXXXXX so wa.me links

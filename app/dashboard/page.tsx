@@ -6,7 +6,8 @@ import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import RoleBadge from "@/components/RoleBadge";
 import { JobRequest, Review, RunnerStatus, Service } from "@/lib/types";
-import { OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
+import { formatRM, OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
+import { parseDeliverTo } from "@/components/RequestFields";
 import { createClient } from "@/lib/supabase/client";
 import {
   acceptJob,
@@ -40,7 +41,7 @@ const greeting = () => {
 };
 
 const QUICK_SERVICES = [
-  { emoji: "📦", label: "Parcel", value: "Parcel Pickup (JNT / SPX / GDEX)" },
+  { emoji: "📦", label: "Parcel", value: "Parcel Pickup" },
   { emoji: "🛒", label: "Groceries", value: "Grocery Run" },
   { emoji: "🧾", label: "Bills", value: "Pay Bills (Toll / Water / Electric)" },
   { emoji: "🏪", label: "Pickup", value: "Drop-Off Parcel" },
@@ -62,48 +63,73 @@ const serviceEmoji = (s: string): string => {
 };
 
 interface ParsedNotes {
-  items: { name: string; qty: string }[];
+  items: { name: string; qty: string; price: string }[];
+  services: string[];
   neededBy: string | null;
+  total: string | null;
   extra: string[];
 }
 
 function parseNotes(notes: string): ParsedNotes {
-  const items: { name: string; qty: string }[] = [];
+  const items: { name: string; qty: string; price: string }[] = [];
+  const services: string[] = [];
   let neededBy: string | null = null;
+  let total: string | null = null;
   const extra: string[] = [];
   for (const line of notes.split("\n")) {
-    const itemsMatch = line.match(/^Items:\s*(.*)$/i);
+    const t = line.trim();
+    if (!t) continue;
+    const svcMatch = t.match(/^Service:\s*(.*)$/i);
+    if (svcMatch) {
+      services.push(svcMatch[1].trim());
+      continue;
+    }
+    const totalMatch = t.match(/^Total:\s*(.*)$/i);
+    if (totalMatch) {
+      total = totalMatch[1].trim();
+      continue;
+    }
+    const itemsMatch = t.match(/^Items:\s*(.*)$/i);
     if (itemsMatch) {
       for (const part of itemsMatch[1].split(",")) {
         const trimmed = part.trim();
         if (!trimmed) continue;
-        const pm = trimmed.match(/^(.*?)\s*[×x*]\s*(.+)$/);
-        items.push(
-          pm ? { name: pm[1].trim(), qty: pm[2].trim() } : { name: trimmed, qty: "" }
-        );
+        const pm = trimmed.match(/^(.*?)\s*[×x*]\s*([\d.]+)\s*(?:@\s*(RM[\d.]+))?/i);
+        if (pm) {
+          items.push({
+            name: pm[1].trim(),
+            qty: pm[2].trim(),
+            price: pm[3]?.trim() ?? "",
+          });
+        } else {
+          items.push({ name: trimmed, qty: "", price: "" });
+        }
       }
       continue;
     }
-    const needMatch = line.match(/^Needed By:\s*(.*)$/i);
+    const needMatch = t.match(/^Needed By:\s*(.*)$/i);
     if (needMatch) {
       neededBy = needMatch[1].trim();
       continue;
     }
-    if (line.trim()) extra.push(line.trim());
+    extra.push(t);
   }
-  return { items, neededBy, extra };
+  return { items, services, neededBy, total, extra };
 }
 
 const requestAgainHref = (job: JobRequest): string => {
   if (!job.runnerId) return "/broadcast";
-  const [sahabat = "", no = "", sign = ""] = job.deliverTo.split(" · ");
+  const parsed = parseDeliverTo(job.deliverTo);
   const q = new URLSearchParams({
     runner: job.runnerId,
     service: job.serviceType,
     take: job.takeFrom,
-    sahabat,
-    no,
-    sign,
+    sahabat: parsed.sahabat,
+    no: parsed.noRumah,
+    unit: parsed.unit,
+    block: parsed.block,
+    area: parsed.deliveryArea,
+    sign: parsed.receiverName,
     notes: job.notes ?? "",
   });
   return `/request?${q.toString()}`;
@@ -648,7 +674,9 @@ export default function DashboardPage() {
 
   const saveServices = async () => {
     setServicesSaved(false);
-    const cleaned = services.filter((s) => s.name.trim() !== "");
+    const cleaned = services
+      .filter((s) => s.name.trim() !== "")
+      .map((s) => ({ ...s, name: titleCase(s.name.trim()) }));
     await updateProfile({ services: cleaned as unknown as ProfileRow["services"] });
     setServices(cleaned);
     setServicesSaved(true);
@@ -675,12 +703,20 @@ export default function DashboardPage() {
         </div>
 
         {toast && toast.kind === "error" && (
-          <div className="bg-ink text-paper rounded-card p-4 mb-4">
-            <div className="text-[13px] font-bold">⚠️ {toast.message}</div>
-            <div className="flex gap-2 mt-3">
+          <div className="bg-white border-[1.5px] border-orange/40 rounded-card p-4 mb-4 shadow-[0_16px_40px_-16px_rgba(232,93,44,0.3)] overflow-hidden relative">
+            <div className="absolute left-0 top-0 bottom-0 w-[5px] bg-orange" />
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-[12px] bg-[#FDF3EE] flex items-center justify-center text-[18px] flex-shrink-0">
+                ⚠️
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-bold text-ink">{toast.message}</div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-3.5">
               <Button
                 variant="outline"
-                className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg"
+                className="w-auto px-4 py-2 text-[11.5px] rounded-[10px]"
                 onClick={() => setToast(null)}
               >
                 OK
@@ -690,41 +726,55 @@ export default function DashboardPage() {
         )}
 
         {toast && toast.kind !== "error" && (
-          <div className="bg-orange text-white rounded-card p-4 mb-4 shadow-[0_10px_30px_-10px_rgba(232,93,44,0.7)] animate-pulse">
+          <div className="bg-white border-[1.5px] border-teal/40 rounded-card p-4 mb-4 shadow-[0_16px_40px_-16px_rgba(46,110,98,0.4)] overflow-hidden relative">
+            <div className="absolute left-0 top-0 bottom-0 w-[5px] bg-teal" />
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-[13.5px] font-bold">
-                  {toast.kind === "accepted" &&
-                    `✅ ${toast.contact?.name ?? "Your runner"} accepted!`}
-                  {toast.kind === "done" && "🎉 Request completed!"}
-                  {toast.kind === "expired" && "Your request expired"}
-                  {toast.kind === "cancelled" && "Request cancelled"}
-                  {toast.kind === "new" && "Request sent"}
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-[12px] bg-[#E4F3EC] flex items-center justify-center text-[20px] flex-shrink-0">
+                  {toast.kind === "accepted" && "✅"}
+                  {toast.kind === "done" && "🎉"}
+                  {toast.kind === "expired" && "⏳"}
+                  {toast.kind === "cancelled" && "🚫"}
+                  {toast.kind === "new" && "📨"}
                 </div>
-                <div className="text-[11.5px] text-white/85 mt-0.5">
-                  {toast.kind !== "cancelled" && toast.job.serviceType && (
-                    <>
-                      {toast.job.serviceType} · {toast.job.takeFrom} → {toast.job.deliverTo}
-                    </>
-                  )}
-                  {toast.kind === "accepted" && toast.contact?.whatsapp
-                    ? " — reach them on WhatsApp below."
-                    : toast.kind === "done"
-                    ? " — don&apos;t forget to rate your runner!"
-                    : ""}
+                <div className="min-w-0">
+                  <div className="text-[13.5px] font-bold text-ink">
+                    {toast.kind === "accepted" &&
+                      `${toast.contact?.name ?? "Your runner"} accepted!`}
+                    {toast.kind === "done" && "Request completed!"}
+                    {toast.kind === "expired" && "Your request expired"}
+                    {toast.kind === "cancelled" && "Request cancelled"}
+                    {toast.kind === "new" && "Request sent"}
+                  </div>
+                  <div className="text-[11.5px] text-slate mt-0.5">
+                    {toast.kind !== "cancelled" && toast.job.serviceType && (
+                      <>
+                        <span className="text-teal font-semibold">
+                          {titleCase(toast.job.serviceType)}
+                        </span>
+                        <span className="mx-1.5 text-line">·</span>
+                        {toast.job.takeFrom} → {toast.job.deliverTo}
+                      </>
+                    )}
+                    {toast.kind === "accepted" && toast.contact?.whatsapp
+                      ? " — reach them on WhatsApp below."
+                      : toast.kind === "done"
+                      ? " — don&apos;t forget to rate your runner!"
+                      : ""}
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setToast(null)} className="text-white/80 text-[14px]">
+              <button onClick={() => setToast(null)} className="text-slate hover:text-ink text-[14px] flex-shrink-0">
                 ✕
               </button>
             </div>
             {toast.kind === "done" && (
               <Button
                 variant="secondary"
-                className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg mt-3"
+                className="w-auto px-4 py-2 text-[11.5px] rounded-[10px] mt-3"
                 onClick={() => setToast(null)}
               >
-                Rate your runner
+                ★ Rate your runner
               </Button>
             )}
           </div>
@@ -1001,37 +1051,47 @@ export default function DashboardPage() {
       </div>
 
       {toast && (toast.kind === "new" || toast.kind === "broadcast") && (
-        <div className="bg-orange text-white rounded-card p-4 mb-4 shadow-[0_10px_30px_-10px_rgba(232,93,44,0.7)] animate-pulse">
+        <div className="bg-white border-[1.5px] border-orange/40 rounded-card p-4 mb-4 shadow-[0_16px_40px_-16px_rgba(232,93,44,0.45)] overflow-hidden relative">
+          <div className="absolute left-0 top-0 bottom-0 w-[5px] bg-orange" />
           <div className="flex items-start justify-between gap-2">
-            <div>
-              <div className="text-[13.5px] font-bold">
-                {toast.kind === "broadcast" ? "📣 New broadcast request!" : "🔔 New request!"}
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-[12px] bg-[#FDF3EE] flex items-center justify-center text-[20px] flex-shrink-0">
+                {toast.kind === "broadcast" ? "📣" : "🔔"}
               </div>
-              <div className="text-[11.5px] text-white/85 mt-0.5">
-                {toast.job.serviceType} · {toast.job.takeFrom} → {toast.job.deliverTo}
-                {toast.kind === "broadcast" && (
-                  <span className="block mt-0.5">Open to all runners — first to accept wins.</span>
-                )}
+              <div className="min-w-0">
+                <div className="text-[13.5px] font-bold text-ink">
+                  {toast.kind === "broadcast" ? "New broadcast request!" : "New request!"}
+                </div>
+                <div className="text-[11.5px] text-slate mt-0.5">
+                  <span className="text-orange font-semibold">{titleCase(toast.job.serviceType)}</span>
+                  <span className="mx-1.5 text-line">·</span>
+                  {toast.job.takeFrom} → {toast.job.deliverTo}
+                  {toast.kind === "broadcast" && (
+                    <span className="block mt-1 text-[10.5px] text-slate">
+                      Open to all runners — first to accept wins.
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-            <button onClick={() => setToast(null)} className="text-white/80 text-[14px]">
+            <button onClick={() => setToast(null)} className="text-slate hover:text-ink text-[14px] flex-shrink-0">
               ✕
             </button>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-3.5">
             <Button
-              variant="secondary"
-              className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg"
+              variant="primary"
+              className="w-auto px-4 py-2 text-[11.5px] rounded-[10px] flex-1"
               onClick={() => {
                 claimJob(toast.job);
                 setToast(null);
               }}
             >
-              {toast.kind === "broadcast" ? "Claim job" : "Accept"}
+              {toast.kind === "broadcast" ? "⚡ Claim this job" : "✓ Accept"}
             </Button>
             <Button
               variant="outline"
-              className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg text-white border-white/40"
+              className="w-auto px-3 py-2 text-[11.5px] rounded-[10px]"
               onClick={() => setToast(null)}
             >
               {toast.kind === "broadcast" ? "Pass" : "Decline"}
@@ -1041,12 +1101,20 @@ export default function DashboardPage() {
       )}
 
       {toast && toast.kind === "error" && (
-        <div className="bg-ink text-paper rounded-card p-4 mb-4">
-          <div className="text-[13px] font-bold">⚠️ {toast.message}</div>
-          <div className="flex gap-2 mt-3">
+        <div className="bg-white border-[1.5px] border-orange/40 rounded-card p-4 mb-4 shadow-[0_16px_40px_-16px_rgba(232,93,44,0.3)] overflow-hidden relative">
+          <div className="absolute left-0 top-0 bottom-0 w-[5px] bg-orange" />
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-[12px] bg-[#FDF3EE] flex items-center justify-center text-[18px] flex-shrink-0">
+              ⚠️
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-bold text-ink">{toast.message}</div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3.5">
             <Button
               variant="outline"
-              className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg"
+              className="w-auto px-4 py-2 text-[11.5px] rounded-[10px]"
               onClick={() => setToast(null)}
             >
               OK
@@ -1056,15 +1124,25 @@ export default function DashboardPage() {
       )}
 
       {toast && toast.kind === "claimed" && (
-        <div className="bg-teal text-white rounded-card p-4 mb-4 shadow-[0_10px_30px_-10px_rgba(46,110,98,0.7)]">
-          <div className="text-[13.5px] font-bold">🎉 You got the job!</div>
-          <div className="text-[11.5px] text-white/85 mt-0.5">
-            {toast.job.serviceType} · {toast.job.takeFrom} → {toast.job.deliverTo}
+        <div className="bg-white border-[1.5px] border-teal/50 rounded-card p-4 mb-4 shadow-[0_16px_40px_-16px_rgba(46,110,98,0.45)] overflow-hidden relative">
+          <div className="absolute left-0 top-0 bottom-0 w-[5px] bg-teal" />
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-[12px] bg-[#E4F3EC] flex items-center justify-center text-[20px] flex-shrink-0">
+              🎉
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13.5px] font-bold text-ink">You got the job!</div>
+              <div className="text-[11.5px] text-slate mt-0.5">
+                <span className="text-teal font-semibold">{titleCase(toast.job.serviceType)}</span>
+                <span className="mx-1.5 text-line">·</span>
+                {toast.job.takeFrom} → {toast.job.deliverTo}
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-3.5">
             <Button
-              variant="secondary"
-              className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg"
+              variant="primary"
+              className="w-auto px-4 py-2 text-[11.5px] rounded-[10px] flex-1"
               onClick={() => setToast(null)}
             >
               Nice
@@ -1074,15 +1152,23 @@ export default function DashboardPage() {
       )}
 
       {toast && toast.kind === "too-late" && (
-        <div className="bg-ink text-paper rounded-card p-4 mb-4">
-          <div className="text-[13.5px] font-bold">⏱️ Just missed it</div>
-          <div className="text-[11.5px] text-[#B8BDB9] mt-0.5">
-            Another runner claimed that job first. Keep an eye out for the next one.
+        <div className="bg-white border-[1.5px] border-line rounded-card p-4 mb-4 shadow-[0_16px_40px_-16px_rgba(28,35,33,0.2)] overflow-hidden relative">
+          <div className="absolute left-0 top-0 bottom-0 w-[5px] bg-[#9AA09C]" />
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-[12px] bg-[#F1EFE8] flex items-center justify-center text-[20px] flex-shrink-0">
+              ⏱️
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13.5px] font-bold text-ink">Just missed it</div>
+              <div className="text-[11.5px] text-slate mt-0.5">
+                Another runner claimed that job first. Keep an eye out for the next one.
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-3.5">
             <Button
               variant="outline"
-              className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg"
+              className="w-auto px-4 py-2 text-[11.5px] rounded-[10px]"
               onClick={() => setToast(null)}
             >
               OK
@@ -1233,7 +1319,7 @@ export default function DashboardPage() {
 
       <div className="flex items-center justify-between bg-white border border-line rounded-[10px] px-3 py-2.5 mb-4">
         <span className="text-[11.5px] text-slate">💰 Est. earned</span>
-        <span className="font-mono font-bold text-[14px]">RM{runnerEarned}</span>
+        <span className="font-mono font-bold text-[14px]">{formatRM(runnerEarned)}</span>
       </div>
       </div>
 
@@ -1258,7 +1344,13 @@ export default function DashboardPage() {
           const deliverAddr =
             deliverParts.length > 2 ? deliverParts.slice(0, 2).join(" · ") : job.deliverTo;
           const receiverName = deliverParts.length > 2 ? deliverParts[2] : null;
-          const { items, neededBy, extra } = parseNotes(job.notes ?? "");
+          const {
+            items,
+            services: extraServices,
+            neededBy,
+            total,
+            extra,
+          } = parseNotes(job.notes ?? "");
           return (
             <div
               key={job.id}
@@ -1305,6 +1397,19 @@ export default function DashboardPage() {
                   <JobInfoTile label="Needed by" value={neededBy ?? "—"} />
                 </div>
 
+                {/* Extra services */}
+                {extraServices.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {extraServices.map((s, i) => (
+                      <span
+                        key={i}
+                        className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#FDF3EE] text-orange border border-[#F5D5C4] whitespace-nowrap"
+                      >
+                        + {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {/* Items chips */}
                 {items.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-3">
@@ -1315,8 +1420,15 @@ export default function DashboardPage() {
                       >
                         {it.name}
                         {it.qty ? ` ×${it.qty}` : ""}
+                        {it.price ? ` · ${it.price}` : ""}
                       </span>
                     ))}
+                  </div>
+                )}
+                {total && (
+                  <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
+                    <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
+                    <span className="font-mono font-bold text-[14px] text-teal">{total}</span>
                   </div>
                 )}
                 {extra.length > 0 && (
