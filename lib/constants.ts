@@ -28,13 +28,18 @@ export function titleCase(s: string): string {
 }
 
 // Normalize Malaysian WhatsApp numbers to +60XXXXXXXXX so wa.me links
-// always work. Accepts 0123456789, 012-3456789, +60123456789, 60123456789.
+// always work. Accepts 0123456789, 012-3456789, 01112345678, +60123456789,
+// +601112345678, 60123456789. Handles every Malaysian mobile prefix (010–019)
+// at 10 or 11 digits (e.g. 011-1234-5678 is 11 digits).
 export function normalizeWhatsApp(input: string): string {
   const raw = (input ?? "").trim();
   const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10 && digits.startsWith("0")) return `+60${digits.slice(1)}`;
-  if (digits.length === 11 && digits.startsWith("60")) return `+${digits}`;
-  if ((digits.length === 9 || digits.length === 10) && digits.startsWith("1")) return `+60${digits}`;
+  if ((digits.length === 10 || digits.length === 11) && digits.startsWith("0"))
+    return `+60${digits.slice(1)}`;
+  if ((digits.length === 11 || digits.length === 12) && digits.startsWith("60"))
+    return `+${digits}`;
+  if ((digits.length === 9 || digits.length === 10) && digits.startsWith("1"))
+    return `+60${digits}`;
   return raw;
 }
 
