@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background-color: #EBE5D6;
+  color: #1C2321;
+}
+
+/* dashed route-strip divider used across screens */
+.route-strip {
+  position: relative;
+  height: 2px;
+  margin: 18px 0 26px;
+  background-image: repeating-linear-gradient(
+    to right,
+    #D8D0BC 0 8px,
+    transparent 8px 16px
+  );
+}
+.route-strip .marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #E85D2C;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  box-shadow: 0 3px 8px rgba(232, 93, 44, 0.35);
+}
+
+input, select, textarea {
+  outline: none;
+}

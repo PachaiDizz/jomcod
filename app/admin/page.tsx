@@ -1,0 +1,283 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import PhoneFrame from "@/components/PhoneFrame";
+import Button from "@/components/Button";
+import LoadingState from "@/components/LoadingState";
+import { createClient } from "@/lib/supabase/client";
+import {
+  adminListJobs,
+  adminListReports,
+  adminListRunners,
+  adminSetApproved,
+  adminSetReportStatus,
+  adminSetSuspended,
+  getProfile,
+} from "@/lib/queries";
+import type { AdminJobRow, AdminRunnerRow, ReportRow } from "@/lib/types";
+
+type Tab = "runners" | "jobs" | "reports";
+
+const STATUS_STYLES: Record<string, string> = {
+  pending: "bg-[#FDF6E3] text-[#8A6D00]",
+  confirmed: "bg-[#F0F8F5] text-teal",
+  done: "bg-[#E4F3EC] text-teal",
+  expired: "bg-[#F5E4E0] text-orange",
+  cancelled: "bg-[#EEEEEE] text-slate",
+};
+
+export default function AdminPage() {
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [uid, setUid] = useState("");
+  const [tab, setTab] = useState<Tab>("runners");
+  const [runners, setRunners] = useState<AdminRunnerRow[]>([]);
+  const [jobs, setJobs] = useState<AdminJobRow[]>([]);
+  const [reports, setReports] = useState<ReportRow[]>([]);
+  const [busy, setBusy] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const {
+        data: { user },
+      } = await createClient().auth.getUser();
+      setUid(user?.id ?? "");
+      const profile = await getProfile();
+      setIsAdmin(!!profile?.is_admin);
+    })();
+  }, []);
+
+  const load = useCallback(async () => {
+    try {
+      const [r, j, rep] = await Promise.all([
+        adminListRunners(),
+        adminListJobs(),
+        adminListReports(),
+      ]);
+      setRunners(r);
+      setJobs(j);
+      setReports(rep);
+    } catch (e) {
+      // Not an admin — access handled by isAdmin gate.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) load();
+  }, [isAdmin, load]);
+
+  const toggleApproved = async (runner: AdminRunnerRow) => {
+    setBusy(runner.id);
+    await adminSetApproved(runner.id, !runner.isApproved);
+    await load();
+    setBusy("");
+  };
+
+  const toggleSuspended = async (runner: AdminRunnerRow) => {
+    setBusy(runner.id);
+    await adminSetSuspended(runner.id, !runner.isSuspended);
+    await load();
+    setBusy("");
+  };
+
+  const setReportStatus = async (reportId: string, status: string) => {
+    await adminSetReportStatus(reportId, status);
+    await load();
+  };
+
+  if (isAdmin === null) {
+    return (
+      <PhoneFrame wide>
+        <LoadingState label="Checking access…" />
+      </PhoneFrame>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <PhoneFrame>
+        <div className="text-[19px] font-bold mb-1 font-display">Admin only</div>
+        <div className="text-[12.5px] text-slate mb-4.5">
+          This panel is restricted. To enable it, run this once in the Supabase SQL editor:
+        </div>
+        <pre className="bg-ink text-paper rounded-card p-3.5 text-[11.5px] overflow-x-auto mb-3.5 font-mono">
+          {`update public.profiles\nset is_admin = true\nwhere id = '${uid || "<your-user-id>"}';`}
+        </pre>
+        <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 italic">
+          Your user id: <span className="font-mono">{uid || "loading…"}</span>
+        </div>
+      </PhoneFrame>
+    );
+  }
+
+  const pendingApproval = runners.filter((r) => !r.isApproved).length;
+  const activeJobs = jobs.filter((j) => j.status === "pending" || j.status === "confirmed").length;
+  const openReports = reports.filter((r) => r.status === "open").length;
+
+  return (
+    <PhoneFrame wide>
+      <div className="text-[19px] font-bold mb-1 font-display">Admin panel</div>
+      <div className="text-[12.5px] text-slate mb-5">Approve runners, moderate jobs, review reports</div>
+
+      <div className="grid grid-cols-4 gap-2.5 mb-5">
+        <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
+          <div className="font-mono font-bold text-xl">{runners.length}</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Runners</div>
+        </div>
+        <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
+          <div className="font-mono font-bold text-xl text-orange">{pendingApproval}</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Pending approval</div>
+        </div>
+        <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
+          <div className="font-mono font-bold text-xl text-teal">{activeJobs}</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Active jobs</div>
+        </div>
+        <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
+          <div className="font-mono font-bold text-xl text-orange">{openReports}</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Open reports</div>
+        </div>
+      </div>
+
+      <div className="flex bg-paper2 rounded-[10px] p-[3px] mb-5 w-fit">
+        {(["runners", "jobs", "reports"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 text-xs font-semibold rounded-lg capitalize transition-colors ${
+              tab === t ? "bg-white text-ink shadow-sm" : "text-slate hover:text-ink"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === "runners" && (
+        <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+          {runners.length === 0 ? (
+            <div className="col-span-full text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
+              No runners yet.
+            </div>
+          ) : (
+            runners.map((r) => (
+              <div key={r.id} className="bg-white border border-line rounded-[10px] p-3.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-bold text-[13.5px] break-words">{r.name}</div>
+                    <div className="text-[11px] text-slate mt-0.5">
+                      {r.area || "No area"} · {r.status ?? "offline"}
+                    </div>
+                    <div className="text-[10px] font-mono text-slate mt-1">
+                      joined {new Date(r.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[9.5px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
+                      r.isApproved
+                        ? "bg-[#E4F3EC] text-teal"
+                        : r.isSuspended
+                        ? "bg-[#FDEFE3] text-orange"
+                        : "bg-[#FDF6E3] text-[#8A6D00]"
+                    }`}
+                  >
+                    {r.isSuspended ? "Suspended" : r.isApproved ? "Approved" : "Pending"}
+                  </span>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <Button
+                    variant={r.isApproved ? "outline" : "primary"}
+                    className="flex-1 px-3 py-1.5 text-[11px] rounded-lg"
+                    disabled={busy === r.id}
+                    onClick={() => toggleApproved(r)}
+                  >
+                    {r.isApproved ? "Unapprove" : "Approve"}
+                  </Button>
+                  <Button
+                    variant={r.isSuspended ? "secondary" : "outline"}
+                    className="flex-1 px-3 py-1.5 text-[11px] rounded-lg"
+                    disabled={busy === r.id}
+                    onClick={() => toggleSuspended(r)}
+                  >
+                    {r.isSuspended ? "Reinstate" : "Suspend"}
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === "jobs" && (
+        <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+          {jobs.length === 0 ? (
+            <div className="col-span-full text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
+              No jobs yet.
+            </div>
+          ) : (
+            jobs.map((j) => (
+              <div key={j.id} className="bg-white border border-line rounded-[10px] p-3.5">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="text-[13px] font-semibold break-words min-w-0">{j.serviceType}</div>
+                  <span className={`text-[9.5px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_STYLES[j.status]}`}>
+                    {j.status}
+                  </span>
+                </div>
+                <div className="text-[11.5px] text-slate mt-1 leading-snug break-words">
+                  {j.takeFrom} → {j.deliverTo}
+                </div>
+                <div className="text-[10px] font-mono text-slate mt-1.5">
+                  {new Date(j.createdAt).toLocaleString("en-MY", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === "reports" && (
+        <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+          {reports.length === 0 ? (
+            <div className="col-span-full text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
+              No reports yet.
+            </div>
+          ) : (
+            reports.map((r) => (
+              <div key={r.id} className="bg-white border border-line rounded-[10px] p-3.5">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="font-bold text-[13px]">
+                    {r.reportedName}
+                    <span className="text-slate font-normal"> — {r.reason}</span>
+                  </div>
+                  <span
+                    className={`text-[9.5px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
+                      r.status === "open"
+                        ? "bg-[#FDEFE3] text-orange"
+                        : r.status === "resolved"
+                        ? "bg-[#E4F3EC] text-teal"
+                        : "bg-[#EEEEEE] text-slate"
+                    }`}
+                  >
+                    {r.status}
+                  </span>
+                </div>
+                {r.details && <div className="text-[12px] text-[#4B5250] mt-1.5 break-words">{r.details}</div>}
+                <div className="text-[10.5px] font-mono text-slate mt-1.5">
+                  reported by {r.reporterName} · {new Date(r.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}
+                </div>
+                {r.status === "open" && (
+                  <div className="flex gap-2 mt-3">
+                    <Button variant="secondary" className="flex-1 px-3 py-1.5 text-[11px] rounded-lg" onClick={() => setReportStatus(r.id, "resolved")}>
+                      Resolve
+                    </Button>
+                    <Button variant="outline" className="flex-1 px-3 py-1.5 text-[11px] rounded-lg" onClick={() => setReportStatus(r.id, "dismissed")}>
+                      Dismiss
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </PhoneFrame>
+  );
+}
