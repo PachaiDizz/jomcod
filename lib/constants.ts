@@ -49,6 +49,17 @@ export function formatRM(value: number | null | undefined): string {
   return `RM${fixed}`;
 }
 
+// Normalize a price string that may have been stored before formatRM existed
+// (e.g. "RM03", "RM4.00", "RM0.3") into the clean "RM3" style.
+export function normalizePrice(text: string | null | undefined): string {
+  if (!text) return "";
+  const m = text.match(/RM\s*([\d.]+)/i);
+  if (!m) return text;
+  const n = parseFloat(m[1]!);
+  if (Number.isNaN(n)) return text;
+  return formatRM(n);
+}
+
 // Normalize Malaysian WhatsApp numbers to +60XXXXXXXXX so wa.me links
 // always work. Accepts 0123456789, 012-3456789, 01112345678, +60123456789,
 // +601112345678, 60123456789. Handles every Malaysian mobile prefix (010–019)

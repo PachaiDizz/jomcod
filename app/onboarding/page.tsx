@@ -182,7 +182,7 @@ export default function OnboardingPage() {
           <div className="text-[10.5px] text-slate mb-2">
             Your delivery address (optional) — prefilled when you request a service.
           </div>
-          <div className="grid grid-cols-3 gap-2 mb-3.5">
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 mb-3.5">
           <div>
             <label className="text-[10.5px] font-semibold text-slate block mb-1">Sahabat</label>
             <input

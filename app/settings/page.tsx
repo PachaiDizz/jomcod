@@ -261,7 +261,7 @@ export default function SettingsPage() {
             </div>
             {role === "community" && (
               <>
-                <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 mt-2">
                   <div>
                     <label className="text-[10.5px] font-semibold text-slate block mb-1">
                       Sahabat

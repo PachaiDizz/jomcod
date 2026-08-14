@@ -7,18 +7,21 @@ import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import LoadingState from "@/components/LoadingState";
 import ItemList from "@/components/ItemList";
-import { titleCase, waLink } from "@/lib/constants";
+import { normalizePrice, titleCase, waLink } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import {
   acceptJob,
   addReview,
   cancelJob,
+  claimBroadcast,
   declineJob,
   fetchContact,
   fetchJobById,
   fetchReviewForJob,
   markJobDone,
+  setJobTotal,
 } from "@/lib/queries";
+import { estimateJobTotal } from "@/lib/estimate";
 import type { JobRequest, Review } from "@/lib/types";
 
 const JOB_STYLES: Record<JobRequest["status"], string> = {
@@ -71,7 +74,9 @@ function parseNotesExtended(notes: string): {
     else if (im) {
       for (const part of im[1]!.split(",")) {
         const p = part.trim();
-        if (p) items.push(p);
+        if (!p) continue;
+        // Normalize any legacy "@ RM03" style price inside the item text.
+        items.push(p.replace(/(RM\s*[\d.]+)/gi, (_, r) => normalizePrice(r)));
       }
     } else if (tm) total = tm[1]!.trim();
     else if (!/^Needed By:/i.test(t)) other.push(t);
@@ -90,6 +95,8 @@ export default function JobDetailPage() {
   const [review, setReview] = useState<Review | null>(null);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [myServices, setMyServices] = useState<import("@/lib/types").Service[]>([]);
   const [rating, setRating] = useState(0);
   const [ratingText, setRatingText] = useState("");
   const [savingRating, setSavingRating] = useState(false);
@@ -122,6 +129,18 @@ export default function JobDetailPage() {
       }
       const r = await fetchReviewForJob(j.id);
       if (active) setReview(r);
+
+      // A runner viewing this page needs their own services to price a
+      // broadcast they're about to claim.
+      if ((user?.user_metadata?.role as string) === "runner") {
+        const { getProfile } = await import("@/lib/queries");
+        const profile = await getProfile();
+        if (active && profile) {
+          setMyServices(
+            (Array.isArray(profile.services) ? (profile.services as import("@/lib/types").Service[]) : [])
+          );
+        }
+      }
       setLoaded(true);
     })();
     return () => {
@@ -131,6 +150,9 @@ export default function JobDetailPage() {
 
   const isRequester = uid !== "" && job?.requesterId === uid;
   const isRunner = uid !== "" && job?.runnerId === uid;
+  // An open broadcast: assigned to no runner yet, still pending.
+  const isOpenBroadcast =
+    role === "runner" && !!job && !job.runnerId && job.status === "pending" && !isRequester;
 
   const act = async (fn: () => Promise<{ ok: boolean; message?: string }>, next: JobRequest["status"]) => {
     setError("");
@@ -154,6 +176,22 @@ export default function JobDetailPage() {
       setRatingMsg("Saved ✓");
     } else {
       setRatingMsg(res.message ?? "Couldn't save your rating.");
+    }
+  };
+
+  const handleClaim = async () => {
+    if (!job) return;
+    setError("");
+    setClaiming(true);
+    const res = await claimBroadcast(job.id);
+    if (res.ok) {
+      const total = estimateJobTotal(job.serviceType, job.notes ?? "", myServices);
+      if (total) await setJobTotal(job.id, total);
+      setJob({ ...job, status: "confirmed", notes: job.notes ?? "" });
+      setClaiming(false);
+    } else {
+      setClaiming(false);
+      setError(res.message ?? "Another runner got this one first.");
     }
   };
 
@@ -274,6 +312,16 @@ export default function JobDetailPage() {
         >
           💬 Chat on WhatsApp
         </a>
+      )}
+
+      {isOpenBroadcast && (
+        <Button
+          className="w-full mb-3"
+          onClick={handleClaim}
+          disabled={claiming}
+        >
+          {claiming ? "Claiming…" : "⚡ Claim this job"}
+        </Button>
       )}
 
       {isRunner && job.status === "pending" && (

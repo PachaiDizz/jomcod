@@ -7,7 +7,7 @@ import Button from "@/components/Button";
 import RoleBadge from "@/components/RoleBadge";
 import ItemList from "@/components/ItemList";
 import { JobRequest, Review, RunnerStatus, Service } from "@/lib/types";
-import { cleanServiceName, formatRM, OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
+import { cleanServiceName, formatRM, normalizePrice, OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
 import { parseDeliverTo } from "@/components/RequestFields";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -29,10 +29,12 @@ import {
   markJobDone,
   refreshAvailability,
   setAvailability,
+  setJobTotal,
   touchAvailability,
   updateProfile,
   type ProfileRow,
 } from "@/lib/queries";
+import { estimateJobTotal } from "@/lib/estimate";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -129,7 +131,7 @@ function parseNotes(notes: string): ParsedNotes {
           items.push({
             name: pm[1].trim(),
             qty: pm[2].trim(),
-            price: pm[3]?.trim() ?? "",
+            price: normalizePrice(pm[3]?.trim() ?? ""),
           });
         } else {
           items.push({ name: trimmed, qty: "", price: "" });
@@ -554,6 +556,22 @@ export default function DashboardPage() {
       setOpenJobs((prev) => prev.filter((j) => j.id !== job.id));
       setJobs((prev) => [claimed, ...prev]);
       setToast({ kind: "claimed", job: claimed });
+      // Price the broadcast now that THIS runner is assigned: the community
+      // pays the claiming runner's price, so write it into the job notes so
+      // both sides see the same total.
+      const total = estimateJobTotal(claimed.serviceType, claimed.notes ?? "", services);
+      if (total) {
+        const res = await setJobTotal(claimed.id, total);
+        if (res.ok) {
+          const updated: JobRequest = {
+            ...claimed,
+            notes: (claimed.notes ?? "").includes("Total:")
+              ? claimed.notes
+              : `${claimed.notes ?? ""}\nTotal: ${total}`,
+          };
+          setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
+        }
+      }
     } else {
       // Someone else got it first, or the runner already has an active job.
       const opens = await fetchOpenBroadcasts();
@@ -1714,9 +1732,9 @@ export default function DashboardPage() {
                 </>
               )}
             </div>
-            <div className="flex gap-2 items-start">
+            <div className="flex flex-wrap gap-2 items-start">
               <select
-                className="bg-white border border-line rounded-[10px] px-2 py-2 text-[12px]"
+                className="bg-white border border-line rounded-[10px] px-2 py-2 text-[12px] max-w-full"
                 value={svc.pricing.model}
                 onChange={(e) =>
                   updatePricing(svc.id, {

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import RoleBadge from "@/components/RoleBadge";
 import { parseDeliverTo } from "@/components/RequestFields";
-import { formatRM, titleCase } from "@/lib/constants";
+import { formatRM, normalizePrice, titleCase } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { fetchJobsForRequester, fetchJobsForRunner, jobFromRow } from "@/lib/queries";
 import type { JobRequest } from "@/lib/types";
@@ -69,7 +69,7 @@ function parseHistoryNotes(notes: string): {
         if (!trimmed) continue;
         const pm = trimmed.match(/^(.*?)\s*[×x*]\s*([\d.]+)\s*(?:@\s*(RM[\d.]+))?/i);
         if (pm) {
-          items.push({ name: pm[1]!.trim(), qty: pm[2]!.trim(), price: pm[3]?.trim() ?? "" });
+          items.push({ name: pm[1]!.trim(), qty: pm[2]!.trim(), price: normalizePrice(pm[3]?.trim() ?? "") });
         } else {
           items.push({ name: trimmed, qty: "", price: "" });
         }

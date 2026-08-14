@@ -394,7 +394,7 @@ export default function LandingPage() {
                   <div className="text-[10.5px] text-slate mt-1.5 mb-0">
                     Your delivery address (optional) — prefilled when you request a service.
                   </div>
-                  <div className="grid grid-cols-3 gap-2 mt-3 mb-3.5">
+                  <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 mt-3 mb-3.5">
                     <div>
                       <label className="text-[10.5px] font-semibold text-slate block mb-1">Sahabat</label>
                       <input className="w-full bg-white border border-line rounded-[10px] px-2.5 py-2.5 text-[13px]" placeholder="e.g. 05" value={sahabat} onChange={(e) => setSahabat(e.target.value)} />
