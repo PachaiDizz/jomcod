@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import RoleBadge from "@/components/RoleBadge";
@@ -40,6 +40,35 @@ const greeting = () => {
   if (h < 18) return "Good afternoon";
   return "Good evening";
 };
+
+function parseTime12(t: string): { h: number; m: number } | null {
+  const m = t?.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10) % 12;
+  if (/pm/i.test(m[3])) h += 12;
+  return { h, m: parseInt(m[2], 10) };
+}
+
+// True when `now` falls inside the runner's schedule window. Handles both
+// normal (8 AM–5 PM) and overnight (10 PM–6 AM) schedules.
+function isWithinSchedule(from: string, to: string, now = new Date()): boolean {
+  const s = parseTime12(from);
+  const e = parseTime12(to);
+  if (!s || !e) return false;
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const start = s.h * 60 + s.m;
+  const end = e.h * 60 + e.m;
+  if (start <= end) return cur >= start && cur < end;
+  return cur >= start || cur < end;
+}
+
+// "RM24" / "RM24.50" → number. Used to total up what a runner actually earned
+// from completed jobs (the exact amount is already saved in the job notes).
+function totalToNumber(total: string | null): number {
+  if (!total) return 0;
+  const n = parseFloat(total.replace(/[^\d.]/g, ""));
+  return Number.isNaN(n) ? 0 : n;
+}
 
 const QUICK_SERVICES = [
   { emoji: "📦", label: "Parcel", value: "Parcel Pickup" },
@@ -319,8 +348,6 @@ export default function DashboardPage() {
   const [status, setStatus] = useState<RunnerStatus>("offline");
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
-  const [scheduleFrom, setScheduleFrom] = useState("");
-  const [scheduleTo, setScheduleTo] = useState("");
   const [services, setServices] = useState<Service[]>([]);
   const [jobs, setJobs] = useState<JobRequest[]>([]);
   const [myJobs, setMyJobs] = useState<JobRequest[]>([]);
@@ -336,6 +363,25 @@ export default function DashboardPage() {
   const [showRatingFor, setShowRatingFor] = useState<string | null>(null);
   const [approved, setApproved] = useState<boolean | null>(null);
   const [confirmingCancel, setConfirmingCancel] = useState<string | null>(null);
+
+  // Refs mirror the availability-relevant state so the schedule heartbeat can
+  // read the latest values without stale closures.
+  const statusRef = useRef<RunnerStatus>("offline");
+  const scheduleFromRef = useRef("");
+  const scheduleToRef = useRef("");
+  const approvedRef = useRef<boolean | null>(null);
+  const setStatusAndRef = (value: RunnerStatus) => {
+    statusRef.current = value;
+    setStatus(value);
+  };
+  const setScheduleRef = (from: string, to: string) => {
+    scheduleFromRef.current = from;
+    scheduleToRef.current = to;
+  };
+  const setApprovedRef = (value: boolean | null) => {
+    approvedRef.current = value;
+    setApproved(value);
+  };
 
   useEffect(() => {
     if (!toast) return;
@@ -373,10 +419,9 @@ export default function DashboardPage() {
       const profile = await getProfile();
       setName(profile?.username ?? md.username ?? md.full_name ?? md.name ?? "");
       if (profile) {
-        if (profile.status) setStatus(profile.status as RunnerStatus);
-        setScheduleFrom(profile.schedule_from ?? "");
-        setScheduleTo(profile.schedule_to ?? "");
-        setApproved(profile.is_approved ?? true);
+        if (profile.status) setStatusAndRef(profile.status as RunnerStatus);
+        setScheduleRef(profile.schedule_from ?? "", profile.schedule_to ?? "");
+        setApprovedRef(profile.is_approved ?? true);
         const rawServices = Array.isArray(profile.services)
           ? (profile.services as Service[])
           : [];
@@ -408,6 +453,19 @@ export default function DashboardPage() {
 
       if (user) {
         if (userRole === "runner") {
+          // Auto-availability from the schedule: during the runner's set hours
+          // (e.g. 8 AM–5 PM) they're online, outside them they're offline.
+          // Unapproved runners can't go available, so skip the auto-online.
+          const approved = profile?.is_approved ?? false;
+          const autoOnline = isWithinSchedule(profile?.schedule_from ?? "", profile?.schedule_to ?? "");
+          if (autoOnline && approved && profile?.status === "offline") {
+            setStatusAndRef("available");
+            await setAvailability("available");
+          } else if (!autoOnline && profile?.status === "available") {
+            setStatusAndRef("offline");
+            await setAvailability("offline");
+          }
+
           const list = await fetchJobsForRunner(user.id);
           setJobs(list);
           loadContacts(list.map((j) => j.requesterId));
@@ -434,9 +492,15 @@ export default function DashboardPage() {
           );
           setReviews(Object.fromEntries(reviewEntries));
 
+          // Total earned = sum of the exact "Total: RM…" saved in each done
+          // job's notes. Jobs created before the calculator keep the old notes
+          // format, so fall back to the runner's service price for those.
           const earned = done.reduce((sum, j) => {
+            const fromNotes = totalToNumber(parseNotes(j.notes ?? "").total);
+            if (fromNotes > 0) return sum + fromNotes;
+            const primaryService = j.serviceType.split(" + ")[0].toLowerCase();
             const svc = (profile?.services as Service[] | undefined)?.find(
-              (s) => s.name.toLowerCase() === j.serviceType.toLowerCase()
+              (s) => cleanServiceName(s.name).toLowerCase() === primaryService
             );
             if (svc && svc.pricing.model !== "custom" && typeof svc.pricing.price === "number") {
               return sum + svc.pricing.price;
@@ -651,20 +715,32 @@ export default function DashboardPage() {
   }, []);
 
   // Heartbeat: while the runner dashboard is open, keep last_seen_at fresh so
-  // an "Available" runner isn't mistaken for stale and auto-offlined.
+  // an "Available" runner isn't mistaken for stale and auto-offlined. Also
+  // re-check the schedule so the runner flips online/offline as time passes.
   useEffect(() => {
     if (role !== "runner") return;
-    const id = setInterval(() => {
-      touchAvailability();
-    }, 30000);
+    const sync = async () => {
+      await touchAvailability();
+      const inWindow = isWithinSchedule(scheduleFromRef.current, scheduleToRef.current);
+      if (inWindow && approvedRef.current && statusRef.current === "offline") {
+        setStatusAndRef("available");
+        await setAvailability("available");
+      } else if (!inWindow && statusRef.current === "available") {
+        setStatusAndRef("offline");
+        await setAvailability("offline");
+      }
+    };
+    sync();
+    const id = setInterval(sync, 30000);
     return () => clearInterval(id);
   }, [role]);
 
   const setRunnerStatus = async (value: RunnerStatus) => {
-    setStatus(value);
+    const prev = statusRef.current;
+    setStatusAndRef(value);
     const res = await setAvailability(value);
     if (!res.ok) {
-      setStatus(status);
+      setStatusAndRef(prev);
       setToast({ kind: "error", message: res.message ?? "Couldn't update your status." });
     }
   };
