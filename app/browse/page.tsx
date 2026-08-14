@@ -147,7 +147,7 @@ export default function BrowsePage() {
         <aside className="mb-4 md:mb-0 md:sticky md:top-24">
           <div className="md:bg-white md:border md:border-line md:rounded-card md:p-4">
             <div className="hidden md:flex items-center justify-between mb-3">
-              <div className="text-[11px] font-mono uppercase tracking-wide text-slate">Filter</div>
+              <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate">Filter</div>
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearFilters}
@@ -181,7 +181,7 @@ export default function BrowsePage() {
 
             {/* Advanced filters — desktop sidebar only */}
             <div className="hidden md:block">
-              <div className="text-[11px] font-mono uppercase tracking-wide text-slate mt-4 mb-2">
+              <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mt-4 mb-2">
                 Service
               </div>
               {allServices.length === 0 ? (
@@ -211,7 +211,7 @@ export default function BrowsePage() {
                 </div>
               )}
 
-              <div className="text-[11px] font-mono uppercase tracking-wide text-slate mt-4 mb-2">
+              <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mt-4 mb-2">
                 Area
               </div>
               {allAreas.length === 0 ? (
@@ -241,7 +241,7 @@ export default function BrowsePage() {
                 </div>
               )}
 
-              <div className="text-[11px] font-mono uppercase tracking-wide text-slate mt-4 mb-2">
+              <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mt-4 mb-2">
                 Max price
               </div>
               <div className="flex items-center justify-between text-[12.5px] mb-1.5">

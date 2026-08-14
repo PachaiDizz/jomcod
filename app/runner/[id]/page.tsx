@@ -158,7 +158,7 @@ export default function RunnerProfilePage() {
         </div>
       )}
 
-      <div className="text-[11px] font-mono uppercase tracking-wide text-slate mt-4.5 mb-2">
+      <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mt-4.5 mb-2">
         Services & pricing
       </div>
       {runner.services.length === 0 ? (
@@ -186,7 +186,7 @@ export default function RunnerProfilePage() {
 
       {reviews.length > 0 && (
         <>
-          <div className="text-[11px] font-mono uppercase tracking-wide text-slate mt-4.5 mb-2">
+          <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mt-4.5 mb-2">
             Recent reviews
           </div>
           <div className="grid gap-2.5 md:grid-cols-2">

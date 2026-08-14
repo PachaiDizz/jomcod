@@ -213,7 +213,7 @@ function BroadcastForm() {
 
       {status !== "idle" && (
         <>
-          <div className="text-[11px] font-mono uppercase tracking-wide text-slate mt-4 mb-2">
+          <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mt-4 mb-2">
             Goes to all runners — {recipients.length} in the network right now
           </div>
           <div className="flex flex-wrap mb-1.5">

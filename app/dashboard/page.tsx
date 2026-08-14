@@ -887,7 +887,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick request — pick a service first */}
-        <div className="text-[11px] font-mono uppercase tracking-wide text-slate mb-2">
+        <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
           What do you need help with?
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-5">
@@ -925,7 +925,7 @@ export default function DashboardPage() {
 
         {/* Your requests */}
         <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-mono uppercase tracking-wide text-slate">
+          <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate">
             Your requests
           </div>
           <Link href="/history" className="text-[11px] font-semibold text-teal hover:underline">
@@ -1380,7 +1380,7 @@ export default function DashboardPage() {
         );
       })()}
 
-      <div className="text-[11px] font-mono uppercase tracking-wide text-slate mb-2">
+      <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
         Open requests from the community
       </div>
       {(() => {
@@ -1428,7 +1428,7 @@ export default function DashboardPage() {
 
       <div className="md:grid md:grid-cols-2 md:gap-6 md:items-start">
       <div className="min-w-0">
-      <div className="text-[11px] font-mono uppercase tracking-wide text-slate mb-2">
+      <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
         Your status
       </div>
       <div className="grid grid-cols-2 gap-2 mb-4">
@@ -1446,7 +1446,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="text-[11px] font-mono uppercase tracking-wide text-slate mb-2">
+      <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
         My performance
       </div>
       <div className="grid grid-cols-2 gap-2 mb-4">
@@ -1479,7 +1479,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="min-w-0">
-      <div className="text-[11px] font-mono uppercase tracking-wide text-slate mb-2">
+      <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
         Recent jobs
       </div>
       {jobs.length === 0 ? (
@@ -1666,7 +1666,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="text-[11px] font-mono uppercase tracking-wide text-slate mt-4 mb-2">
+      <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mt-4 mb-2">
         Your services & pricing
       </div>
       <div className="grid gap-2.5">
