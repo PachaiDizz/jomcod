@@ -218,7 +218,7 @@ export default function SettingsPage() {
       <div className="md:grid md:grid-cols-2 md:gap-6 md:items-start">
         {/* Left: profile */}
         <div>
-          <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
+          <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
             Profile
           </div>
           <div className="bg-white border border-line rounded-[12px] p-3.5 mb-4">
@@ -302,7 +302,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
+          <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
             Account
           </div>
           <div className="bg-white border border-line rounded-[12px] p-3.5 mb-4">
@@ -340,7 +340,7 @@ export default function SettingsPage() {
         <div>
           {role === "runner" && (
             <>
-              <div className="text-[11px] font-mono font-bold uppercase tracking-wide text-slate mb-2">
+              <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
                 Availability (runners)
               </div>
               <div className="bg-white border border-line rounded-[12px] p-3.5 mb-4">
