@@ -185,13 +185,19 @@ function BroadcastForm() {
         </div>
       )}
 
-      <div className="bg-paper2 rounded-[10px] px-3.5 py-3 mb-3.5">
-        <div className="text-[11.5px] text-slate italic">
-          Pricing varies by runner — you&apos;ll see the accepted runner&apos;s price to confirm
-          before the job starts.
+      <div className="bg-white border border-line rounded-[12px] px-3.5 py-3 mb-3.5">
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="text-xs text-slate mb-1">Pricing</div>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-paper2 text-ink">
+              varies by runner
+            </span>
+          </div>
+          <span className="font-mono font-bold text-[17px] text-teal">—</span>
         </div>
         <div className="text-[11px] text-slate mt-1.5">
-          You&apos;ll only pay after the job is done — no upfront payment needed.
+          Once a runner claims this, you&apos;ll both see the exact price on the job — no upfront
+          payment needed.
         </div>
       </div>
 

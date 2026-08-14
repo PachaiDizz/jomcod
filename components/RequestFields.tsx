@@ -219,9 +219,12 @@ export function buildNotes(d: RequestDetails, estimate?: number | null): string 
 }
 
 export function totalItemCount(d: RequestDetails): number {
-  let sum = d.items.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0);
+  let sum =
+    d.items.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0) +
+    d.couriers.reduce((s, c) => s + (parseInt(c.qty, 10) || 0), 0);
   for (const e of d.extraServices) {
     sum += e.items.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0);
+    sum += e.couriers.reduce((s, c) => s + (parseInt(c.qty, 10) || 0), 0);
   }
   return sum;
 }
@@ -234,22 +237,29 @@ export function estimateTotal(
   d: RequestDetails,
   pricingFor: (serviceType: string) => Pricing | undefined
 ): number {
-  const serviceCount = (items: RequestItem[]) =>
-    items.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0);
+  // Count both typed items (Rice ×2) AND parcel courier quantities
+  // (J&T ×3), so per-item pricing works for every service type.
+  const serviceCount = (items: RequestItem[], couriers: ParcelCourier[]): number =>
+    items.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0) +
+    couriers.reduce((s, c) => s + (parseInt(c.qty, 10) || 0), 0);
 
-  const linePrice = (serviceType: string, items: RequestItem[]): number => {
+  const linePrice = (
+    serviceType: string,
+    items: RequestItem[],
+    couriers: ParcelCourier[]
+  ): number => {
     const p = pricingFor(serviceType);
     if (!p) return 0;
     if (p.model === "flat_rate" && typeof p.price === "number") return p.price;
     if (p.model === "per_item" && typeof p.price === "number")
-      return serviceCount(items) * p.price;
+      return serviceCount(items, couriers) * p.price;
     return 0;
   };
 
   const total =
-    linePrice(d.serviceType, d.items) +
+    linePrice(d.serviceType, d.items, d.couriers) +
     d.extraServices.reduce(
-      (sum, e) => sum + linePrice(e.serviceType, e.items),
+      (sum, e) => sum + linePrice(e.serviceType, e.items, e.couriers),
       0
     );
   return Math.round(total * 100) / 100;

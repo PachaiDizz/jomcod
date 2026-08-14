@@ -185,7 +185,7 @@ export default function JobDetailPage() {
     setClaiming(true);
     const res = await claimBroadcast(job.id);
     if (res.ok) {
-      const total = estimateJobTotal(job.serviceType, job.notes ?? "", myServices);
+      const total = estimateJobTotal(job.serviceType, job.notes ?? "", myServices, job.takeFrom);
       if (total) await setJobTotal(job.id, total);
       setJob({ ...job, status: "confirmed", notes: job.notes ?? "" });
       setClaiming(false);

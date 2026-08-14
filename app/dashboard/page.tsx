@@ -299,7 +299,6 @@ function RequestSteps({ status }: { status: JobRequest["status"] }) {
   const steps = [
     "Request sent",
     "Runner accepted",
-    "Contact runner",
     "Task in progress",
     "Completed",
   ];
@@ -559,7 +558,7 @@ export default function DashboardPage() {
       // Price the broadcast now that THIS runner is assigned: the community
       // pays the claiming runner's price, so write it into the job notes so
       // both sides see the same total.
-      const total = estimateJobTotal(claimed.serviceType, claimed.notes ?? "", services);
+      const total = estimateJobTotal(claimed.serviceType, claimed.notes ?? "", services, claimed.takeFrom);
       if (total) {
         const res = await setJobTotal(claimed.id, total);
         if (res.ok) {
@@ -1415,28 +1414,47 @@ export default function DashboardPage() {
         <div className="grid gap-2.5 mb-4 md:grid-cols-2 lg:grid-cols-3">
           {live.map((job) => {
             const bItems = parseNotes(job.notes ?? "").items;
+            const minsLeft = Math.max(0, 5 - Math.floor((Date.now() - job.createdAt) / 60000));
             return (
-            <div key={job.id} className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3.5 py-3">
-              <div className="flex justify-between items-start gap-2">
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold">{titleCase(job.serviceType)}</div>
-                  <div className="text-[11.5px] text-slate mt-0.5 leading-snug">
-                    {job.takeFrom} → {job.deliverTo}
-                  </div>
-                  <ItemList items={bItems} title="Items requested" />
-                  <div className="text-[10px] font-mono text-slate mt-1.5">
-                    Broadcast · open to all · expires in{" "}
-                    {Math.max(0, 5 - Math.floor((Date.now() - job.createdAt) / 60000))}m
-                  </div>
+            <div key={job.id} className="bg-white border border-line rounded-card overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+              <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b bg-[#FDF6E3] border-[#F0E0A8]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[17px] leading-none flex-shrink-0">📣</span>
+                  <span className="text-[13.5px] font-bold font-display text-ink break-words">
+                    {titleCase(job.serviceType)}
+                  </span>
                 </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 bg-[#F0F8F5] text-teal">
+                  {minsLeft}m left
+                </span>
               </div>
-              <Button
-                variant="secondary"
-                className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg mt-2"
-                onClick={() => claimJob(job)}
-              >
-                ⚡ Claim this job
-              </Button>
+              <div className="px-3.5 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-teal flex-shrink-0" />
+                  <span className="text-[12px] font-semibold text-ink truncate flex-1">
+                    {job.takeFrom}
+                  </span>
+                  <span className="text-teal font-bold flex-shrink-0">→</span>
+                  <span className="text-[12px] font-semibold text-ink truncate flex-1 text-right">
+                    {job.deliverTo}
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <JobInfoTile label="Pickup" value={job.takeFrom} />
+                  <JobInfoTile label="Delivery" value={job.deliverTo} />
+                  <JobInfoTile label="Broadcast" value="Open to all runners" />
+                  <JobInfoTile label="Expires" value={minsLeft > 0 ? `in ${minsLeft}m` : "any moment"} />
+                </div>
+                <ItemList items={bItems} title="Items requested" />
+                <Button
+                  variant="secondary"
+                  className="w-full px-3 py-2 text-[12px] rounded-lg mt-2.5"
+                  onClick={() => claimJob(job)}
+                >
+                  ⚡ Claim this job
+                </Button>
+              </div>
             </div>
             );
           })}
