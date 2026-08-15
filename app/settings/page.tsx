@@ -365,7 +365,7 @@ export default function SettingsPage() {
                 <div className="text-[10.5px] font-semibold text-slate block mb-1">
                   Schedule (optional)
                 </div>
-                <div className="flex gap-2 mb-2">
+                <div className="flex flex-wrap gap-2 mb-2 min-w-0">
                   <TimePicker
                     value={scheduleFrom}
                     onChange={setScheduleFrom}

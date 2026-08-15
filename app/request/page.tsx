@@ -100,11 +100,8 @@ function RequestForm() {
   const sendRequest = async () => {
     setError("");
     if (!runner) return;
-    const baseService =
-      details.serviceType === "Other" ? "Other Errand" : details.serviceType || serviceOptions[0];
-    const extraNames = details.extraServices.map((e) =>
-      e.serviceType === "Other" ? "Other Errand" : e.serviceType || ""
-    );
+    const baseService = details.serviceType || serviceOptions[0];
+    const extraNames = details.extraServices.map((e) => e.serviceType || "");
     const serviceType = [baseService, ...extraNames].filter(Boolean).join(" + ");
     const takeFrom = buildTakeFrom(details);
     const deliverTo = buildDeliverTo(details);

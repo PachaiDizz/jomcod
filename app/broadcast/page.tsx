@@ -77,13 +77,8 @@ function BroadcastForm() {
       return;
     }
     setSending(true);
-    const baseService =
-      details.serviceType === "Other"
-        ? "Other Errand"
-        : details.serviceType || REQUEST_SERVICE_OPTIONS[0];
-    const extraNames = details.extraServices.map((e) =>
-      e.serviceType === "Other" ? "Other Errand" : e.serviceType || ""
-    );
+    const baseService = details.serviceType || REQUEST_SERVICE_OPTIONS[0];
+    const extraNames = details.extraServices.map((e) => e.serviceType || "");
     const serviceType = [baseService, ...extraNames].filter(Boolean).join(" + ");
     const res = await createJob({
       serviceType,

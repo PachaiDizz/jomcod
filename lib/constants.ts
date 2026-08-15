@@ -1,22 +1,54 @@
-export const SERVICE_PRESETS = [
-  "Parcel Pickup",
-  "Grocery Run",
-  "Buy Groceries For Me",
-  "Food Takeaway Pickup",
-  "Pay Bills (Toll / Water / Electric)",
-  "Top-Up / Reload Card",
-  "Pharmacy Run",
-  "Documents Delivery",
-  "Drop-Off Parcel",
-  "Shop Errand",
-  "Queue / Collect Number",
-  "Petrol Station Run",
-  "Laundry Drop-Off / Pickup",
-  "ATM / Banking Errand",
-  "Other Errand",
+export const SERVICE_CATEGORIES: { emoji: string; label: string; services: string[] }[] = [
+  {
+    emoji: "🛒",
+    label: "Shopping & Groceries",
+    services: ["Grocery Run", "Pharmacy Run"],
+  },
+  {
+    emoji: "📦",
+    label: "Parcels & Documents",
+    services: ["Parcel Pickup", "Parcel Drop-off", "Documents Delivery"],
+  },
+  {
+    emoji: "💳",
+    label: "Bills & Payments",
+    services: ["Pay Bills", "Top-Up / Reload", "ATM / Banking Errand"],
+  },
+  {
+    emoji: "🍜",
+    label: "Food",
+    services: ["Food Takeaway Pickup"],
+  },
+  {
+    emoji: "🧺",
+    label: "Other Errands",
+    services: [
+      "Laundry Drop-Off/Pickup",
+      "Petrol Station Run",
+      "Queue / Collect Number",
+      "Other (specify)",
+    ],
+  },
 ];
 
+export const SERVICE_PRESETS = SERVICE_CATEGORIES.flatMap((c) => c.services);
+
 export const OTHER_SERVICE = "Other (Write It Myself)";
+
+// A friendly emoji for a service name, used across cards and list rows.
+export function serviceEmoji(s: string): string {
+  const t = (s ?? "").toLowerCase();
+  if (t.includes("parcel")) return "📦";
+  if (t.includes("grocery") || t.includes("shop") || t.includes("buy")) return "🛒";
+  if (t.includes("food") || t.includes("takeaway")) return "🍔";
+  if (t.includes("document") || t.includes("delivery")) return "📄";
+  if (t.includes("bill") || t.includes("top") || t.includes("atm") || t.includes("bank")) return "🧾";
+  if (t.includes("petrol")) return "⛽";
+  if (t.includes("pharmacy")) return "💊";
+  if (t.includes("laundry")) return "🧺";
+  if (t.includes("queue") || t.includes("collect")) return "🎟️";
+  return "⚡";
+}
 
 export const AREA_OPTIONS = ["Felda Desa Kencana", "Felda Wilayah Sahabat"];
 
