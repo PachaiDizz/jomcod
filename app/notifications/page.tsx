@@ -17,6 +17,7 @@ const KIND_STYLE: Record<string, { emoji: string; tile: string; bar: string }> =
   expired: { emoji: "⏳", tile: "bg-[#FDF6E3]", bar: "bg-[#8A6D00]" },
   cancelled: { emoji: "🚫", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" },
   declined: { emoji: "🙅", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" },
+  broadcast_taken: { emoji: "⏱️", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" },
 };
 
 const KIND_FALLBACK = { emoji: "🔔", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" };

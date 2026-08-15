@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import TopNav from "@/components/TopNav";
 import InstallPrompt from "@/components/InstallPrompt";
+import PushBanner from "@/components/PushBanner";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default function RootLayout({
           <main>{children}</main>
         </div>
         <InstallPrompt />
+        <PushBanner />
       </body>
     </html>
   );

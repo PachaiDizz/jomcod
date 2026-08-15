@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { formatRM } from "@/lib/constants";
+import { formatRM, SERVICE_CATEGORIES } from "@/lib/constants";
 import type { Pricing } from "@/lib/types";
 
-export const REQUEST_SERVICE_OPTIONS = [
-  "Grocery Run",
-  "Parcel Pickup",
-  "Food Pickup",
-  "Document Delivery",
-  "Other",
-];
+// The full categorized preset list — community picks from the same services a
+// runner can offer. (A runner's own custom service list is passed in via
+// `serviceOptions` and shown flat.)
+export const REQUEST_SERVICE_OPTIONS = SERVICE_CATEGORIES.flatMap((c) => c.services);
 
 export interface RequestItem {
   name: string;
@@ -123,35 +120,7 @@ export function buildTakeFrom(d: RequestDetails): string {
   return all.length > 0 ? all.join(" · ") : "";
 }
 
-export function parseDeliverTo(s: string) {
-  const out = {
-    deliveryArea: "",
-    sahabat: "",
-    noRumah: "",
-    unit: "",
-    block: "",
-    receiverName: "",
-    receiverPhone: "",
-  };
-  for (const p of s.split(" · ")) {
-    const t = p.trim();
-    if (!t) continue;
-    const sm = t.match(/^Sahabat\s+(.+)$/i);
-    const nm = t.match(/^No R\s+(.+)$/i);
-    const um = t.match(/^Unit\s+(.+)$/i);
-    const bm = t.match(/^Block\s+(.+)$/i);
-    const pm = t.match(/^(.+?)\s*\((.+)\)$/);
-    if (sm) out.sahabat = sm[1]!.trim();
-    else if (nm) out.noRumah = nm[1]!.trim();
-    else if (um) out.unit = um[1]!.trim();
-    else if (bm) out.block = bm[1]!.trim();
-    else if (pm) {
-      out.receiverName = pm[1]!.trim();
-      out.receiverPhone = pm[2]!.trim();
-    } else out.deliveryArea = t;
-  }
-  return out;
-}
+export { parseDeliverTo } from "@/lib/jobFormat";
 
 export function buildDeliverTo(d: RequestDetails): string {
   const receiver = d.receiverName.trim();
@@ -411,6 +380,7 @@ export default function RequestFields({
   const set = (patch: Partial<RequestDetails>) => onChange({ ...details, ...patch });
   const selected = details.serviceType || serviceOptions[0];
   const itemList = isItemListService(selected);
+  const isDefaultList = serviceOptions === REQUEST_SERVICE_OPTIONS;
 
   const updateExtra = (id: string, patch: Partial<ExtraService>) =>
     set({
@@ -441,9 +411,17 @@ export default function RequestFields({
           value={selected}
           onChange={(e) => set({ serviceType: e.target.value })}
         >
-          {serviceOptions.map((name) => (
-            <option key={name}>{name}</option>
-          ))}
+          {isDefaultList ? (
+            SERVICE_CATEGORIES.map((cat) => (
+              <optgroup key={cat.label} label={`${cat.emoji} ${cat.label}`}>
+                {cat.services.map((name) => (
+                  <option key={name}>{name}</option>
+                ))}
+              </optgroup>
+            ))
+          ) : (
+            serviceOptions.map((name) => <option key={name}>{name}</option>)
+          )}
         </select>
       </div>
 
