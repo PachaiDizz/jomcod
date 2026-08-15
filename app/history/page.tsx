@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import RoleBadge from "@/components/RoleBadge";
-import { parseDeliverTo } from "@/components/RequestFields";
-import { formatRM, normalizePrice, titleCase } from "@/lib/constants";
+import RouteInfo from "@/components/RouteInfo";
+import { parseDeliverTo } from "@/lib/jobFormat";
+import { formatRM, normalizePrice, serviceEmoji, titleCase } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { fetchJobsForRequester, fetchJobsForRunner, jobFromRow } from "@/lib/queries";
 import type { JobRequest } from "@/lib/types";
@@ -34,18 +35,12 @@ const JOB_BANDS: Record<JobRequest["status"], string> = {
   cancelled: "bg-[#F3F3F3] border-line",
 };
 
-const serviceEmoji = (s: string): string => {
-  const t = s.toLowerCase();
-  if (t.includes("parcel")) return "📦";
-  if (t.includes("grocery") || t.includes("shop") || t.includes("buy")) return "🛒";
-  if (t.includes("food") || t.includes("takeaway")) return "🍔";
-  if (t.includes("document") || t.includes("delivery")) return "📄";
-  if (t.includes("bill") || t.includes("top") || t.includes("atm") || t.includes("bank")) return "🧾";
-  if (t.includes("petrol")) return "⛽";
-  if (t.includes("pharmacy")) return "💊";
-  if (t.includes("laundry")) return "🧺";
-  if (t.includes("queue") || t.includes("collect")) return "🎟️";
-  return "⚡";
+const JOB_TILES: Record<JobRequest["status"], string> = {
+  pending: "bg-[#FDF6E3]",
+  confirmed: "bg-[#FDEFE3]",
+  done: "bg-[#E4F3EC]",
+  expired: "bg-paper2",
+  cancelled: "bg-[#F3F3F3]",
 };
 
 function parseHistoryNotes(notes: string): {
@@ -121,15 +116,20 @@ export default function HistoryPage() {
 
   const hasFilter = fromDate || toDate;
 
+  const totalMoney = finished.reduce((s, j) => {
+    const n = parseFloat((parseHistoryNotes(j.notes ?? "").total ?? "").replace(/[^\d.]/g, ""));
+    return s + (Number.isNaN(n) ? 0 : n);
+  }, 0);
+  const cancelledCount = past.filter((j) => j.status === "cancelled").length;
+
   return (
     <PhoneFrame>
       <div className="flex items-center gap-2 mb-1 flex-wrap">
         <div className="text-[19px] md:text-[26px] font-bold font-display">History</div>
         <RoleBadge role={role} />
       </div>
-      <div className="text-[12.5px] text-slate mb-4.5">
-        {name || (role === "runner" ? "Runner" : "Community member")} · {finished.length} job
-        {finished.length === 1 ? "" : "s"} completed
+      <div className="text-[12.5px] text-slate mb-4">
+        {name || (role === "runner" ? "Runner" : "Community member")} · your past requests and jobs
       </div>
 
       {!loaded ? (
@@ -149,6 +149,23 @@ export default function HistoryPage() {
         </div>
       ) : (
         <>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-white border border-line rounded-[12px] p-3 text-center">
+            <div className="font-mono font-bold text-[18px] text-teal">✓ {finished.length}</div>
+            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">Completed</div>
+          </div>
+          <div className="bg-white border border-line rounded-[12px] p-3 text-center">
+            <div className="font-mono font-bold text-[18px] text-orange">{formatRM(totalMoney)}</div>
+            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">
+              {role === "runner" ? "Earned" : "Spent"}
+            </div>
+          </div>
+          <div className="bg-white border border-line rounded-[12px] p-3 text-center">
+            <div className="font-mono font-bold text-[18px] text-slate">{cancelledCount}</div>
+            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">Cancelled</div>
+          </div>
+        </div>
+
         <div className="flex bg-paper2 rounded-[10px] p-[3px] mb-4 w-fit">
           {(
             [
@@ -212,14 +229,16 @@ export default function HistoryPage() {
           </div>
         ) : (
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((job) => (
-          <div key={job.id} className="bg-white border border-line rounded-card overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        {filtered.map((job) => {
+          const note = parseHistoryNotes(job.notes ?? "");
+          return (
+          <div key={job.id} className="group bg-white border border-line rounded-card overflow-hidden hover:border-teal/50 hover:shadow-[0_14px_36px_-18px_rgba(28,35,33,0.22)] transition-all">
             <div className={`px-3.5 py-2.5 flex items-center justify-between gap-2 border-b ${JOB_BANDS[job.status]}`}>
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[17px] leading-none flex-shrink-0">
+                <span className={`w-8 h-8 rounded-[9px] flex items-center justify-center text-[15px] flex-shrink-0 ${JOB_TILES[job.status]}`}>
                   {serviceEmoji(job.serviceType)}
                 </span>
-                <Link href={`/job/${job.id}`} className="text-[13.5px] font-bold font-display text-ink break-words hover:text-teal transition-colors">
+                <Link href={`/job/${job.id}`} className="text-[13.5px] font-bold font-display text-ink break-words group-hover:text-teal transition-colors">
                   {titleCase(job.serviceType)}
                 </Link>
               </div>
@@ -230,29 +249,14 @@ export default function HistoryPage() {
               </span>
             </div>
             <div className="px-3.5 py-3">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-teal flex-shrink-0" />
-              <span className="text-[12px] font-semibold text-ink truncate flex-1">{job.takeFrom}</span>
-              <span className="text-teal font-bold flex-shrink-0">→</span>
-              <span className="text-[12px] font-semibold text-ink truncate flex-1 text-right">{job.deliverTo}</span>
-              <span className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
-            </div>
-            <div className="text-[10.5px] font-mono text-slate mt-2">
-              {new Date(job.createdAt).toLocaleDateString("en-MY", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </div>
-            {parseHistoryNotes(job.notes ?? "").items.length > 0 && (
+            <RouteInfo job={job} />
+            {note.items.length > 0 && (
               <div className="rounded-[10px] bg-[#F0F7F4] border border-[#D7EBE1] px-3 py-2 mt-2.5">
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-teal mb-1.5">
                   Items ordered
                 </div>
                 <div className="space-y-1">
-                  {parseHistoryNotes(job.notes ?? "").items.map((it, i) => (
+                  {note.items.map((it, i) => (
                     <div key={i} className="flex items-center justify-between gap-2 text-[12px]">
                       <span className="text-ink font-medium break-words">{it.name}</span>
                       <span className="font-mono text-teal whitespace-nowrap">
@@ -264,13 +268,13 @@ export default function HistoryPage() {
                 </div>
               </div>
             )}
-            {parseHistoryNotes(job.notes ?? "").total && (
+            {note.total && (
               <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2">
                 <span className="text-[11.5px] font-semibold text-teal">
-                  {role === "runner" ? "Community pays" : "You paid the runner"}
+                  {role === "runner" ? "Community pays" : "You paid"}
                 </span>
                 <span className="font-mono font-bold text-[14px] text-teal">
-                  {parseHistoryNotes(job.notes ?? "").total}
+                  {note.total}
                 </span>
               </div>
             )}
@@ -298,8 +302,26 @@ export default function HistoryPage() {
               </Link>
             )}
             </div>
+            <div className="flex items-center justify-between px-3.5 py-2 border-t border-line bg-paper2/50">
+              <span className="text-[10.5px] font-mono text-slate">
+                {new Date(job.createdAt).toLocaleDateString("en-MY", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+              <Link
+                href={`/job/${job.id}`}
+                className="text-[11px] font-semibold text-teal hover:underline inline-flex items-center gap-1"
+              >
+                View details →
+              </Link>
+            </div>
           </div>
-        ))}
+          );
+        })}
         </div>
         )}
         </>

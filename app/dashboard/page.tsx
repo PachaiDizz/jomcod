@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import RoleBadge from "@/components/RoleBadge";
 import ItemList from "@/components/ItemList";
+import RouteInfo from "@/components/RouteInfo";
 import { JobRequest, Review, RunnerStatus, Service } from "@/lib/types";
-import { cleanServiceName, formatRM, normalizePrice, OTHER_SERVICE, SERVICE_PRESETS, titleCase, waLink } from "@/lib/constants";
-import { parseDeliverTo } from "@/components/RequestFields";
+import { cleanServiceName, formatRM, normalizePrice, OTHER_SERVICE, SERVICE_CATEGORIES, SERVICE_PRESETS, serviceEmoji, titleCase, waLink } from "@/lib/constants";
+import { formatDelivery, formatTakeFromLines, parseDeliverTo } from "@/lib/jobFormat";
 import { createClient } from "@/lib/supabase/client";
 import {
   acceptJob,
@@ -72,27 +73,35 @@ function totalToNumber(total: string | null): number {
   return Number.isNaN(n) ? 0 : n;
 }
 
+// Est. earned = sum of the exact "Total: RM…" saved in each done job's notes.
+// Jobs created before the calculator keep the old notes format, so fall back
+// to the runner's current service price for those. Derived reactively from
+// the jobs + services state so it updates the moment a job is marked done
+// (not just on page load).
+function computeEarned(jobs: JobRequest[], services: Service[]): number {
+  return jobs
+    .filter((j) => j.status === "done")
+    .reduce((sum, j) => {
+      const fromNotes = totalToNumber(parseNotes(j.notes ?? "").total);
+      if (fromNotes > 0) return sum + fromNotes;
+      const primaryService = j.serviceType.split(" + ")[0].toLowerCase();
+      const svc = services.find(
+        (s) => cleanServiceName(s.name).toLowerCase() === primaryService
+      );
+      if (svc && svc.pricing.model !== "custom" && typeof svc.pricing.price === "number") {
+        return sum + svc.pricing.price;
+      }
+      return sum;
+    }, 0);
+}
+
 const QUICK_SERVICES = [
   { emoji: "📦", label: "Parcel", value: "Parcel Pickup" },
   { emoji: "🛒", label: "Groceries", value: "Grocery Run" },
-  { emoji: "🧾", label: "Bills", value: "Pay Bills (Toll / Water / Electric)" },
-  { emoji: "🏪", label: "Pickup", value: "Drop-Off Parcel" },
+  { emoji: "🧾", label: "Bills", value: "Pay Bills" },
+  { emoji: "🏪", label: "Pickup", value: "Parcel Drop-off" },
   { emoji: "✏️", label: "Other", value: "" },
 ];
-
-const serviceEmoji = (s: string): string => {
-  const t = s.toLowerCase();
-  if (t.includes("parcel")) return "📦";
-  if (t.includes("grocery") || t.includes("shop") || t.includes("buy")) return "🛒";
-  if (t.includes("food") || t.includes("takeaway")) return "🍔";
-  if (t.includes("document") || t.includes("delivery")) return "📄";
-  if (t.includes("bill") || t.includes("top") || t.includes("atm") || t.includes("bank")) return "🧾";
-  if (t.includes("petrol")) return "⛽";
-  if (t.includes("pharmacy")) return "💊";
-  if (t.includes("laundry")) return "🧺";
-  if (t.includes("queue") || t.includes("collect")) return "🎟️";
-  return "⚡";
-};
 
 interface ParsedNotes {
   items: { name: string; qty: string; price: string }[];
@@ -286,11 +295,17 @@ function RatingCard({
   );
 }
 
-function JobInfoTile({ label, value }: { label: string; value: string }) {
+function JobInfoTile({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | ReactNode;
+}) {
   return (
     <div className="bg-paper2 rounded-[8px] px-2.5 py-2 min-w-0">
       <div className="text-[9px] text-slate font-semibold uppercase tracking-wide">{label}</div>
-      <div className="text-[11.5px] text-ink font-semibold mt-0.5 break-words">{value}</div>
+      <div className="text-[11.5px] text-ink mt-0.5 break-words">{value}</div>
     </div>
   );
 }
@@ -356,7 +371,6 @@ export default function DashboardPage() {
   const [availableRunners, setAvailableRunners] = useState(0);
   const [contacts, setContacts] = useState<Record<string, Contact>>({});
   const [runnerRating, setRunnerRating] = useState<number | null>(null);
-  const [runnerEarned, setRunnerEarned] = useState(0);
   const [reviews, setReviews] = useState<Record<string, Review | null>>({});
   const [toast, setToast] = useState<Toast>(null);
   const [loaded, setLoaded] = useState(false);
@@ -492,23 +506,6 @@ export default function DashboardPage() {
             done.map(async (j) => [j.id, await fetchReviewForJob(j.id)] as const)
           );
           setReviews(Object.fromEntries(reviewEntries));
-
-          // Total earned = sum of the exact "Total: RM…" saved in each done
-          // job's notes. Jobs created before the calculator keep the old notes
-          // format, so fall back to the runner's service price for those.
-          const earned = done.reduce((sum, j) => {
-            const fromNotes = totalToNumber(parseNotes(j.notes ?? "").total);
-            if (fromNotes > 0) return sum + fromNotes;
-            const primaryService = j.serviceType.split(" + ")[0].toLowerCase();
-            const svc = (profile?.services as Service[] | undefined)?.find(
-              (s) => cleanServiceName(s.name).toLowerCase() === primaryService
-            );
-            if (svc && svc.pricing.model !== "custom" && typeof svc.pricing.price === "number") {
-              return sum + svc.pricing.price;
-            }
-            return sum;
-          }, 0);
-          setRunnerEarned(earned);
         } else {
           const list = await fetchJobsForRequester(user.id);
           setMyJobs(list);
@@ -675,11 +672,18 @@ export default function DashboardPage() {
         channels.push(broadcast);
 
         // Poll fallback — keeps the open board honest when realtime misses
-        // a claim/expiry (claimed broadcasts no longer match the filter).
+        // a claim/expiry (claimed broadcasts no longer match the filter), and
+        // re-syncs assigned jobs so stats like Est. earned update on devices
+        // where realtime is flaky (e.g. mobile browsers).
         pollInterval = setInterval(async () => {
           if (cancelled) return;
-          const opens = await fetchOpenBroadcasts();
+          const [opens, list] = await Promise.all([
+            fetchOpenBroadcasts(),
+            fetchJobsForRunner(uid),
+          ]);
           setOpenJobs(opens);
+          setJobs(list);
+          loadContacts(list.map((j) => j.requesterId));
         }, 8000);
       } else {
         const my = supabase
@@ -752,6 +756,12 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, [role]);
 
+  // Est. earned recomputes live from the jobs + services state (see
+  // computeEarned), so it updates when a job is marked done on this screen
+  // or arrives via realtime / the sync poll. Must live with the other hooks
+  // (before any early return) so the hook count never changes between renders.
+  const runnerEarned = useMemo(() => computeEarned(jobs, services), [jobs, services]);
+
   const setRunnerStatus = async (value: RunnerStatus) => {
     const prev = statusRef.current;
     setStatusAndRef(value);
@@ -796,6 +806,154 @@ export default function DashboardPage() {
 
   // ---------- Community view ----------
   if (role === "community") {
+    const renderCommunityCard = (job: JobRequest) => {
+      const contact = job.runnerId ? contacts[job.runnerId] : undefined;
+      const review = reviews[job.id];
+      const delivery = formatDelivery(job.deliverTo);
+      const takeLines = formatTakeFromLines(job.takeFrom);
+      return (
+        <div key={job.id} className="bg-white border border-line rounded-[10px] px-3.5 py-3">
+          <div className="flex justify-between items-start gap-2">
+            <div className="min-w-0">
+              <Link href={`/job/${job.id}`} className="text-[15px] font-bold font-display break-words hover:text-teal transition-colors">
+                {titleCase(job.serviceType)}
+              </Link>
+              <div className="mt-1.5 space-y-1 text-[12.5px]">
+                <div className="leading-snug">
+                  <span className="text-slate">Take from:</span>{" "}
+                  {takeLines.length === 0 ? (
+                    <span className="text-ink break-words">{job.takeFrom || "—"}</span>
+                  ) : (
+                    <span className="inline-block align-top space-y-0.5">
+                      {takeLines.map((l, i) => (
+                        <span key={i} className="block">
+                          {l}
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </div>
+                <div className="leading-snug">
+                  <span className="text-slate">Received By:</span>{" "}
+                  <span className="text-ink break-words">
+                    {delivery.receiverName || "—"}
+                  </span>
+                </div>
+                <div className="leading-snug">
+                  <span className="text-slate">Delivered To (Location):</span>{" "}
+                  <span className="text-ink break-words">
+                    {delivery.address}
+                  </span>
+                </div>
+                <div className="leading-snug">
+                  <span className="text-slate">Runner:</span>{" "}
+                  <span className="text-ink break-words">
+                    {contact?.name ?? (job.runnerId ? "…" : "Broadcast")}
+                  </span>
+                </div>
+              </div>
+
+              {parseNotes(job.notes ?? "").items.length > 0 && (
+                <div className="rounded-[10px] bg-[#F0F7F4] border border-[#D7EBE1] px-3 py-2 mt-2.5">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-teal mb-1.5">
+                    Items ordered
+                  </div>
+                  <div className="space-y-1">
+                    {parseNotes(job.notes ?? "").items.map((it, i) => (
+                      <div key={i} className="flex items-center justify-between gap-2 text-[12px]">
+                        <span className="text-ink font-medium break-words">{it.name}</span>
+                        <span className="font-mono text-teal whitespace-nowrap">
+                          {it.qty ? `×${it.qty}` : ""}
+                          {it.price ? ` · ${it.price}` : ""}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {parseNotes(job.notes ?? "").total && (
+                <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2">
+                  <span className="text-[11.5px] font-semibold text-teal">You pay the runner</span>
+                  <span className="font-mono font-bold text-[14px] text-teal">
+                    {parseNotes(job.notes ?? "").total}
+                  </span>
+                </div>
+              )}
+            </div>
+            <span
+              className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
+            >
+              {JOB_LABELS[job.status]}
+            </span>
+          </div>
+
+          <RequestSteps status={job.status} />
+
+          {job.status === "confirmed" && contact?.whatsapp && (
+            <a
+              href={waLink(contact.whatsapp) ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2.5 w-full rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-[#25D366] text-white hover:opacity-90"
+            >
+              💬 Chat with {contact.name.split(" ")[0]} on WhatsApp
+            </a>
+          )}
+
+          {(job.status === "pending" || job.status === "confirmed") && (
+            <Button
+              variant={confirmingCancel === job.id ? "primary" : "outline"}
+              className="mt-2.5 w-full px-3 py-2 text-[11.5px] rounded-lg"
+              onClick={async () => {
+                if (confirmingCancel !== job.id) {
+                  setConfirmingCancel(job.id);
+                  setTimeout(() => {
+                    setConfirmingCancel((cur) => (cur === job.id ? null : cur));
+                  }, 4000);
+                  return;
+                }
+                setConfirmingCancel(null);
+                const res = await cancelJob(job.id);
+                if (res.ok) {
+                  setMyJobs((prev) =>
+                    prev.map((j) => (j.id === job.id ? { ...j, status: "cancelled" } : j))
+                  );
+                  setToast({ kind: "cancelled", job });
+                } else {
+                  setToast({ kind: "error", message: res.message ?? "Couldn't cancel the request." });
+                }
+              }}
+            >
+              {confirmingCancel === job.id ? "Tap again to confirm cancel" : "Cancel request"}
+            </Button>
+          )}
+
+          {job.status === "done" &&
+            (review ? (
+              <div className="mt-2.5 text-[12px] text-teal font-semibold">
+                You rated {review.rating}★ {review.text ? `— "${review.text}"` : ""}
+              </div>
+            ) : (
+              <RatingCard
+                job={job}
+                onSubmitted={(review) => {
+                  setReviews((prev) => ({ ...prev, [job.id]: review }));
+                  setToast(null);
+                }}
+              />
+            ))}
+
+          {job.status === "done" && (
+            <Link
+              href={requestAgainHref(job)}
+              className="mt-2.5 w-full rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-orange/10 text-orange border border-orange/30 hover:bg-orange hover:text-white transition-colors"
+            >
+              🔄 Request again
+            </Link>
+          )}
+        </div>
+      );
+    };
     return (
       <PhoneFrame>
         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -949,7 +1107,15 @@ export default function DashboardPage() {
             History →
           </Link>
         </div>
-        {myJobs.length === 0 ? (
+        {(() => {
+          const active = myJobs.filter(
+            (j) => j.status === "pending" || j.status === "confirmed"
+          );
+          const past = myJobs.filter(
+            (j) => j.status === "done" || j.status === "cancelled" || j.status === "expired"
+          );
+          if (myJobs.length === 0) {
+            return (
           <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-8 mb-3.5">
             <div className="text-2xl mb-2">📦</div>
             <div className="font-display font-bold text-[14.5px] mb-1">No requests yet</div>
@@ -960,148 +1126,39 @@ export default function DashboardPage() {
               <Button variant="outline">Find a runner</Button>
             </Link>
           </div>
-        ) : (
-          <div className="grid gap-2.5 md:grid-cols-2">
-          {myJobs.map((job) => {
-            const contact = job.runnerId ? contacts[job.runnerId] : undefined;
-            const review = reviews[job.id];
-            const deliverParts = job.deliverTo.split(" · ");
-            const deliverAddr =
-              deliverParts.length > 2 ? deliverParts.slice(0, 2).join(" · ") : job.deliverTo;
-            const receiverName = deliverParts.length > 2 ? deliverParts[2] : null;
-            return (
-              <div key={job.id} className="bg-white border border-line rounded-[10px] px-3.5 py-3">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0">
-                    <Link href={`/job/${job.id}`} className="text-[15px] font-bold font-display break-words hover:text-teal transition-colors">
-                      {titleCase(job.serviceType)}
-                    </Link>
-                    <div className="mt-1.5 space-y-1 text-[12.5px]">
-                      <div className="leading-snug">
-                        <span className="text-slate">Take from:</span>{" "}
-                        <span className="font-semibold text-ink break-words">{job.takeFrom}</span>
-                      </div>
-                      <div className="leading-snug">
-                        <span className="text-slate">Received By:</span>{" "}
-                        <span className="font-semibold text-ink break-words">
-                          {receiverName ?? deliverAddr}
-                        </span>
-                      </div>
-                      <div className="leading-snug">
-                        <span className="text-slate">Delivered To (Location):</span>{" "}
-                        <span className="font-semibold text-ink break-words">{deliverAddr}</span>
-                      </div>
-                      <div className="leading-snug">
-                        <span className="text-slate">Runner:</span>{" "}
-                        <span className="font-semibold text-ink break-words">
-                          {contact?.name ?? (job.runnerId ? "…" : "Broadcast")}
-                        </span>
-                      </div>
-                    </div>
-
-                    {parseNotes(job.notes ?? "").items.length > 0 && (
-                      <div className="rounded-[10px] bg-[#F0F7F4] border border-[#D7EBE1] px-3 py-2 mt-2.5">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-teal mb-1.5">
-                          Items ordered
-                        </div>
-                        <div className="space-y-1">
-                          {parseNotes(job.notes ?? "").items.map((it, i) => (
-                            <div key={i} className="flex items-center justify-between gap-2 text-[12px]">
-                              <span className="text-ink font-medium break-words">{it.name}</span>
-                              <span className="font-mono text-teal whitespace-nowrap">
-                                {it.qty ? `×${it.qty}` : ""}
-                                {it.price ? ` · ${it.price}` : ""}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {parseNotes(job.notes ?? "").total && (
-                      <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2">
-                        <span className="text-[11.5px] font-semibold text-teal">You pay the runner</span>
-                        <span className="font-mono font-bold text-[14px] text-teal">
-                          {parseNotes(job.notes ?? "").total}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
-                  >
-                    {JOB_LABELS[job.status]}
-                  </span>
-                </div>
-
-                <RequestSteps status={job.status} />
-
-                {job.status === "confirmed" && contact?.whatsapp && (
-                  <a
-                    href={waLink(contact.whatsapp) ?? "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2.5 w-full rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-[#25D366] text-white hover:opacity-90"
-                  >
-                    💬 Chat with {contact.name.split(" ")[0]} on WhatsApp
-                  </a>
-                )}
-
-                {(job.status === "pending" || job.status === "confirmed") && (
-                  <Button
-                    variant={confirmingCancel === job.id ? "primary" : "outline"}
-                    className="mt-2.5 w-full px-3 py-2 text-[11.5px] rounded-lg"
-                    onClick={async () => {
-                      if (confirmingCancel !== job.id) {
-                        setConfirmingCancel(job.id);
-                        setTimeout(() => {
-                          setConfirmingCancel((cur) => (cur === job.id ? null : cur));
-                        }, 4000);
-                        return;
-                      }
-                      setConfirmingCancel(null);
-                      const res = await cancelJob(job.id);
-                      if (res.ok) {
-                        setMyJobs((prev) =>
-                          prev.map((j) => (j.id === job.id ? { ...j, status: "cancelled" } : j))
-                        );
-                        setToast({ kind: "cancelled", job });
-                      } else {
-                        setToast({ kind: "error", message: res.message ?? "Couldn't cancel the request." });
-                      }
-                    }}
-                  >
-                    {confirmingCancel === job.id ? "Tap again to confirm cancel" : "Cancel request"}
-                  </Button>
-                )}
-
-                {job.status === "done" &&
-                  (review ? (
-                    <div className="mt-2.5 text-[12px] text-teal font-semibold">
-                      You rated {review.rating}★ {review.text ? `— "${review.text}"` : ""}
-                    </div>
-                  ) : (
-                    <RatingCard
-                      job={job}
-                      onSubmitted={(review) => {
-                        setReviews((prev) => ({ ...prev, [job.id]: review }));
-                        setToast(null);
-                      }}
-                    />
-                  ))}
-
-                {job.status === "done" && (
-                  <Link
-                    href={requestAgainHref(job)}
-                    className="mt-2.5 w-full rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-orange/10 text-orange border border-orange/30 hover:bg-orange hover:text-white transition-colors"
-                  >
-                    🔄 Request again
-                  </Link>
-                )}
-              </div>
             );
-          })}
+          }
+          return (
+            <>
+          {active.length > 0 && (
+          <div className="grid gap-2.5 md:grid-cols-2">
+          {active.map(renderCommunityCard)}
           </div>
-        )}
+          )}
+          {active.length === 0 && (
+            <div className="text-center bg-paper2 border border-dashed border-line rounded-card px-4 py-6 mb-3.5">
+              <div className="text-[13px] font-semibold text-ink">No active requests</div>
+              <div className="text-[11.5px] text-slate mt-0.5">
+                Past requests are shown below — send a new one anytime.
+              </div>
+            </div>
+          )}
+          {past.length > 0 && (
+            <div className="mt-3.5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10.5px] font-mono uppercase tracking-wide text-slate">Recent</span>
+                <Link href="/history" className="text-[11px] font-semibold text-teal hover:underline">
+                  View all →
+                </Link>
+              </div>
+              <div className="grid gap-2.5 md:grid-cols-2">
+                {past.slice(0, 3).map(renderCommunityCard)}
+              </div>
+            </div>
+          )}
+            </>
+          );
+        })()}
 
         <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 mt-3.5 italic">
           Want to earn instead? Switch your role to Runner anytime — you can be both.
@@ -1117,6 +1174,176 @@ export default function DashboardPage() {
   const liveOpenCount = openJobs.filter(
     (j) => Date.now() - j.createdAt < 5 * 60 * 1000
   ).length;
+
+  const renderRunnerCard = (job: JobRequest) => {
+    const contact = job.requesterId ? contacts[job.requesterId] : undefined;
+    const review = reviews[job.id];
+    const delivery = formatDelivery(job.deliverTo);
+    const takeLines = formatTakeFromLines(job.takeFrom);
+    const takeFromDisplay =
+      takeLines.length > 0 ? (
+        <span className="block space-y-0.5">
+          {takeLines.map((l, i) => (
+            <span key={i} className="block">
+              {l}
+            </span>
+          ))}
+        </span>
+      ) : (
+        job.takeFrom || "—"
+      );
+    const {
+      items,
+      services: extraServices,
+      neededBy,
+      total,
+      extra,
+    } = parseNotes(job.notes ?? "");
+    return (
+      <div
+        key={job.id}
+        className="bg-white border border-line rounded-card overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+      >
+        {/* Header band */}
+        <div
+          className={`px-3.5 py-2.5 flex items-center justify-between gap-2 border-b ${JOB_BANDS[job.status]}`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[18px] leading-none flex-shrink-0">
+              {serviceEmoji(job.serviceType)}
+            </span>
+            <Link href={`/job/${job.id}`} className="text-[14px] font-bold font-display text-ink break-words hover:text-teal transition-colors">
+              {titleCase(job.serviceType)}
+            </Link>
+          </div>
+          <span
+            className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
+          >
+            {JOB_LABELS[job.status]}
+          </span>
+        </div>
+
+        <div className="px-3.5 py-3">
+          {/* Detail tiles */}
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <JobInfoTile label="Pickup" value={takeFromDisplay} />
+            <JobInfoTile label="Delivery address" value={delivery.address} />
+            <JobInfoTile label="Received by" value={delivery.receiverName || "—"} />
+            <JobInfoTile label="Needed by" value={neededBy ?? "—"} />
+          </div>
+
+          {/* Extra services */}
+          {extraServices.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {extraServices.map((s, i) => (
+                <span
+                  key={i}
+                  className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#FDF3EE] text-orange border border-[#F5D5C4] whitespace-nowrap"
+                >
+                  + {s}
+                </span>
+              ))}
+            </div>
+          )}
+          <ItemList items={items} title="What to buy / pick up" />
+          {total && (
+            <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
+              <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
+              <span className="font-mono font-bold text-[14px] text-teal">{total}</span>
+            </div>
+          )}
+          {extra.length > 0 && (
+            <div className="mt-2 space-y-0.5">
+              {extra.map((line, i) => (
+                <div key={i} className="text-[11px] text-[#4B5250] leading-snug break-words">
+                  {line}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Actions */}
+          {job.status === "pending" && (
+            <div className="flex gap-2 mt-3">
+              <Button
+                variant="secondary"
+                className="flex-1 px-3 py-2 text-[11.5px] rounded-lg"
+                onClick={() => changeJobStatus(job, "confirmed")}
+              >
+                Accept job
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 px-3 py-2 text-[11.5px] rounded-lg"
+                onClick={() => changeJobStatus(job, "cancelled")}
+              >
+                Decline
+              </Button>
+            </div>
+          )}
+          {job.status === "confirmed" && (
+            <Button
+              variant="secondary"
+              className="w-full px-3 py-2 text-[11.5px] rounded-lg mt-3"
+              onClick={() => changeJobStatus(job, "done")}
+            >
+              Mark as done
+            </Button>
+          )}
+        </div>
+
+        {/* Rating CTA — floating pill like before */}
+        {job.status === "done" && (
+          <div className="px-3.5 pb-3">
+            {review ? (
+              showRatingFor === job.id ? (
+                <div className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3.5 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[15px] leading-none">
+                      <span className="text-yellow">{"★".repeat(review.rating)}</span>
+                      <span className="text-[#D8D2BE]">{"★".repeat(5 - review.rating)}</span>
+                    </div>
+                    <button
+                      onClick={() => setShowRatingFor(null)}
+                      className="text-[11px] text-slate hover:text-ink"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="text-[10.5px] font-mono text-slate mt-1">
+                    {review.rating}/5 from {review.authorName}
+                  </div>
+                  {review.text ? (
+                    <div className="text-[12px] text-[#4B5250] italic mt-1">
+                      &quot;{review.text}&quot;
+                    </div>
+                  ) : (
+                    <div className="text-[12px] text-[#4B5250] mt-1">
+                      No message left.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowRatingFor(job.id)}
+                  className="w-full rounded-[10px] px-4 py-2 text-[12px] font-semibold text-center inline-flex items-center justify-center gap-1.5 bg-[#FDF6E3] text-[#8A6D00] border border-[#F0E0A8] hover:bg-yellow/20 transition-colors"
+                >
+                  ★ View rating from{" "}
+                  {contact?.name?.split(" ")[0] ?? review.authorName ?? "community"}
+                </button>
+              )
+            ) : (
+              <div className="text-center text-[12px] text-slate italic">
+                No rating yet from the community
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <PhoneFrame>
       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -1340,9 +1567,7 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className="text-[15px] font-bold font-display">{titleCase(active.serviceType)}</div>
-            <div className="text-[12px] text-slate mt-1 leading-snug">
-              {active.takeFrom} → {active.deliverTo}
-            </div>
+            <RouteInfo job={active} variant="current" />
             {noteData.services.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2.5">
                 {noteData.services.map((s, i) => (
@@ -1413,7 +1638,7 @@ export default function DashboardPage() {
         ) : (
         <div className="grid gap-2.5 mb-4 md:grid-cols-2 lg:grid-cols-3">
           {live.map((job) => {
-            const bItems = parseNotes(job.notes ?? "").items;
+            const bNotes = parseNotes(job.notes ?? "");
             const minsLeft = Math.max(0, 5 - Math.floor((Date.now() - job.createdAt) / 60000));
             return (
             <div key={job.id} className="bg-white border border-line rounded-card overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
@@ -1429,24 +1654,17 @@ export default function DashboardPage() {
                 </span>
               </div>
               <div className="px-3.5 py-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-teal flex-shrink-0" />
-                  <span className="text-[12px] font-semibold text-ink truncate flex-1">
-                    {job.takeFrom}
-                  </span>
-                  <span className="text-teal font-bold flex-shrink-0">→</span>
-                  <span className="text-[12px] font-semibold text-ink truncate flex-1 text-right">
-                    {job.deliverTo}
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-3">
-                  <JobInfoTile label="Pickup" value={job.takeFrom} />
-                  <JobInfoTile label="Delivery" value={job.deliverTo} />
-                  <JobInfoTile label="Broadcast" value="Open to all runners" />
-                  <JobInfoTile label="Expires" value={minsLeft > 0 ? `in ${minsLeft}m` : "any moment"} />
-                </div>
-                <ItemList items={bItems} title="Items requested" />
+                <RouteInfo job={job} />
+                <ItemList items={bNotes.items} title="Items requested" />
+                {bNotes.extra.length > 0 && (
+                  <div className="mt-2 space-y-0.5">
+                    {bNotes.extra.map((line, i) => (
+                      <div key={i} className="text-[11px] text-[#4B5250] leading-snug break-words">
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <Button
                   variant="secondary"
                   className="w-full px-3 py-2 text-[12px] rounded-lg mt-2.5"
@@ -1512,195 +1730,6 @@ export default function DashboardPage() {
         <span className="text-[11.5px] text-slate">💰 Est. earned</span>
         <span className="font-mono font-bold text-[14px]">{formatRM(runnerEarned)}</span>
       </div>
-      </div>
-
-      <div className="min-w-0">
-      <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-        Recent jobs
-      </div>
-      {jobs.length === 0 ? (
-        <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-8 mb-3.5">
-          <div className="text-2xl mb-2">📭</div>
-          <div className="font-display font-bold text-[14.5px] mb-1">No jobs yet</div>
-          <div className="text-[12px] text-slate leading-relaxed">
-            Jobs you accept from the community will appear here.
-          </div>
-        </div>
-      ) : (
-        <div className="grid gap-2.5 md:grid-cols-2">
-        {jobs.map((job) => {
-          const contact = job.requesterId ? contacts[job.requesterId] : undefined;
-          const review = reviews[job.id];
-          const deliverParts = job.deliverTo.split(" · ");
-          const deliverAddr =
-            deliverParts.length > 2 ? deliverParts.slice(0, 2).join(" · ") : job.deliverTo;
-          const receiverName = deliverParts.length > 2 ? deliverParts[2] : null;
-          const {
-            items,
-            services: extraServices,
-            neededBy,
-            total,
-            extra,
-          } = parseNotes(job.notes ?? "");
-          return (
-            <div
-              key={job.id}
-              className="bg-white border border-line rounded-card overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
-            >
-              {/* Header band */}
-              <div
-                className={`px-3.5 py-2.5 flex items-center justify-between gap-2 border-b ${JOB_BANDS[job.status]}`}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[18px] leading-none flex-shrink-0">
-                    {serviceEmoji(job.serviceType)}
-                  </span>
-                  <Link href={`/job/${job.id}`} className="text-[14px] font-bold font-display text-ink break-words hover:text-teal transition-colors">
-                    {titleCase(job.serviceType)}
-                  </Link>
-                </div>
-                <span
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
-                >
-                  {JOB_LABELS[job.status]}
-                </span>
-              </div>
-
-              <div className="px-3.5 py-3">
-                {/* Route line */}
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-teal flex-shrink-0" />
-                  <span className="text-[12px] font-semibold text-ink truncate flex-1">
-                    {job.takeFrom}
-                  </span>
-                  <span className="text-teal font-bold flex-shrink-0">→</span>
-                  <span className="text-[12px] font-semibold text-ink truncate flex-1 text-right">
-                    {deliverAddr}
-                  </span>
-                  <span className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
-                </div>
-
-                {/* Detail tiles */}
-                <div className="grid grid-cols-2 gap-2 mt-3">
-                  <JobInfoTile label="Pickup location" value={job.takeFrom} />
-                  <JobInfoTile label="Delivery location" value={deliverAddr} />
-                  <JobInfoTile label="Received by" value={receiverName ?? "—"} />
-                  <JobInfoTile label="Needed by" value={neededBy ?? "—"} />
-                </div>
-
-                {/* Extra services */}
-                {extraServices.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {extraServices.map((s, i) => (
-                      <span
-                        key={i}
-                        className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#FDF3EE] text-orange border border-[#F5D5C4] whitespace-nowrap"
-                      >
-                        + {s}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <ItemList items={items} title="What to buy / pick up" />
-                {total && (
-                  <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
-                    <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
-                    <span className="font-mono font-bold text-[14px] text-teal">{total}</span>
-                  </div>
-                )}
-                {extra.length > 0 && (
-                  <div className="mt-2 space-y-0.5">
-                    {extra.map((line, i) => (
-                      <div key={i} className="text-[11px] text-[#4B5250] leading-snug break-words">
-                        {line}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Actions */}
-                {job.status === "pending" && (
-                  <div className="flex gap-2 mt-3">
-                    <Button
-                      variant="secondary"
-                      className="flex-1 px-3 py-2 text-[11.5px] rounded-lg"
-                      onClick={() => changeJobStatus(job, "confirmed")}
-                    >
-                      Accept job
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 px-3 py-2 text-[11.5px] rounded-lg"
-                      onClick={() => changeJobStatus(job, "cancelled")}
-                    >
-                      Decline
-                    </Button>
-                  </div>
-                )}
-                {job.status === "confirmed" && (
-                  <Button
-                    variant="secondary"
-                    className="w-full px-3 py-2 text-[11.5px] rounded-lg mt-3"
-                    onClick={() => changeJobStatus(job, "done")}
-                  >
-                    Mark as done
-                  </Button>
-                )}
-              </div>
-
-              {/* Rating CTA — floating pill like before */}
-              {job.status === "done" && (
-                <div className="px-3.5 pb-3">
-                  {review ? (
-                    showRatingFor === job.id ? (
-                      <div className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3.5 py-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="text-[15px] leading-none">
-                            <span className="text-yellow">{"★".repeat(review.rating)}</span>
-                            <span className="text-[#D8D2BE]">{"★".repeat(5 - review.rating)}</span>
-                          </div>
-                          <button
-                            onClick={() => setShowRatingFor(null)}
-                            className="text-[11px] text-slate hover:text-ink"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        <div className="text-[10.5px] font-mono text-slate mt-1">
-                          {review.rating}/5 from {review.authorName}
-                        </div>
-                        {review.text ? (
-                          <div className="text-[12px] text-[#4B5250] italic mt-1">
-                            &quot;{review.text}&quot;
-                          </div>
-                        ) : (
-                          <div className="text-[12px] text-[#4B5250] mt-1">
-                            No message left.
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowRatingFor(job.id)}
-                        className="w-full rounded-[10px] px-4 py-2 text-[12px] font-semibold text-center inline-flex items-center justify-center gap-1.5 bg-[#FDF6E3] text-[#8A6D00] border border-[#F0E0A8] hover:bg-yellow/20 transition-colors"
-                      >
-                        ★ View rating from{" "}
-                        {contact?.name?.split(" ")[0] ?? review.authorName ?? "community"}
-                      </button>
-                    )
-                  ) : (
-                    <div className="text-center text-[12px] text-slate italic">
-                      No rating yet from the community
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-        </div>
-      )}
 
       <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4 mb-2">
         Your services & pricing
@@ -1714,7 +1743,7 @@ export default function DashboardPage() {
           <div key={svc.id} className="bg-white border border-line rounded-[10px] p-3">
             <div className="mb-2">
               <label className="text-[10px] font-semibold text-slate block mb-1">
-                Service name
+                Service Name
               </label>
               <select
                 className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px]"
@@ -1731,8 +1760,12 @@ export default function DashboardPage() {
                   })
                 }
               >
-                {SERVICE_PRESETS.map((name) => (
-                  <option key={name}>{name}</option>
+                {SERVICE_CATEGORIES.map((cat) => (
+                  <optgroup key={cat.label} label={`${cat.emoji} ${cat.label}`}>
+                    {cat.services.map((name) => (
+                      <option key={name}>{name}</option>
+                    ))}
+                  </optgroup>
                 ))}
                 <option>{OTHER_SERVICE}</option>
               </select>
@@ -1760,8 +1793,8 @@ export default function DashboardPage() {
                   })
                 }
               >
-                <option value="flat_rate">Flat rate</option>
-                <option value="per_item">Per item</option>
+                <option value="flat_rate">Flat Rate</option>
+                <option value="per_item">Per Item</option>
                 <option value="custom">Custom</option>
               </select>
               {svc.pricing.model === "custom" ? (
@@ -1818,6 +1851,46 @@ export default function DashboardPage() {
       <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 italic">
         These show on your public profile so neighbours know what you offer and how much.
       </div>
+      </div>
+
+      <div className="min-w-0">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[11px] font-mono uppercase tracking-wide text-ink">
+          Recent jobs
+        </div>
+        <Link href="/history" className="text-[11px] font-semibold text-teal hover:underline">
+          View all →
+        </Link>
+      </div>
+      {(() => {
+        const pending = jobs.filter((j) => j.status === "pending");
+        const done = jobs.filter((j) => j.status === "done");
+        if (jobs.length === 0) {
+          return (
+        <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-8 mb-3.5">
+          <div className="text-2xl mb-2">📭</div>
+          <div className="font-display font-bold text-[14.5px] mb-1">No jobs yet</div>
+          <div className="text-[12px] text-slate leading-relaxed">
+            Jobs you accept from the community will appear here.
+          </div>
+        </div>
+          );
+        }
+        return (
+          <>
+        {pending.length > 0 && (
+        <div className="grid gap-2.5 md:grid-cols-2 mb-3.5">
+        {pending.map(renderRunnerCard)}
+        </div>
+        )}
+        {done.length > 0 && (
+        <div className="grid gap-2.5 md:grid-cols-2">
+        {done.slice(0, 3).map(renderRunnerCard)}
+        </div>
+        )}
+          </>
+        );
+      })()}
       </div>
       </div>
     </PhoneFrame>

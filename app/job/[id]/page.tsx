@@ -7,7 +7,8 @@ import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import LoadingState from "@/components/LoadingState";
 import ItemList from "@/components/ItemList";
-import { normalizePrice, titleCase, waLink } from "@/lib/constants";
+import RouteInfo from "@/components/RouteInfo";
+import { normalizePrice, serviceEmoji, titleCase, waLink } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import {
   acceptJob,
@@ -38,6 +39,14 @@ const JOB_LABELS: Record<JobRequest["status"], string> = {
   done: "Completed",
   expired: "Expired",
   cancelled: "Cancelled",
+};
+
+const JOB_ACCENT: Record<JobRequest["status"], string> = {
+  pending: "bg-[#E7C86A]",
+  confirmed: "bg-orange",
+  done: "bg-teal",
+  expired: "bg-[#9AA09C]",
+  cancelled: "bg-[#B5B8B5]",
 };
 
 function parseItems(notes: string): string[] {
@@ -227,36 +236,35 @@ export default function JobDetailPage() {
         ← Dashboard
       </Link>
 
-      <div className="bg-white border border-line rounded-card overflow-hidden mb-4">
-        <div className="px-3.5 py-3 flex items-center justify-between gap-2 border-b border-line">
-          <div className="text-[16px] font-bold font-display break-words">
-            {titleCase(job.serviceType)}
+      <div className="bg-white border border-line rounded-card overflow-hidden mb-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className={`h-1.5 ${JOB_ACCENT[job.status]}`} />
+        <div className="px-4 py-3.5 flex items-center justify-between gap-2 border-b border-line">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-10 h-10 rounded-[12px] bg-paper2 flex items-center justify-center text-[20px] flex-shrink-0">
+              {serviceEmoji(job.serviceType)}
+            </span>
+            <div className="min-w-0">
+              <div className="text-[16px] font-bold font-display break-words">
+                {titleCase(job.serviceType)}
+              </div>
+              {contact?.name && (
+                <div className="text-[11.5px] text-slate truncate">
+                  {isRequester ? `Runner: ${contact.name}` : `Requested by ${contact.name}`}
+                </div>
+              )}
+            </div>
           </div>
           <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}>
             {JOB_LABELS[job.status]}
           </span>
         </div>
 
-        <div className="px-3.5 py-3.5 space-y-2.5">
-          <div className="leading-snug">
-            <span className="text-slate text-[12px]">Take from:</span>{" "}
-            <span className="font-semibold text-[13px] break-words">{job.takeFrom}</span>
-          </div>
-          <div className="leading-snug">
-            <span className="text-slate text-[12px]">Deliver to:</span>{" "}
-            <span className="font-semibold text-[13px] break-words">{job.deliverTo}</span>
-          </div>
-          {contact?.name && (
-            <div className="leading-snug">
-              <span className="text-slate text-[12px]">
-                {isRequester ? "Runner:" : "Requested by:"}
-              </span>{" "}
-              <span className="font-semibold text-[13px] break-words">{contact.name}</span>
-            </div>
-          )}
-          <div className="leading-snug">
-            <span className="text-slate text-[12px]">Created:</span>{" "}
-            <span className="font-semibold text-[13px]">
+        <div className="px-4 py-3.5 space-y-2.5">
+          <RouteInfo job={job} />
+
+          <div className="flex items-center justify-between gap-2 rounded-[10px] bg-paper2 border border-line px-3 py-2">
+            <span className="text-[11px] font-semibold text-slate">Created</span>
+            <span className="text-[12px] text-ink font-medium">
               {new Date(job.createdAt).toLocaleString("en-MY", {
                 day: "numeric",
                 month: "short",
@@ -284,9 +292,9 @@ export default function JobDetailPage() {
             })} title="What to buy / pick up" />
           )}
           {total && (
-            <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-1">
+            <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3.5 py-2.5 mt-1">
               <span className="text-[12px] font-semibold text-teal">Estimated total</span>
-              <span className="font-mono font-bold text-[14px] text-teal">{total}</span>
+              <span className="font-mono font-bold text-[15px] text-teal">{total}</span>
             </div>
           )}
           {otherLines.length > 0 && (
