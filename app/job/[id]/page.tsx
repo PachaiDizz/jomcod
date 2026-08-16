@@ -89,7 +89,7 @@ function parseNotesExtended(notes: string): {
         // Normalize any legacy "@ RM03" style price inside the item text.
         items.push(p.replace(/(RM\s*[\d.]+)/gi, (_, r) => normalizePrice(r)));
       }
-    } else if (tm) total = tm[1]!.trim();
+    } else if (tm) total = normalizePrice(tm[1]!.trim());
     else if (!/^Needed By:/i.test(t)) other.push(t);
   }
   return { services, items, total, other };

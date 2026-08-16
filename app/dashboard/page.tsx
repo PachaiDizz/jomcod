@@ -8,7 +8,8 @@ import RoleBadge from "@/components/RoleBadge";
 import ItemList from "@/components/ItemList";
 import RouteInfo from "@/components/RouteInfo";
 import { JobRequest, Review, RunnerStatus, Service } from "@/lib/types";
-import { categoryLabelKey, cleanServiceName, formatRM, normalizePrice, OTHER_SERVICE, SERVICE_CATEGORIES, SERVICE_PRESETS, serviceEmoji, serviceNameKey, titleCase, translateServiceName, waLink } from "@/lib/constants";
+import { cleanServiceName, formatRM, normalizePrice, OTHER_SERVICE, SERVICE_PRESETS, serviceEmoji, serviceNameKey, titleCase, translateServiceName, waLink } from "@/lib/constants";
+import ServicePicker from "@/components/ServicePicker";
 import { formatDelivery, formatTakeFromLines, parseDeliverTo } from "@/lib/jobFormat";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -128,7 +129,7 @@ function parseNotes(notes: string): ParsedNotes {
     }
     const totalMatch = t.match(/^Total:\s*(.*)$/i);
     if (totalMatch) {
-      total = totalMatch[1].trim();
+      total = normalizePrice(totalMatch[1].trim());
       continue;
     }
     const itemsMatch = t.match(/^Items:\s*(.*)$/i);
@@ -1790,8 +1791,7 @@ export default function DashboardPage() {
               <label className="text-[10px] font-semibold text-slate block mb-1">
                 {t("dash.run.serviceName")}
               </label>
-              <select
-                className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px]"
+              <ServicePicker
                 value={
                   isOther
                     ? OTHER_SERVICE
@@ -1799,23 +1799,8 @@ export default function DashboardPage() {
                         (p) => p.toLowerCase() === svc.name.toLowerCase()
                       ) ?? svc.name)
                 }
-                onChange={(e) =>
-                  updateService(svc.id, {
-                    name: e.target.value === OTHER_SERVICE ? "" : e.target.value,
-                  })
-                }
-              >
-                {SERVICE_CATEGORIES.map((cat) => (
-                  <optgroup key={cat.label} label={`${cat.emoji} ${t(categoryLabelKey(cat.label))}`}>
-                    {cat.services.map((name) => (
-                      <option key={name} value={name}>
-                        {t(serviceNameKey(name))}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-                <option value={OTHER_SERVICE}>{t(serviceNameKey(OTHER_SERVICE))}</option>
-              </select>
+                onChange={(name) => updateService(svc.id, { name: name === OTHER_SERVICE ? "" : name })}
+              />
               {isOther && (
                 <>
                   <input

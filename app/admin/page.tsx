@@ -17,7 +17,7 @@ import {
 } from "@/lib/queries";
 import type { AdminJobRow, AdminRunnerRow, ReportRow } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
-import { translateServiceName } from "@/lib/constants";
+import { formatRM, translateServiceName } from "@/lib/constants";
 
 type Tab = "runners" | "jobs" | "reports";
 
@@ -203,7 +203,7 @@ export default function AdminPage() {
                           className="text-[9.5px] bg-[#F0F7F4] text-teal border border-[#D7EBE1] px-1.5 py-0.5 rounded"
                         >
                           {translateServiceName(t, String(s.name))}
-                          {typeof s.pricing?.price === "number" ? ` · RM${s.pricing.price}` : ""}
+                          {typeof s.pricing?.price === "number" ? ` · ${formatRM(s.pricing.price)}` : ""}
                         </span>
                       ))}
                     </div>

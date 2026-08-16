@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { categoryLabelKey, formatRM, SERVICE_CATEGORIES, serviceNameKey, translateServiceName } from "@/lib/constants";
+import { formatRM, SERVICE_CATEGORIES, translateServiceName } from "@/lib/constants";
+import ServicePicker from "@/components/ServicePicker";
 import { useI18n } from "@/lib/i18n";
 import type { Pricing } from "@/lib/types";
 
@@ -410,29 +411,12 @@ export default function RequestFields({
       {/* Service type */}
       <div className="mb-3.5">
         <label className="text-xs font-semibold mb-1.5 block">{t("rf.serviceType")}</label>
-        <select
-          className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]"
+        <ServicePicker
           value={selected}
-          onChange={(e) => set({ serviceType: e.target.value })}
-        >
-          {isDefaultList ? (
-            SERVICE_CATEGORIES.map((cat) => (
-              <optgroup key={cat.label} label={`${cat.emoji} ${t(categoryLabelKey(cat.label))}`}>
-                {cat.services.map((name) => (
-                  <option key={name} value={name}>
-                    {t(serviceNameKey(name))}
-                  </option>
-                ))}
-              </optgroup>
-            ))
-          ) : (
-            serviceOptions.map((name) => (
-              <option key={name} value={name}>
-                {t(serviceNameKey(name))}
-              </option>
-            ))
-          )}
-        </select>
+          onChange={(name) => set({ serviceType: name })}
+          options={isDefaultList ? undefined : serviceOptions}
+          placeholder={t("rf.serviceType")}
+        />
       </div>
 
       {/* Pickup details */}
@@ -562,20 +546,19 @@ export default function RequestFields({
             </button>
           </div>
           <label className="text-xs font-semibold mb-1.5 block">{t("rf.serviceTypeColon")}</label>
-          <select
-            className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px] mb-2.5"
-            value={e.serviceType}
-            onChange={(ev) =>
-              updateExtra(e.id, {
-                serviceType: ev.target.value,
-                items: [emptyItem()],
-              })
-            }
-          >
-            {serviceOptions.map((name) => (
-              <option key={name}>{name}</option>
-            ))}
-          </select>
+          <div className="mb-2.5">
+            <ServicePicker
+              value={e.serviceType}
+              onChange={(name) =>
+                updateExtra(e.id, {
+                  serviceType: name,
+                  items: [emptyItem()],
+                })
+              }
+              options={serviceOptions}
+              placeholder={t("rf.serviceType")}
+            />
+          </div>
           {isParcelService(e.serviceType) ? (
             <CourierRows
               couriers={e.couriers}

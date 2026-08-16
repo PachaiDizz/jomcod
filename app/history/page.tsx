@@ -55,7 +55,7 @@ function parseHistoryNotes(notes: string): {
     if (!t) continue;
     const tm = t.match(/^Total:\s*(.*)$/i);
     if (tm) {
-      total = tm[1]!.trim();
+      total = normalizePrice(tm[1]!.trim());
       continue;
     }
     const im = t.match(/^Items:\s*(.*)$/i);
