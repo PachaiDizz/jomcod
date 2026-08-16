@@ -1740,6 +1740,12 @@ export default function DashboardPage() {
       <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4 mb-2">
         {t("dash.run.yourServices")}
       </div>
+      {services.length === 0 && (
+        <div className="rounded-[10px] border border-orange/30 bg-[#FDF3EE] px-3.5 py-3 mb-3">
+          <div className="text-[12px] font-bold text-orange mb-0.5">{t("dash.run.servicesReminderTitle")}</div>
+          <div className="text-[11.5px] text-slate leading-snug">{t("dash.run.servicesReminderBody")}</div>
+        </div>
+      )}
       <div className="grid gap-2.5">
       {services.map((svc) => {
         const isOther = !SERVICE_PRESETS.some(

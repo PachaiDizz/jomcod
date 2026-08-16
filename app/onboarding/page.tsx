@@ -232,6 +232,10 @@ export default function OnboardingPage() {
               placeholder={t("picker.toShort")}
             />
           </div>
+          <div className="rounded-[10px] border border-orange/30 bg-[#FDF3EE] px-3 py-2.5 mt-3">
+            <div className="text-[11.5px] font-bold text-orange mb-0.5">{t("dash.run.servicesReminderTitle")}</div>
+            <div className="text-[11px] text-slate leading-snug">{t("dash.run.servicesReminderBody")}</div>
+          </div>
         </div>
       )}
 

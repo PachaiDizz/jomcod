@@ -360,6 +360,9 @@ export const en: Record<string, string> = {
   "dash.run.openNow": "Open now",
   "dash.run.estEarned": "💰 Est. earned",
   "dash.run.yourServices": "Your services & pricing",
+  "dash.run.servicesReminderTitle": "⚠️ Add your services & pricing",
+  "dash.run.servicesReminderBody":
+    "Don't forget to add at least one service with its price. Community members see your price tag before requesting — no service, no requests.",
   "dash.run.serviceName": "Service Name",
   "dash.run.writeOwn": "Write your own service name",
   "dash.run.noCourierNames":
