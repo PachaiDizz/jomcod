@@ -3,26 +3,18 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-}
-
-// Mobile install nudge.
-//  - Android/Chrome: auto-triggers the native install prompt once.
-//  - iOS: shows a step-by-step guide (Apple provides no install API and the
-//    JS share sheet does NOT include "Add to Home Screen" — only Safari's
-//    own menu does, so we walk the user through it).
+// Mobile install nudge — iOS only.
+// Apple provides no install API and the JS share sheet does NOT include
+// "Add to Home Screen" (only Safari's own menu does), so we show a short
+// step-by-step guide. Android/Chrome needs no banner — the browser already
+// surfaces its own native install button in the address bar.
 // Once installed, a permanent flag stops the banner forever — even if the
 // site is later opened in a normal browser tab (not standalone).
 const INSTALLED_KEY = "jomcod_installed";
-const DISMISSED_KEY = "jomcod_install_dismissed";
 
 export default function InstallBanner() {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
@@ -46,66 +38,14 @@ export default function InstallBanner() {
       // ignore storage errors
     }
 
-    const ua = navigator.userAgent;
-    const mobile =
-      /Mobi|Android|iPhone|iPad|iPod/i.test(ua) ||
-      (navigator.maxTouchPoints > 0 && /Windows/i.test(ua));
-    if (!mobile) return;
+    // iOS only — Android/Chrome already have a native install button.
+    if (!/iPad|iPhone|iPod/i.test(navigator.userAgent)) return;
 
-    const iOS = /iPad|iPhone|iPod/i.test(ua);
-    setIsIOS(iOS);
-
-    if (iOS) {
-      // iOS never fires beforeinstallprompt — show the guide after a beat.
-      const timer = setTimeout(() => setVisible(true), 1500);
-      return () => clearTimeout(timer);
-    }
-
-    // Android/Chrome: capture the install event, then show the banner. We do
-    // NOT call prompt() here — firing it early consumes the event and makes
-    // the "Install app" button a no-op later. prompt() runs only on tap.
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
-      setVisible(true);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    const timer = setTimeout(() => setVisible(true), 1500);
+    return () => clearTimeout(timer);
   }, []);
 
-  const dismiss = () => {
-    try {
-      sessionStorage.setItem(DISMISSED_KEY, "1");
-    } catch {
-      // ignore
-    }
-    setVisible(false);
-  };
-
-  const handleInstall = async () => {
-    if (!deferred) return;
-    try {
-      deferred.prompt();
-      await deferred.userChoice;
-      try {
-        localStorage.setItem(INSTALLED_KEY, "1");
-      } catch {
-        // ignore
-      }
-    } catch {
-      // prompt can throw if the event is no longer valid — ignore
-    } finally {
-      setVisible(false);
-    }
-  };
-
-  const handleIOSInstall = () => {
-    setShowGuide(true);
-    setVisible(false);
-  };
-
-  // iOS step-by-step guide — must be checked BEFORE the `visible` early return,
-  // because tapping "Install app" hides the banner AND shows the guide.
+  // iOS step-by-step guide.
   if (showGuide) {
     return (
       <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
@@ -142,18 +82,16 @@ export default function InstallBanner() {
   return (
     <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-4 md:left-auto md:max-w-sm z-50 bg-ink text-paper rounded-[14px] p-3.5 shadow-[0_20px_50px_-16px_rgba(28,35,33,0.5)] border border-white/10">
       <div className="text-[12.5px] font-bold font-display mb-0.5">{t("install.banner")}</div>
-      <div className="text-[11.5px] text-[#C7CBC7] leading-snug mb-3">
-        {isIOS ? t("install.how") : t("install.bannerBody")}
-      </div>
+      <div className="text-[11.5px] text-[#C7CBC7] leading-snug mb-3">{t("install.how")}</div>
       <div className="flex gap-2">
         <button
-          onClick={isIOS ? handleIOSInstall : handleInstall}
+          onClick={() => setShowGuide(true)}
           className="flex-1 bg-orange text-white rounded-[9px] px-3 py-2 text-[12px] font-semibold"
         >
           {t("install.install")}
         </button>
         <button
-          onClick={dismiss}
+          onClick={() => setVisible(false)}
           className="px-3 py-2 text-[12px] text-[#C7CBC7] hover:text-paper transition-colors"
         >
           {t("install.later")}
