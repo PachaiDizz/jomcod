@@ -194,7 +194,7 @@ export const en: Record<string, string> = {
   "install.banner": "📱 Install JomCOD on your phone",
   "install.bannerBody": "Get the app on your home screen for a faster, cleaner experience — no browser tab needed.",
   "install.install": "Install app",
-  "install.how": "Tap the share button, then choose \"Add to Home Screen\".",
+  "install.how": "Tap \"Install app\" below — then choose \"Add to Home Screen\" from the menu.",
   "install.later": "Not now",
 
   // ── QR share card ─────────────────────────────────────────────────────────

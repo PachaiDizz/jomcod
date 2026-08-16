@@ -99,6 +99,23 @@ export default function InstallBanner() {
     }
   };
 
+  // iOS: no install API exists, so "Yes" opens the native Share sheet where
+  // "Add to Home Screen" lives. Best we can do on Apple devices.
+  const handleIOSInstall = async () => {
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({ title: "JomCOD", url: window.location.origin });
+      } else {
+        // No share API (older iOS Safari) — fall back to copy.
+        await navigator.clipboard.writeText(window.location.origin);
+      }
+    } catch {
+      // user cancelled the share sheet — keep banner open? no, they chose Yes
+    } finally {
+      dismiss();
+    }
+  };
+
   return (
     <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-4 md:left-auto md:max-w-sm z-50 bg-ink text-paper rounded-[14px] p-3.5 shadow-[0_20px_50px_-16px_rgba(28,35,33,0.5)] border border-white/10">
       <div className="text-[12.5px] font-bold font-display mb-0.5">{t("install.banner")}</div>
@@ -106,29 +123,18 @@ export default function InstallBanner() {
         {isIOS ? t("install.how") : t("install.bannerBody")}
       </div>
       <div className="flex gap-2">
-        {isIOS ? (
-          <button
-            onClick={dismiss}
-            className="flex-1 bg-orange text-white rounded-[9px] px-3 py-2 text-[12px] font-semibold"
-          >
-            {t("install.later")}
-          </button>
-        ) : (
-          <>
-            <button
-              onClick={handleInstall}
-              className="flex-1 bg-orange text-white rounded-[9px] px-3 py-2 text-[12px] font-semibold"
-            >
-              {t("install.install")}
-            </button>
-            <button
-              onClick={dismiss}
-              className="px-3 py-2 text-[12px] text-[#C7CBC7] hover:text-paper transition-colors"
-            >
-              {t("install.later")}
-            </button>
-          </>
-        )}
+        <button
+          onClick={isIOS ? handleIOSInstall : handleInstall}
+          className="flex-1 bg-orange text-white rounded-[9px] px-3 py-2 text-[12px] font-semibold"
+        >
+          {t("install.install")}
+        </button>
+        <button
+          onClick={dismiss}
+          className="px-3 py-2 text-[12px] text-[#C7CBC7] hover:text-paper transition-colors"
+        >
+          {t("install.later")}
+        </button>
       </div>
     </div>
   );

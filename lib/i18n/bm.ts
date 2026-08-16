@@ -192,7 +192,7 @@ export const bm: Record<string, string> = {
   "install.banner": "📱 Pasang JomCOD di telefon anda",
   "install.bannerBody": "Dapatkan aplikasi di skrin utama anda untuk pengalaman yang lebih pantas dan kemas — tanpa perlu tab pelayar.",
   "install.install": "Pasang aplikasi",
-  "install.how": "Ketuk butang kongsi, kemudian pilih \"Tambah ke Skrin Utama\".",
+  "install.how": "Ketuk \"Pasang aplikasi\" di bawah — kemudian pilih \"Tambah ke Skrin Utama\" daripada menu.",
   "install.later": "Bukan sekarang",
 
   // ── QR share card ─────────────────────────────────────────────────────────
