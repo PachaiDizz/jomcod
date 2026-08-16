@@ -35,6 +35,32 @@ export const SERVICE_PRESETS = SERVICE_CATEGORIES.flatMap((c) => c.services);
 
 export const OTHER_SERVICE = "Other (Write It Myself)";
 
+// i18n key for a stored service name (e.g. "Grocery Run" -> "svc.Grocery Run")
+// so components can translate displayed names. Falls back to the name itself.
+export function serviceNameKey(name: string): string {
+  return `svc.${name}`;
+}
+
+// Translate a stored service name (or combined "A + B" string) via t().
+export function translateServiceName(t: (key: string) => string, value: string): string {
+  return value
+    .split(" + ")
+    .map((part) => t(serviceNameKey(part.trim())))
+    .join(" + ");
+}
+
+// i18n key for a service category label (e.g. "Shopping & Groceries" -> "cat.shopping").
+const CATEGORY_KEYS: Record<string, string> = {
+  "Shopping & Groceries": "cat.shopping",
+  "Parcels & Documents": "cat.parcels",
+  "Bills & Payments": "cat.bills",
+  Food: "cat.food",
+  "Other Errands": "cat.other",
+};
+export function categoryLabelKey(label: string): string {
+  return CATEGORY_KEYS[label] ?? label;
+}
+
 // A friendly emoji for a service name, used across cards and list rows.
 export function serviceEmoji(s: string): string {
   const t = (s ?? "").toLowerCase();

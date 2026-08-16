@@ -8,7 +8,7 @@ import Button from "@/components/Button";
 import LoadingState from "@/components/LoadingState";
 import ItemList from "@/components/ItemList";
 import RouteInfo from "@/components/RouteInfo";
-import { normalizePrice, serviceEmoji, titleCase, waLink } from "@/lib/constants";
+import { normalizePrice, serviceEmoji, translateServiceName, waLink } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import {
   acceptJob,
@@ -247,7 +247,7 @@ export default function JobDetailPage() {
             </span>
             <div className="min-w-0">
               <div className="text-[16px] font-bold font-display break-words">
-                {titleCase(job.serviceType)}
+                {translateServiceName(t, job.serviceType)}
               </div>
               {contact?.name && (
                 <div className="text-[11.5px] text-slate truncate">

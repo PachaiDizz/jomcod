@@ -16,6 +16,7 @@ import {
 } from "@/lib/queries";
 import type { AdminJobRow, AdminRunnerRow, ReportRow } from "@/lib/types";
 import { useI18n } from "@/lib/i18n";
+import { translateServiceName } from "@/lib/constants";
 
 type Tab = "runners" | "jobs" | "reports";
 
@@ -218,7 +219,7 @@ export default function AdminPage() {
             jobs.map((j) => (
               <div key={j.id} className="bg-white border border-line rounded-[10px] p-3.5">
                 <div className="flex justify-between items-start gap-2">
-                  <div className="text-[13px] font-semibold break-words min-w-0">{j.serviceType}</div>
+                  <div className="text-[13px] font-semibold break-words min-w-0">{translateServiceName(t, j.serviceType)}</div>
                   <span className={`text-[9.5px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${STATUS_STYLES[j.status]}`}>
                     {j.status}
                   </span>

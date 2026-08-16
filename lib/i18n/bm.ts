@@ -211,6 +211,26 @@ export const bm: Record<string, string> = {
   "itemlist.title": "Apa yang perlu dibeli / diambil",
   "itemlist.itemsOrdered": "Barangan dipesan",
 
+  // ── Service presets & categories (keys = the English names stored in DB) ──
+  "cat.shopping": "Membeli-belah & Barangan Dapur",
+  "cat.parcels": "Bungkusan & Dokumen",
+  "cat.bills": "Bil & Pembayaran",
+  "cat.food": "Makanan",
+  "cat.other": "Urusan Lain",
+  "svc.Grocery Run": "Beli Barangan Dapur",
+  "svc.Pharmacy Run": "Pergi Farmasi",
+  "svc.Parcel Pickup / Drop-off": "Ambil / Hantar Bungkusan",
+  "svc.Documents Delivery": "Penghantaran Dokumen",
+  "svc.Pay Bills": "Bayar Bil",
+  "svc.Top-Up / Reload": "Tambah Nilai",
+  "svc.ATM / Banking Errand": "Urusan ATM / Perbankan",
+  "svc.Food Takeaway Pickup": "Ambil Makanan Bungkus",
+  "svc.Laundry Drop-Off/Pickup": "Hantar/Ambil Dobi",
+  "svc.Petrol Station Run": "Urusan Stesen Minyak",
+  "svc.Queue / Collect Number": "Beratur / Ambil Nombor",
+  "svc.Other (specify)": "Lain-lain (nyatakan)",
+  "svc.Other (Write It Myself)": "Lain-lain (Tulis Sendiri)",
+
   // ── Browse ────────────────────────────────────────────────────────────────
   "browse.findRunner": "Cari runner",
   "browse.sub": "Jiran berdekatan yang menawarkan masa mereka di {area}.",
@@ -325,8 +345,8 @@ export const bm: Record<string, string> = {
   "dash.run.noCourierNames":
     "Tiada nama kurier (JNT / SPX / GDEX) — itu hanya untuk butiran ambilan parcel.",
   "dash.run.flatRate": "Kadar Tetap",
-  "dash.run.perItem": "Sekilang",
-  "dash.run.custom": "Khas",
+  "dash.run.perItem": "Setiap Item",
+  "dash.run.custom": "Kadar Custom",
   "dash.run.customPlaceholder": "cth. yuran perjalanan RM6 + RM1/peringkat",
   "dash.run.addService": "+ Tambah perkhidmatan",
   "dash.run.saveServices": "Simpan perkhidmatan",
@@ -435,6 +455,15 @@ export const bm: Record<string, string> = {
   "notif.mAgo": "{n} min lalu",
   "notif.hAgo": "{n} jam lalu",
   "notif.dAgo": "{n} hari lalu",
+  "notif.newRequest": "Permintaan baharu",
+  "notif.newBroadcast": "Permintaan siaran baharu",
+  "notif.accepted": "Runner menerima permintaan anda",
+  "notif.done": "Permintaan selesai",
+  "notif.expired": "Permintaan anda tamat tempoh",
+  "notif.cancelled": "Permintaan dibatalkan",
+  "notif.declined": "Runner menolak permintaan anda",
+  "notif.requestTaken": "Permintaan telah diambil",
+  "notif.requestTakenBody": "Permintaan ini telah diterima oleh runner lain.",
 
   // ── Request page ──────────────────────────────────────────────────────────
   "req.requestRunner": "Minta bantuan runner",
@@ -504,7 +533,7 @@ export const bm: Record<string, string> = {
   "admin.sub": "Luluskan runner, sederhanakan tugasan, semak laporan",
   "admin.only": "Admin sahaja",
   "admin.onlyBody":
-    "Panel ini terhadap. Untuk mengaktifkannya, jalankan ini sekali dalam editor SQL Supabase:",
+    "Panel ini terhad. Untuk mengaktifkannya, jalankan ini sekali dalam editor SQL Supabase:",
   "admin.yourUserId": "ID pengguna anda:",
   "admin.runners": "Runner",
   "admin.pendingApproval": "Menunggu kelulusan",

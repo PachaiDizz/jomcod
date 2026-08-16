@@ -6,7 +6,7 @@ import PhoneFrame from "@/components/PhoneFrame";
 import RoleBadge from "@/components/RoleBadge";
 import RouteInfo from "@/components/RouteInfo";
 import { parseDeliverTo } from "@/lib/jobFormat";
-import { formatRM, normalizePrice, serviceEmoji, titleCase } from "@/lib/constants";
+import { formatRM, normalizePrice, serviceEmoji, translateServiceName } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { fetchJobsForRequester, fetchJobsForRunner, jobFromRow } from "@/lib/queries";
 import { useI18n } from "@/lib/i18n";
@@ -241,7 +241,7 @@ export default function HistoryPage() {
                   {serviceEmoji(job.serviceType)}
                 </span>
                 <Link href={`/job/${job.id}`} className="text-[13.5px] font-bold font-display text-ink break-words group-hover:text-teal transition-colors">
-                  {titleCase(job.serviceType)}
+                  {translateServiceName(t, job.serviceType)}
                 </Link>
               </div>
               <span

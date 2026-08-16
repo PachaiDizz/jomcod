@@ -16,9 +16,9 @@ export function getRunnerById(id: string): Runner | undefined {
 }
 
 export function pricingLabel(model: PricingModel): string {
-  if (model === "flat_rate") return "flat rate";
-  if (model === "per_item") return "per item";
-  return "custom";
+  if (model === "flat_rate") return "dash.run.flatRate";
+  if (model === "per_item") return "dash.run.perItem";
+  return "dash.run.custom";
 }
 
 export function pricingDisplay(runner: Runner) {

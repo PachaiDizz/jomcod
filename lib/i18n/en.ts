@@ -213,6 +213,26 @@ export const en: Record<string, string> = {
   "itemlist.title": "What to buy / pick up",
   "itemlist.itemsOrdered": "Items ordered",
 
+  // ── Service presets & categories (keys = the English names stored in DB) ──
+  "cat.shopping": "Shopping & Groceries",
+  "cat.parcels": "Parcels & Documents",
+  "cat.bills": "Bills & Payments",
+  "cat.food": "Food",
+  "cat.other": "Other Errands",
+  "svc.Grocery Run": "Grocery Run",
+  "svc.Pharmacy Run": "Pharmacy Run",
+  "svc.Parcel Pickup / Drop-off": "Parcel Pickup / Drop-off",
+  "svc.Documents Delivery": "Documents Delivery",
+  "svc.Pay Bills": "Pay Bills",
+  "svc.Top-Up / Reload": "Top-Up / Reload",
+  "svc.ATM / Banking Errand": "ATM / Banking Errand",
+  "svc.Food Takeaway Pickup": "Food Takeaway Pickup",
+  "svc.Laundry Drop-Off/Pickup": "Laundry Drop-Off/Pickup",
+  "svc.Petrol Station Run": "Petrol Station Run",
+  "svc.Queue / Collect Number": "Queue / Collect Number",
+  "svc.Other (specify)": "Other (specify)",
+  "svc.Other (Write It Myself)": "Other (Write It Myself)",
+
   // ── Browse ────────────────────────────────────────────────────────────────
   "browse.findRunner": "Find a runner",
   "browse.sub": "Nearby neighbours offering their time in {area}.",
@@ -437,6 +457,15 @@ export const en: Record<string, string> = {
   "notif.mAgo": "{n}m ago",
   "notif.hAgo": "{n}h ago",
   "notif.dAgo": "{n}d ago",
+  "notif.newRequest": "New request",
+  "notif.newBroadcast": "New broadcast request",
+  "notif.accepted": "Runner accepted your request",
+  "notif.done": "Request completed",
+  "notif.expired": "Your request expired",
+  "notif.cancelled": "Request cancelled",
+  "notif.declined": "Runner declined your request",
+  "notif.requestTaken": "Request already taken",
+  "notif.requestTakenBody": "This request has already been accepted by another runner.",
 
   // ── Request page ──────────────────────────────────────────────────────────
   "req.requestRunner": "Request a runner",

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cleanServiceName, titleCase } from "@/lib/constants";
+import { cleanServiceName, translateServiceName } from "@/lib/constants";
 import { Runner, RunnerStatus } from "@/lib/types";
 import StatusPill from "./StatusPill";
 import { pricingDisplay, pricingLabel } from "@/lib/mockData";
@@ -63,7 +63,7 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
             </span>
             {firstService && (
               <span className="block text-[8px] font-medium text-slate uppercase tracking-wide mt-0.5">
-                {pricingLabel(firstService.pricing.model)}
+                {t(pricingLabel(firstService.pricing.model))}
               </span>
             )}
           </div>
@@ -132,7 +132,7 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
                       key={s.id}
                       className="text-[9.5px] bg-[#E4F3EC] text-teal border border-[#C9E3D6] px-1.5 py-0.5 rounded"
                     >
-                      {titleCase(cleanServiceName(s.name))}
+                      {translateServiceName(t, cleanServiceName(s.name))}
                     </span>
                   ))
                 ) : (

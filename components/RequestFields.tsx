@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatRM, SERVICE_CATEGORIES } from "@/lib/constants";
+import { categoryLabelKey, formatRM, SERVICE_CATEGORIES, serviceNameKey, translateServiceName } from "@/lib/constants";
 import { useI18n } from "@/lib/i18n";
 import type { Pricing } from "@/lib/types";
 
@@ -417,14 +417,20 @@ export default function RequestFields({
         >
           {isDefaultList ? (
             SERVICE_CATEGORIES.map((cat) => (
-              <optgroup key={cat.label} label={`${cat.emoji} ${cat.label}`}>
+              <optgroup key={cat.label} label={`${cat.emoji} ${t(categoryLabelKey(cat.label))}`}>
                 {cat.services.map((name) => (
-                  <option key={name}>{name}</option>
+                  <option key={name} value={name}>
+                    {t(serviceNameKey(name))}
+                  </option>
                 ))}
               </optgroup>
             ))
           ) : (
-            serviceOptions.map((name) => <option key={name}>{name}</option>)
+            serviceOptions.map((name) => (
+              <option key={name} value={name}>
+                {t(serviceNameKey(name))}
+              </option>
+            ))
           )}
         </select>
       </div>
@@ -539,7 +545,7 @@ export default function RequestFields({
         >
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="text-[12px] font-bold text-orange">
-              + {titleCaseService(e.serviceType || t("rf.extraService"))}
+              + {e.serviceType ? translateServiceName(t, e.serviceType) : t("rf.extraService")}
             </div>
             <button
               type="button"

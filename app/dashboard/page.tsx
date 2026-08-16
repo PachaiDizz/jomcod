@@ -8,7 +8,7 @@ import RoleBadge from "@/components/RoleBadge";
 import ItemList from "@/components/ItemList";
 import RouteInfo from "@/components/RouteInfo";
 import { JobRequest, Review, RunnerStatus, Service } from "@/lib/types";
-import { cleanServiceName, formatRM, normalizePrice, OTHER_SERVICE, SERVICE_CATEGORIES, SERVICE_PRESETS, serviceEmoji, titleCase, waLink } from "@/lib/constants";
+import { categoryLabelKey, cleanServiceName, formatRM, normalizePrice, OTHER_SERVICE, SERVICE_CATEGORIES, SERVICE_PRESETS, serviceEmoji, serviceNameKey, titleCase, translateServiceName, waLink } from "@/lib/constants";
 import { formatDelivery, formatTakeFromLines, parseDeliverTo } from "@/lib/jobFormat";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -820,7 +820,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-start gap-2">
             <div className="min-w-0">
               <Link href={`/job/${job.id}`} className="text-[15px] font-bold font-display break-words hover:text-teal transition-colors">
-                {titleCase(job.serviceType)}
+                {translateServiceName(t, job.serviceType)}
               </Link>
               <div className="mt-1.5 space-y-1 text-[12.5px]">
                 <div className="leading-snug">
@@ -1016,7 +1016,7 @@ export default function DashboardPage() {
                     {toast.kind !== "cancelled" && toast.job.serviceType && (
                       <>
                         <span className="text-teal font-semibold">
-                          {titleCase(toast.job.serviceType)}
+                          {translateServiceName(t, toast.job.serviceType)}
                         </span>
                         <span className="mx-1.5 text-line">·</span>
                         {toast.job.takeFrom} → {toast.job.deliverTo}
@@ -1217,7 +1217,7 @@ export default function DashboardPage() {
               {serviceEmoji(job.serviceType)}
             </span>
             <Link href={`/job/${job.id}`} className="text-[14px] font-bold font-display text-ink break-words hover:text-teal transition-colors">
-              {titleCase(job.serviceType)}
+              {translateServiceName(t, job.serviceType)}
             </Link>
           </div>
           <span
@@ -1425,7 +1425,7 @@ export default function DashboardPage() {
                   {toast.kind === "broadcast" ? t("dash.run.newBroadcastToast") : t("dash.run.newRequestToast")}
                 </div>
                 <div className="text-[11.5px] text-slate mt-0.5">
-                  <span className="text-orange font-semibold">{titleCase(toast.job.serviceType)}</span>
+                  <span className="text-orange font-semibold">{translateServiceName(t, toast.job.serviceType)}</span>
                   <span className="mx-1.5 text-line">·</span>
                   {toast.job.takeFrom} → {toast.job.deliverTo}
                   {toast.kind === "broadcast" && (
@@ -1510,7 +1510,7 @@ export default function DashboardPage() {
             <div className="min-w-0 flex-1">
               <div className="text-[13.5px] font-bold text-ink">{t("dash.run.gotJob")}</div>
               <div className="text-[11.5px] text-slate mt-0.5">
-                <span className="text-teal font-semibold">{titleCase(toast.job.serviceType)}</span>
+                <span className="text-teal font-semibold">{translateServiceName(t, toast.job.serviceType)}</span>
                 <span className="mx-1.5 text-line">·</span>
                 {toast.job.takeFrom} → {toast.job.deliverTo}
               </div>
@@ -1570,7 +1570,7 @@ export default function DashboardPage() {
                 {t("job.status.confirmed")}
               </span>
             </div>
-            <div className="text-[15px] font-bold font-display">{titleCase(active.serviceType)}</div>
+            <div className="text-[15px] font-bold font-display">{translateServiceName(t, active.serviceType)}</div>
             <RouteInfo job={active} variant="current" />
             {noteData.services.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -1579,7 +1579,7 @@ export default function DashboardPage() {
                     key={i}
                     className="text-[10.5px] font-mono px-2 py-0.5 rounded-full bg-[#FDF3EE] text-orange border border-[#F5D5C4] whitespace-nowrap"
                   >
-                    + {titleCase(s)}
+                    + {translateServiceName(t, s)}
                   </span>
                 ))}
               </div>
@@ -1650,7 +1650,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-[17px] leading-none flex-shrink-0">📣</span>
                   <span className="text-[13.5px] font-bold font-display text-ink break-words">
-                    {titleCase(job.serviceType)}
+                    {translateServiceName(t, job.serviceType)}
                   </span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 bg-[#F0F8F5] text-teal">
@@ -1765,13 +1765,15 @@ export default function DashboardPage() {
                 }
               >
                 {SERVICE_CATEGORIES.map((cat) => (
-                  <optgroup key={cat.label} label={`${cat.emoji} ${cat.label}`}>
+                  <optgroup key={cat.label} label={`${cat.emoji} ${t(categoryLabelKey(cat.label))}`}>
                     {cat.services.map((name) => (
-                      <option key={name}>{name}</option>
+                      <option key={name} value={name}>
+                        {t(serviceNameKey(name))}
+                      </option>
                     ))}
                   </optgroup>
                 ))}
-                <option>{OTHER_SERVICE}</option>
+                <option value={OTHER_SERVICE}>{t(serviceNameKey(OTHER_SERVICE))}</option>
               </select>
               {isOther && (
                 <>

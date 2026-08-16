@@ -8,6 +8,7 @@ import LoadingState from "@/components/LoadingState";
 import { fetchNotifications, markAllNotificationsRead } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { translateServiceName } from "@/lib/constants";
 import type { AppNotification } from "@/lib/types";
 
 const KIND_STYLE: Record<string, { emoji: string; tile: string; bar: string }> = {
@@ -22,6 +23,28 @@ const KIND_STYLE: Record<string, { emoji: string; tile: string; bar: string }> =
 };
 
 const KIND_FALLBACK = { emoji: "🔔", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" };
+
+// Stored notification titles/bodies come from the DB in English; translate
+// them by kind so BM users see natural text.
+const KIND_TITLE_KEY: Record<string, string> = {
+  new_request: "notif.newRequest",
+  new_broadcast: "notif.newBroadcast",
+  accepted: "notif.accepted",
+  done: "notif.done",
+  expired: "notif.expired",
+  cancelled: "notif.cancelled",
+  declined: "notif.declined",
+  broadcast_taken: "notif.requestTaken",
+};
+
+function notifTitle(t: (k: string) => string, n: AppNotification): string {
+  return n.kind in KIND_TITLE_KEY ? t(KIND_TITLE_KEY[n.kind]) : n.title;
+}
+
+function notifBody(t: (k: string) => string, n: AppNotification): string {
+  if (n.kind === "broadcast_taken") return t("notif.requestTakenBody");
+  return translateServiceName(t, n.body ?? "");
+}
 
 export default function NotificationsPage() {
   const { t } = useI18n();
@@ -104,10 +127,10 @@ export default function NotificationsPage() {
                   {style.emoji}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[12.5px] font-semibold text-ink break-words">{n.title}</div>
+                  <div className="text-[12.5px] font-semibold text-ink break-words">{notifTitle(t, n)}</div>
                   {n.body && (
                     <div className="text-[11.5px] text-slate mt-0.5 leading-snug break-words">
-                      {n.body}
+                      {notifBody(t, n)}
                     </div>
                   )}
                   <div className="text-[10px] font-mono text-slate mt-1.5">

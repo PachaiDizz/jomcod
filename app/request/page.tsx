@@ -220,7 +220,7 @@ function RequestForm() {
             <div>
               <div className="text-xs text-slate mb-1">{t("req.pricing", { name: runner.name.split(" ")[0] })}</div>
               <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-paper2 text-ink">
-                {pricingLabel(firstService.pricing.model)}
+                {t(pricingLabel(firstService.pricing.model))}
               </span>
             </div>
             <span className="font-mono font-bold text-[17px]">
