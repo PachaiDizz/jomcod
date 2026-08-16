@@ -1496,7 +1496,11 @@ export default function DashboardPage() {
               variant="primary"
               className="w-auto px-4 py-2 text-[11.5px] rounded-[10px] flex-1"
               onClick={() => {
-                claimJob(toast.job);
+                if (toast.kind === "broadcast") {
+                  claimJob(toast.job);
+                } else {
+                  changeJobStatus(toast.job, "confirmed");
+                }
                 setToast(null);
               }}
             >
