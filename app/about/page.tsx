@@ -44,7 +44,9 @@ export default function AboutPage() {
           <Md text={t("about.community1")} />
         </p>
         <div className="mt-3 rounded-xl border border-teal/30 bg-teal/[0.06] px-4 py-3">
-          <div className="font-bold mb-1.5 text-[13.5px]">{t("about.locations")}</div>
+          <div className="font-bold mb-1.5 text-[13.5px]">
+            <Md text={t("about.locations")} />
+          </div>
           <ul className="list-disc pl-5 space-y-1 text-[13px]">
             <li>{t("guide.area1")}</li>
             <li>{t("guide.area2")}</li>
@@ -111,7 +113,9 @@ export default function AboutPage() {
         <h2 className="text-[17px] font-bold font-display mb-2.5">{t("about.appInfo")}</h2>
         <div className="flex items-center justify-between text-[13px] border-b border-line pb-2.5 mb-2.5">
           <span className="text-slate">{t("about.appName")}</span>
-          <span className="font-mono font-bold text-ink">{t("about.version")}</span>
+          <span className="font-mono font-bold text-ink">
+            <Md text={t("about.version")} />
+          </span>
         </div>
         <div className="flex items-center justify-between text-[13px]">
           <span className="text-slate">{t("about.copyright")}</span>
