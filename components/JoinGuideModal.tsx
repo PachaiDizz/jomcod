@@ -6,19 +6,28 @@ import Button from "@/components/Button";
 import Md from "@/components/Md";
 import { useI18n } from "@/lib/i18n";
 
-// Full "before you join" guide shown as a modal the FIRST time someone tries
-// to sign up. Once accepted it is remembered (localStorage) so it never
-// blocks them again.
+export type GuideRole = "runner" | "community";
+
+const STEPS: Record<GuideRole, number> = { runner: 6, community: 5 };
+const SAFE: Record<GuideRole, number> = { runner: 5, community: 6 };
+const INTRO: Record<GuideRole, number> = { runner: 2, community: 3 };
+
+// Role-specific "how things work" guide shown before someone signs up, and
+// re-openable from the nav. Which guide you see matches the role you picked
+// (or the role of the signed-in user).
 export default function JoinGuideModal({
   onAccept,
   onClose,
   acceptLabel,
+  role = "community",
 }: {
   onAccept: () => void;
   onClose?: () => void;
   acceptLabel?: string;
+  role?: GuideRole;
 }) {
   const { t } = useI18n();
+  const k = role === "runner" ? "gr" : "gc";
 
   // Portal to <body> so `fixed inset-0` always covers the whole viewport —
   // inside any sticky/backdrop-blur ancestor, fixed positioning would be
@@ -42,7 +51,7 @@ export default function JoinGuideModal({
           <div className="bg-paper border border-line rounded-[20px] w-full max-w-[520px] p-5 md:p-7 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div className="text-[19px] md:text-[22px] font-bold font-display">
-                {t("guide.title")}
+                {t(`${k}.title`)}
               </div>
               <button
                 type="button"
@@ -54,79 +63,69 @@ export default function JoinGuideModal({
               </button>
             </div>
             <p className="text-[12.5px] leading-relaxed text-slate mt-1 mb-4">
-              {t("guide.sub")}
+              {t(`${k}.sub`)}
             </p>
 
             <div className="space-y-4 text-[13px] leading-relaxed text-ink">
-              <p><Md text={t("guide.p1")} /></p>
-              <p>
-                {t("guide.p2")} <b>{t("guide.p2Bold")}</b>
-              </p>
-              <p><Md text={t("guide.p3")} /></p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>{t("guide.list1")}</li>
-                <li>{t("guide.list2")}</li>
-                <li>{t("guide.list3")}</li>
-                <li>{t("guide.list4")}</li>
-                <li>{t("guide.list5")}</li>
-              </ul>
-              <p>
-                <Md text={t("guide.p4")} /> <b>{t("guide.p4Bold")}</b>
-              </p>
-              <p>
-                {t("guide.p5")} <b>{t("guide.p5Bold")}</b> {t("guide.p5Post")}
-              </p>
+              {Array.from({ length: INTRO[role] }, (_, i) => (
+                <p key={i}>
+                  <Md text={t(`${k}.intro${i + 1}`)} />
+                </p>
+              ))}
+
+              <div className="font-bold">{t(`${k}.howTitle`)}</div>
+              <ol className="list-decimal pl-5 space-y-1">
+                {Array.from({ length: STEPS[role] }, (_, i) => (
+                  <li key={i}>
+                    <b>{t(`${k}.step${i + 1}`)}</b> — {t(`${k}.step${i + 1}Desc`)}
+                  </li>
+                ))}
+              </ol>
 
               <div className="rounded-xl border border-teal/30 bg-teal/[0.06] px-4 py-3">
-                <div className="font-bold mb-1.5">{t("guide.openTo")}</div>
+                <div className="font-bold mb-1.5">{t(`${k}.parcelTitle`)}</div>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Felda Desa Kencana</li>
-                  <li>Felda Wilayah Sahabat</li>
+                  <li>
+                    <Md text={t(`${k}.parcel1`)} />
+                  </li>
+                  <li>
+                    <Md text={t(`${k}.parcel2`)} />
+                  </li>
+                  <li>
+                    <Md text={t(`${k}.parcel3`)} />
+                  </li>
                 </ul>
               </div>
 
-              <div className="font-bold">{t("guide.howWorks")}</div>
-              <ol className="list-decimal pl-5 space-y-1">
-                <li>{t("guide.step1")}</li>
-                <li>{t("guide.step2")}</li>
-                <li>{t("guide.step3")}</li>
-                <li>{t("guide.step4")}</li>
-                <li>{t("guide.step5")}</li>
-              </ol>
-
-              <div className="font-bold">{t("guide.reminders")}</div>
-              <ul className="list-disc pl-5 space-y-1.5">
+              <div className="font-bold">{t(`${k}.payTitle`)}</div>
+              <ul className="list-disc pl-5 space-y-1">
                 <li>
-                  <Md text={t("guide.r1")} /> <b>{t("guide.r1Bold")}</b>.
+                  <Md text={t(`${k}.pay1`)} />
                 </li>
                 <li>
-                  {t("guide.r2")} <b>{t("guide.r2Bold")}</b>
-                </li>
-                <li>
-                  {t("guide.r3")} <b>{t("guide.r3Bold")}</b>. <Md text={t("guide.r3Post")} />
-                </li>
-                <li>
-                  {t("guide.r4")} <b>{t("guide.r4Bold")}</b> {t("guide.r4Post")}
-                </li>
-                <li>
-                  {t("guide.r5")} <b><Md text={t("guide.r5Bold")} /></b> {t("guide.r5Post")}
-                </li>
-                <li>
-                  {t("guide.r6")} <b>{t("guide.r6Bold")}</b> {t("guide.r6Post")}
-                </li>
-                <li>
-                  <Md text={t("guide.r7")} /> <b><Md text={t("guide.r7Bold")} /></b>.
-                </li>
-                <li>
-                  <Md text={t("guide.r8")} /> <b><Md text={t("guide.r8Bold")} /></b>
+                  <Md text={t(`${k}.pay2`)} />
                 </li>
               </ul>
 
+              <div className="font-bold">{t(`${k}.safeTitle`)}</div>
+              <ul className="list-disc pl-5 space-y-1.5">
+                {Array.from({ length: SAFE[role] }, (_, i) => (
+                  <li key={i}>
+                    <Md text={t(`${k}.safe${i + 1}`)} />
+                  </li>
+                ))}
+              </ul>
+
+              <div className="font-bold">{t(`${k}.goodTitle`)}</div>
               <p>
-                {t("guide.p6")} <b>{t("guide.p6Bold")}</b>
+                <Md text={t(`${k}.good1`)} />
               </p>
               <p className="text-slate">
-                {t("guide.p7")} <b className="text-ink"><Md text={t("guide.p7Bold")} /></b>
+                <Md text={t(`${k}.good2`)} />
+              </p>
+
+              <p className="font-bold text-center pt-1">
+                <Md text={t(`${k}.footer`)} />
               </p>
             </div>
 

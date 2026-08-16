@@ -483,7 +483,9 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {showGuide && <JoinGuideModal onAccept={handleAcceptGuide} onClose={() => setShowGuide(false)} />}
+      {showGuide && (
+        <JoinGuideModal role={role} onAccept={handleAcceptGuide} onClose={() => setShowGuide(false)} />
+      )}
       <InstallBanner />
     </div>
   );

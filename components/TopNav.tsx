@@ -212,7 +212,11 @@ export default function TopNav() {
       )}
 
       {showGuide && (
-        <JoinGuideModal onAccept={() => setShowGuide(false)} acceptLabel={t("guide.acceptNav")} />
+        <JoinGuideModal
+          role={role === "runner" ? "runner" : "community"}
+          onAccept={() => setShowGuide(false)}
+          acceptLabel={t("guide.acceptNav")}
+        />
       )}
     </header>
   );
