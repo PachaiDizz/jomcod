@@ -30,6 +30,7 @@ export const en: Record<string, string> = {
   "nav.news": "News",
   "nav.settings": "Settings",
   "nav.admin": "Admin",
+  "nav.about": "About",
   "nav.guide": "📋 Guide",
   "nav.signOut": "Sign out",
   "nav.directRequest": "Direct request",
@@ -542,6 +543,8 @@ export const en: Record<string, string> = {
   "set.scheduleSaved": "Schedule saved ✓",
   "set.saveFailed": "Couldn't save — please try again.",
   "set.profileSaveFailed": "Couldn't save your profile. Please try again.",
+  "set.aboutHint": "About JomCOD, our story, and how to get in touch.",
+  "set.adminHint": "Approve runners, moderate jobs, and review reports.",
   "set.loading": "Loading settings…",
 
   // ── Admin ─────────────────────────────────────────────────────────────────
@@ -617,8 +620,7 @@ export const en: Record<string, string> = {
   "report.reason7": "Other",
 
   // ── News ──────────────────────────────────────────────────────────────────
-  "news.title": "Community news",
-  "news.sub": "Things happening around Malaysia that neighbours talk about.",
+  "news.title": "Community news",  "news.sub": "Things happening around Malaysia that neighbours talk about.",
   "news.loadError": "Couldn't load live news right now.",
   "news.placeholder": "Showing a placeholder for now.",
   "news.loading": "Loading news…",
@@ -626,6 +628,41 @@ export const en: Record<string, string> = {
     "News is pulled from a public Google News feed. JomCOD doesn't own these stories — tap one to read it on the source site.",
   "news.fallback1": "JomCOD is live in your neighbourhood — request a runner now",
   "news.fallback2": "New runners can sign up in under a minute",
+
+  // ── About ─────────────────────────────────────────────────────────────────
+  "about.title": "About JomCOD",
+  "about.tagline": "Neighbours helping neighbours. ❤️",
+  "about.intro1":
+    "**JomCOD** is a simple community platform that helps neighbours find and connect with people nearby who are available to help with everyday errands.",
+  "about.intro2":
+    "Whether you need a parcel picked up, groceries collected, or a small favour — JomCOD makes it easier to find someone who can help.",
+  "about.why": "Why JomCOD?",
+  "about.why1": "Sometimes, you just need a helping hand nearby — but you don't know who is available.",
+  "about.why2": "JomCOD was created to make that easier.",
+  "about.motto": "**Find someone. Ask for help. Connect. Get it done.**",
+  "about.community": "Our Community",
+  "about.community1": "JomCOD is built to stay local and close to the community.",
+  "about.locations": "📍 **Currently available in:**",
+  "about.community2": "We're starting small, with the hope of growing together with the community.",
+  "about.story": "A Little Story",
+  "about.storyTimeline": "Started in November 2025.\nBuilt with the community in mind.\nReleased in August 2026.",
+  "about.story2":
+    "What began as a simple idea — *“Who nearby is available to help?”* — has finally become JomCOD.",
+  "about.story3":
+    "After months of planning, building, testing, and improving, we're happy to finally share it with the community.",
+  "about.story4": "**Thank you for your support, feedback, and for being part of the journey. ❤️**",
+  "about.help": "Need Help?",
+  "about.help1":
+    "Have a question, found something that's not working, or want to share an idea?",
+  "about.help2": "We're always happy to hear from you.",
+  "about.contactAdmin": "Contact JomCOD Admin",
+  "about.sendFeedback": "Send Feedback",
+  "about.reportProblem": "Report a Problem",
+  "about.appInfo": "App Information",
+  "about.appName": "JomCOD",
+  "about.version": "Version **1.0.0**",
+  "about.copyright": "© 2026 JomCOD",
+  "about.madeWith": "Made with ❤️ for our community.",
 
   // ── Request fields ────────────────────────────────────────────────────────
   "rf.serviceType": "Service Type",

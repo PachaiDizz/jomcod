@@ -30,6 +30,7 @@ export const bm: Record<string, string> = {
   "nav.news": "Berita",
   "nav.settings": "Tetapan",
   "nav.admin": "Admin",
+  "nav.about": "Tentang",
   "nav.guide": "📋 Panduan",
   "nav.signOut": "Log keluar",
   "nav.directRequest": "Permintaan terus",
@@ -538,6 +539,8 @@ export const bm: Record<string, string> = {
   "set.scheduleSaved": "Jadual disimpan ✓",
   "set.saveFailed": "Tidak dapat menyimpan — sila cuba lagi.",
   "set.profileSaveFailed": "Tidak dapat menyimpan profil anda. Sila cuba lagi.",
+  "set.aboutHint": "Tentang JomCOD, kisah kami, dan cara menghubungi kami.",
+  "set.adminHint": "Luluskan runner, sederhanakan tugasan, dan semak laporan.",
   "set.loading": "Memuatkan tetapan…",
 
   // ── Admin ─────────────────────────────────────────────────────────────────
@@ -622,6 +625,41 @@ export const bm: Record<string, string> = {
     "Berita diambil daripada suapan Google News awam. JomCOD tidak memiliki cerita ini — ketik satu untuk membacanya di laman sumber.",
   "news.fallback1": "JomCOD kini aktif di kawasan anda — minta bantuan runner sekarang",
   "news.fallback2": "Runner baharu boleh mendaftar dalam masa kurang seminit",
+
+  // ── About ─────────────────────────────────────────────────────────────────
+  "about.title": "Tentang JomCOD",
+  "about.tagline": "Jiran membantu jiran. ❤️",
+  "about.intro1":
+    "**JomCOD** ialah platform komuniti ringkas yang membantu jiran mencari dan berhubung dengan orang berdekatan yang bersedia membantu urusan harian.",
+  "about.intro2":
+    "Sama ada anda perlu parcel diambil, barangan runcit dikutip, atau kebaikan kecil — JomCOD memudahkan anda mencari seseorang yang boleh membantu.",
+  "about.why": "Kenapa JomCOD?",
+  "about.why1": "Kadangkala, anda hanya perlukan bantuan berdekatan — tetapi anda tidak tahu siapa yang tersedia.",
+  "about.why2": "JomCOD dicipta untuk memudahkan itu.",
+  "about.motto": "**Cari seseorang. Minta bantuan. Berhubung. Selesai.**",
+  "about.community": "Komuniti Kami",
+  "about.community1": "JomCOD dibina untuk kekal setempat dan akrab dengan komuniti.",
+  "about.locations": "📍 **Kini tersedia di:**",
+  "about.community2": "Kami bermula secara kecil-kecilan, dengan harapan untuk membesar bersama komuniti.",
+  "about.story": "Sedikit Kisah",
+  "about.storyTimeline": "Bermula November 2025.\nDibina dengan komuniti dalam fikiran.\nDilancarkan Ogos 2026.",
+  "about.story2":
+    "Apa yang bermula sebagai idea mudah — *“Siapa berdekatan yang tersedia untuk membantu?”* — akhirnya menjadi JomCOD.",
+  "about.story3":
+    "Selepas berbulan-bulan merancang, membina, menguji, dan menambah baik, kami gembira akhirnya dapat berkongsi dengan komuniti.",
+  "about.story4": "**Terima kasih atas sokongan, maklum balas, dan menjadi sebahagian daripada perjalanan ini. ❤️**",
+  "about.help": "Perlu Bantuan?",
+  "about.help1":
+    "Ada soalan, menemui sesuatu yang tidak berfungsi, atau mahu berkongsi idea?",
+  "about.help2": "Kami sentiasa gembira mendengar daripada anda.",
+  "about.contactAdmin": "Hubungi Admin JomCOD",
+  "about.sendFeedback": "Hantar Maklum Balas",
+  "about.reportProblem": "Laporkan Masalah",
+  "about.appInfo": "Maklumat Aplikasi",
+  "about.appName": "JomCOD",
+  "about.version": "Versi **1.0.0**",
+  "about.copyright": "© 2026 JomCOD",
+  "about.madeWith": "Dibuat dengan ❤️ untuk komuniti kami.",
 
   // ── Request fields ────────────────────────────────────────────────────────
   "rf.serviceType": "Jenis Perkhidmatan",

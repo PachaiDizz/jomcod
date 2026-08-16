@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import TimePicker from "@/components/TimePicker";
@@ -93,6 +94,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [scheduleMsg, setScheduleMsg] = useState("");
   const [error, setError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -107,6 +109,7 @@ export default function SettingsPage() {
 
       const profile = await getProfile();
       if (profile) {
+        setIsAdmin(!!profile.is_admin);
         setUsername(profile.username ?? md.username ?? "");
         setWhatsapp(profile.whatsapp ?? md.whatsapp ?? "");
         setArea(profile.area ?? md.area ?? "");
@@ -317,6 +320,30 @@ export default function SettingsPage() {
               <span className="text-[12px] capitalize text-slate font-mono">{role}</span>
             </div>
           </div>
+
+          <Link
+            href="/about"
+            className="flex items-center justify-between gap-2 bg-white border border-line rounded-[12px] p-3.5 mb-4 hover:border-teal/50 transition-colors"
+          >
+            <div>
+              <div className="text-[13px] font-semibold">ℹ️ {t("nav.about")}</div>
+              <div className="text-[11px] text-slate mt-0.5">{t("set.aboutHint")}</div>
+            </div>
+            <span className="text-slate">→</span>
+          </Link>
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center justify-between gap-2 bg-white border border-orange/30 rounded-[12px] p-3.5 mb-4 hover:border-orange/60 transition-colors"
+            >
+              <div>
+                <div className="text-[13px] font-semibold text-orange">🛠 {t("nav.admin")}</div>
+                <div className="text-[11px] text-slate mt-0.5">{t("set.adminHint")}</div>
+              </div>
+              <span className="text-slate">→</span>
+            </Link>
+          )}
 
           {error && (
             <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-3">

@@ -16,6 +16,7 @@ const NAV = [
   { href: "/notifications", key: "nav.notifications" },
   { href: "/news", key: "nav.news" },
   { href: "/settings", key: "nav.settings" },
+  { href: "/about", key: "nav.about" },
 ];
 
 export default function TopNav() {
