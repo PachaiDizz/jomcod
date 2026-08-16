@@ -361,6 +361,9 @@ export const bm: Record<string, string> = {
   "dash.run.servicesReminderTitle": "⚠️ Tambah perkhidmatan & harga anda",
   "dash.run.servicesReminderBody":
     "Jangan lupa tambah sekurang-kurangnya satu perkhidmatan dengan harganya. Komuniti melihat tanda harga anda sebelum membuat permintaan — tiada perkhidmatan, tiada permintaan.",
+  "dash.run.goLiveBlockedTitle": "⚠️ Anda belum boleh aktif",
+  "dash.run.goLiveBlockedBody":
+    "Tambah sekurang-kurangnya satu perkhidmatan dengan harga dalam \"Perkhidmatan & harga anda\" di bawah sebelum menjadi tersedia — komuniti perlu melihat tanda harga anda.",
   "dash.run.serviceName": "Nama Perkhidmatan",
   "dash.run.writeOwn": "Tulis nama perkhidmatan anda sendiri",
   "dash.run.noCourierNames":

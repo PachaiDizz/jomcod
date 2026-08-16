@@ -382,6 +382,7 @@ export default function DashboardPage() {
   const [showRatingFor, setShowRatingFor] = useState<string | null>(null);
   const [approved, setApproved] = useState<boolean | null>(null);
   const [confirmingCancel, setConfirmingCancel] = useState<string | null>(null);
+  const [goLiveBlocked, setGoLiveBlocked] = useState(false);
 
   // Refs mirror the availability-relevant state so the schedule heartbeat can
   // read the latest values without stale closures.
@@ -767,6 +768,20 @@ export default function DashboardPage() {
   const runnerEarned = useMemo(() => computeEarned(jobs, services), [jobs, services]);
 
   const setRunnerStatus = async (value: RunnerStatus) => {
+    // Block going live without at least one service that has a price.
+    if (value === "available") {
+      const hasPricedService = services.some((s) => {
+        if (!s.name.trim()) return false;
+        if (s.pricing.model === "custom")
+          return !!s.pricing.description?.trim();
+        return typeof s.pricing.price === "number" && s.pricing.price > 0;
+      });
+      if (!hasPricedService) {
+        setToast({ kind: "error", message: t("dash.run.goLiveBlockedBody") });
+        setGoLiveBlocked(true);
+        return;
+      }
+    }
     const prev = statusRef.current;
     setStatusAndRef(value);
     const res = await setAvailability(value);
@@ -798,6 +813,11 @@ export default function DashboardPage() {
     await updateProfile({ services: cleaned as unknown as ProfileRow["services"] });
     setServices(cleaned);
     setServicesSaved(true);
+    if (goLiveBlocked && cleaned.some((s) => s.pricing.model === "custom"
+      ? !!s.pricing.description?.trim()
+      : typeof s.pricing.price === "number" && s.pricing.price > 0)) {
+      setGoLiveBlocked(false);
+    }
   };
 
   if (!loaded) {
@@ -1413,6 +1433,19 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {goLiveBlocked && (
+        <div className="rounded-[10px] border border-orange/40 bg-[#FDEFE3] px-3.5 py-3 mb-4">
+          <div className="text-[12.5px] font-bold text-orange mb-0.5">{t("dash.run.goLiveBlockedTitle")}</div>
+          <div className="text-[11.5px] text-slate leading-snug">{t("dash.run.goLiveBlockedBody")}</div>
+          <button
+            onClick={() => setGoLiveBlocked(false)}
+            className="mt-2 text-[11px] font-semibold text-orange underline"
+          >
+            {t("common.ok")}
+          </button>
+        </div>
+      )}
 
       {toast && (toast.kind === "new" || toast.kind === "broadcast") && (
         <div className="bg-white border-[1.5px] border-orange/40 rounded-card p-4 mb-4 shadow-[0_16px_40px_-16px_rgba(232,93,44,0.45)] overflow-hidden relative">
