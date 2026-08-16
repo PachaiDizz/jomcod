@@ -192,7 +192,12 @@ export const bm: Record<string, string> = {
   "install.banner": "📱 Pasang JomCOD di telefon anda",
   "install.bannerBody": "Dapatkan aplikasi di skrin utama anda untuk pengalaman yang lebih pantas dan kemas — tanpa perlu tab pelayar.",
   "install.install": "Pasang aplikasi",
-  "install.how": "Ketuk \"Pasang aplikasi\" di bawah — kemudian pilih \"Tambah ke Skrin Utama\" daripada menu.",
+  "install.how": "Ketuk \"Pasang aplikasi\" untuk arahan langkah demi langkah.",
+  "install.iosIntro": "Apple tidak membenarkan pemasangan automatik, tetapi ia mudah dengan Safari:",
+  "install.iosStep1": "Ketuk butang Kongsi (segi empat dengan anak panah ke atas) di bar alat Safari.",
+  "install.iosStep2": "Tatal ke bawah dan ketuk \"Tambah ke Skrin Utama\".",
+  "install.iosStep3": "Ketuk \"Tambah\" — JomCOD kini muncul di skrin utama anda.",
+  "install.gotIt": "Faham",
   "install.later": "Bukan sekarang",
 
   // ── QR share card ─────────────────────────────────────────────────────────

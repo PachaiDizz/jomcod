@@ -8,32 +8,40 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
 
-const STORAGE_KEY = "jomcod_install_dismissed";
+// Mobile install nudge.
+//  - Android/Chrome: auto-triggers the native install prompt once.
+//  - iOS: shows a step-by-step guide (Apple provides no install API and the
+//    JS share sheet does NOT include "Add to Home Screen" — only Safari's
+//    own menu does, so we walk the user through it).
+// Once installed, a permanent flag stops the banner forever — even if the
+// site is later opened in a normal browser tab (not standalone).
+const INSTALLED_KEY = "jomcod_installed";
+const DISMISSED_KEY = "jomcod_install_dismissed";
 
-// Mobile install nudge. On Android/Chrome it auto-triggers the native install
-// prompt; on iOS it opens the Share sheet (Add to Home Screen). The banner
-// reappears each session until the app is actually installed — "Not now" only
-// hides it for the current visit (sessionStorage), never permanently.
 export default function InstallBanner() {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
-    // Already running as an installed PWA (Android Chrome standalone, iOS
-    // home-screen web app, desktop installed app) → never show the nudge.
+    // Running inside the installed PWA (standalone) → installed for good.
     try {
       const standalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         (window.navigator as { standalone?: boolean }).standalone === true;
-      if (standalone) return;
+      if (standalone) {
+        localStorage.setItem(INSTALLED_KEY, "1");
+        return;
+      }
     } catch {
       // ignore
     }
 
+    // Already installed before (even if opened in a normal tab now) → no nudge.
     try {
-      if (sessionStorage.getItem(STORAGE_KEY) === "1") return;
+      if (localStorage.getItem(INSTALLED_KEY) === "1") return;
     } catch {
       // ignore storage errors
     }
@@ -47,9 +55,15 @@ export default function InstallBanner() {
     const iOS = /iPad|iPhone|iPod/i.test(ua);
     setIsIOS(iOS);
 
+    if (iOS) {
+      // iOS never fires beforeinstallprompt — show the guide after a beat.
+      const timer = setTimeout(() => setVisible(true), 1500);
+      return () => clearTimeout(timer);
+    }
+
     // Android/Chrome: wait for the native prompt, then try to auto-install
-    // once. If it's accepted, great — no banner needed. If dismissed (or the
-    // browser blocks a programmatic prompt), fall back to the banner button.
+    // once. If accepted, mark installed — no banner needed again. If dismissed
+    // or blocked, fall back to the banner button.
     const handler = (e: Event) => {
       e.preventDefault();
       const ev = e as BeforeInstallPromptEvent;
@@ -57,23 +71,22 @@ export default function InstallBanner() {
       try {
         ev.prompt();
         ev.userChoice.then((choice) => {
-          if (choice.outcome !== "accepted") setVisible(true);
+          if (choice.outcome === "accepted") {
+            try {
+              localStorage.setItem(INSTALLED_KEY, "1");
+            } catch {
+              // ignore
+            }
+            setVisible(false);
+          } else {
+            setVisible(true);
+          }
         });
       } catch {
         setVisible(true);
       }
     };
     window.addEventListener("beforeinstallprompt", handler);
-
-    if (iOS) {
-      // iOS never fires beforeinstallprompt — show share-sheet instructions.
-      const timer = setTimeout(() => setVisible(true), 1500);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener("beforeinstallprompt", handler);
-      };
-    }
-
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
@@ -81,9 +94,9 @@ export default function InstallBanner() {
 
   const dismiss = () => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, "1");
+      sessionStorage.setItem(DISMISSED_KEY, "1");
     } catch {
-      // ignore storage errors
+      // ignore
     }
     setVisible(false);
   };
@@ -93,29 +106,54 @@ export default function InstallBanner() {
     try {
       deferred.prompt();
       await deferred.userChoice;
+      try {
+        localStorage.setItem(INSTALLED_KEY, "1");
+      } catch {
+        // ignore
+      }
     } catch {
       // prompt can throw if the event is no longer valid — ignore
     } finally {
-      dismiss();
+      setVisible(false);
     }
   };
 
-  // iOS: no install API exists, so "Yes" opens the native Share sheet where
-  // "Add to Home Screen" lives. Best we can do on Apple devices.
-  const handleIOSInstall = async () => {
-    try {
-      if (typeof navigator.share === "function") {
-        await navigator.share({ title: "JomCOD", url: window.location.origin });
-      } else {
-        // No share API (older iOS Safari) — fall back to copy.
-        await navigator.clipboard.writeText(window.location.origin);
-      }
-    } catch {
-      // user cancelled the share sheet — keep banner open? no, they chose Yes
-    } finally {
-      dismiss();
-    }
+  const handleIOSInstall = () => {
+    setShowGuide(true);
+    setVisible(false);
   };
+
+  // iOS step-by-step guide.
+  if (showGuide) {
+    return (
+      <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
+        <div className="bg-paper border border-line rounded-[18px] w-full max-w-[360px] p-5 shadow-2xl">
+          <div className="text-[16px] font-bold font-display mb-1">{t("install.banner")}</div>
+          <div className="text-[12px] text-slate mb-3.5 leading-snug">{t("install.iosIntro")}</div>
+          <ol className="space-y-3 text-[13px] text-ink">
+            <li className="flex gap-2.5">
+              <span className="w-6 h-6 flex-shrink-0 rounded-full bg-orange text-white text-[11px] font-bold flex items-center justify-center">1</span>
+              <span>{t("install.iosStep1")}</span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="w-6 h-6 flex-shrink-0 rounded-full bg-orange text-white text-[11px] font-bold flex items-center justify-center">2</span>
+              <span>{t("install.iosStep2")}</span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="w-6 h-6 flex-shrink-0 rounded-full bg-orange text-white text-[11px] font-bold flex items-center justify-center">3</span>
+              <span>{t("install.iosStep3")}</span>
+            </li>
+          </ol>
+          <button
+            onClick={() => setShowGuide(false)}
+            className="w-full mt-5 bg-ink text-paper rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold"
+          >
+            {t("install.gotIt")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-4 md:left-auto md:max-w-sm z-50 bg-ink text-paper rounded-[14px] p-3.5 shadow-[0_20px_50px_-16px_rgba(28,35,33,0.5)] border border-white/10">

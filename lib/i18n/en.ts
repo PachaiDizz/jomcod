@@ -194,7 +194,12 @@ export const en: Record<string, string> = {
   "install.banner": "📱 Install JomCOD on your phone",
   "install.bannerBody": "Get the app on your home screen for a faster, cleaner experience — no browser tab needed.",
   "install.install": "Install app",
-  "install.how": "Tap \"Install app\" below — then choose \"Add to Home Screen\" from the menu.",
+  "install.how": "Tap \"Install app\" for step-by-step instructions.",
+  "install.iosIntro": "Apple doesn't allow automatic install, but it's easy with Safari:",
+  "install.iosStep1": "Tap the Share button (the square with the up arrow) in Safari's toolbar.",
+  "install.iosStep2": "Scroll down and tap \"Add to Home Screen\".",
+  "install.iosStep3": "Tap \"Add\" — JomCOD now appears on your home screen.",
+  "install.gotIt": "Got it",
   "install.later": "Not now",
 
   // ── QR share card ─────────────────────────────────────────────────────────
