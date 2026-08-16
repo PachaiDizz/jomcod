@@ -85,7 +85,7 @@ export function isItemListService(serviceType: string): boolean {
 
 export function isParcelService(serviceType: string): boolean {
   const t = serviceType.toLowerCase();
-  return t.includes("parcel") && !t.includes("drop");
+  return t.includes("parcel") && !t.includes("document");
 }
 
 const newId = () =>
@@ -439,10 +439,16 @@ export default function RequestFields({
       <div className="mb-3.5">
         <label className="text-xs font-semibold mb-1.5 block">{t("rf.pickupDetails")}</label>
         {isParcelService(selected) ? (
-          <CourierRows
-            couriers={details.couriers}
-            onChange={(couriers) => set({ couriers })}
-          />
+          <>
+            <CourierRows
+              couriers={details.couriers}
+              onChange={(couriers) => set({ couriers })}
+            />
+            <div className="rounded-[10px] border border-orange/30 bg-[#FDF3EE] px-3 py-2.5 mt-2">
+              <div className="text-[11.5px] font-bold text-orange mb-0.5">{t("rf.parcelProofTitle")}</div>
+              <div className="text-[11px] text-slate leading-snug">{t("rf.parcelProofNote")}</div>
+            </div>
+          </>
         ) : (
           <>
             <label className="text-xs font-semibold mb-1.5 block">{t("rf.pickupLocation")}</label>

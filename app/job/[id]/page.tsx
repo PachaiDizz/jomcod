@@ -9,6 +9,7 @@ import LoadingState from "@/components/LoadingState";
 import ItemList from "@/components/ItemList";
 import RouteInfo from "@/components/RouteInfo";
 import { normalizePrice, serviceEmoji, translateServiceName, waLink } from "@/lib/constants";
+import { isParcelService } from "@/components/RequestFields";
 import { createClient } from "@/lib/supabase/client";
 import {
   acceptJob,
@@ -312,6 +313,15 @@ export default function JobDetailPage() {
       {error && (
         <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-3">{error}</div>
       )}
+
+      {isRequester &&
+        (job.status === "confirmed" || job.status === "done") &&
+        isParcelService(job.serviceType) && (
+          <div className="rounded-[10px] border border-orange/30 bg-[#FDF3EE] px-3.5 py-3 mb-3">
+            <div className="text-[12px] font-bold text-orange mb-0.5">{t("rf.parcelProofTitle")}</div>
+            <div className="text-[11.5px] text-slate leading-snug">{t("rf.parcelProofNote")}</div>
+          </div>
+        )}
 
       {wa && (
         <a

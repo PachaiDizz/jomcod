@@ -714,4 +714,7 @@ export const en: Record<string, string> = {
   "rf.selectCourier": "Select courier…",
   "rf.removeCourier": "Remove courier",
   "rf.addCourier": "+ Add another courier",
+  "rf.parcelProofTitle": "📸 Parcel proof photo",
+  "rf.parcelProofNote":
+    "After the runner accepts, send them the proof photo from the courier (tracking / receiver details) over WhatsApp — the runner shows it to the courier to release the parcel.",
 };

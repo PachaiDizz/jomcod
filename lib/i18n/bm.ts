@@ -710,4 +710,7 @@ export const bm: Record<string, string> = {
   "rf.selectCourier": "Pilih kurier…",
   "rf.removeCourier": "Buang kurier",
   "rf.addCourier": "+ Tambah kurier lain",
+  "rf.parcelProofTitle": "📸 Foto bukti bungkusan",
+  "rf.parcelProofNote":
+    "Selepas runner menerima, hantar foto bukti daripada kurier (butiran penjejakan / penerima) melalui WhatsApp kepada runner — runner akan tunjukkan kepada kurier untuk mendapatkan bungkusan.",
 };
