@@ -1,7 +1,7 @@
 // JomCOD service worker — network-first so deployed updates always load.
 // Cache is only used as an offline fallback, so stale builds never get served.
 // Bump CACHE_NAME whenever you make big changes to clear old caches.
-const CACHE_NAME = "jomcod-cache-v6";
+const CACHE_NAME = "jomcod-cache-v7";
 // NOTE: no "/index.html" here — it redirects (307) on Vercel/Next.js, and
 // iOS Safari's cache.addAll rejects redirects, which would fail the whole
 // install and leave the service worker inactive.

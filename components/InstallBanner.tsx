@@ -10,9 +10,10 @@ interface BeforeInstallPromptEvent extends Event {
 
 const STORAGE_KEY = "jomcod_install_dismissed";
 
-// Mobile install nudge. On Android/Chrome it triggers the native install
-// prompt; on iOS (no beforeinstallprompt event) it shows share-sheet
-// instructions instead. Dismissed choice is remembered so it doesn't nag.
+// Mobile install nudge. On Android/Chrome it auto-triggers the native install
+// prompt; on iOS it opens the Share sheet (Add to Home Screen). The banner
+// reappears each session until the app is actually installed — "Not now" only
+// hides it for the current visit (sessionStorage), never permanently.
 export default function InstallBanner() {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
@@ -32,7 +33,7 @@ export default function InstallBanner() {
     }
 
     try {
-      if (localStorage.getItem(STORAGE_KEY) === "1") return;
+      if (sessionStorage.getItem(STORAGE_KEY) === "1") return;
     } catch {
       // ignore storage errors
     }
@@ -80,7 +81,7 @@ export default function InstallBanner() {
 
   const dismiss = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, "1");
+      sessionStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // ignore storage errors
     }
