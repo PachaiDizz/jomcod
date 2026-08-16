@@ -199,6 +199,7 @@ export const en: Record<string, string> = {
   "qr.title": "Share JomCOD",
   "qr.body": "Scan this code with your phone camera to open JomCOD instantly.",
   "qr.hint": "Works with any camera — no app needed.",
+  "qr.share": "Share link",
 
   // ── Time picker ───────────────────────────────────────────────────────────
   "picker.set": "Set",

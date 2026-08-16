@@ -197,6 +197,7 @@ export const bm: Record<string, string> = {
   "qr.title": "Kongsi JomCOD",
   "qr.body": "Imbas kod ini dengan kamera telefon anda untuk membuka JomCOD serta-merta.",
   "qr.hint": "Berfungsi dengan mana-mana kamera — tiada aplikasi diperlukan.",
+  "qr.share": "Kongsi pautan",
 
   // ── Time picker ───────────────────────────────────────────────────────────
   "picker.set": "Tetapkan",
