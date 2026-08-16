@@ -108,7 +108,13 @@ function RequestForm() {
     const takeFrom = buildTakeFrom(details);
     const deliverTo = buildDeliverTo(details);
     if (!takeFrom || !deliverTo) {
-      setError("Please fill in pickup and delivery details.");
+      if (!takeFrom && !deliverTo) {
+        setError(t("req.fillPickupAndDelivery"));
+      } else if (!takeFrom) {
+        setError(t("req.fillPickup"));
+      } else {
+        setError(t("req.fillDelivery"));
+      }
       return;
     }
     setSending(true);

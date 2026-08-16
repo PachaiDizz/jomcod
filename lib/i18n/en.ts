@@ -506,6 +506,9 @@ export const en: Record<string, string> = {
   "req.broadcastInstead": "Broadcast instead",
   "req.autoRevokeNote":
     "If {name} doesn't respond in 5 minutes, this request auto-revokes. You can then pick another runner directly, or broadcast to everyone available.",
+  "req.fillPickupAndDelivery": "Please fill in the pickup and delivery details.",
+  "req.fillPickup": "Please fill in the pickup details — where should the runner pick up from?",
+  "req.fillDelivery": "Please fill in the delivery details — where should the runner send it?",
   "req.loading": "Loading…",
 
   // ── Broadcast page ────────────────────────────────────────────────────────
@@ -691,6 +694,7 @@ export const en: Record<string, string> = {
   "rf.receiverPhone": "Receiver Phone (Optional):",
   "rf.enterReceiverPhone": "Enter receiver phone",
   "rf.itemsDetails": "Items / Request Details",
+  "rf.itemsDetailsOptional": "Items / Request Details (optional)",
   "rf.parcelPlaceholder":
     "e.g. Parcel under the name Ahmad, receipt number 88213",
   "rf.itemsPlaceholder": "e.g. 2 bags of rice, 1 carton of mineral water",

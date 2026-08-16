@@ -504,6 +504,9 @@ export const bm: Record<string, string> = {
   "req.broadcastInstead": "Siarkan sebaliknya",
   "req.autoRevokeNote":
     "Jika {name} tidak membalas dalam 5 minit, permintaan ini terbatal automatik. Anda kemudian boleh pilih runner lain secara terus, atau siarkan kepada semua yang tersedia.",
+  "req.fillPickupAndDelivery": "Sila isi butiran ambilan dan penghantaran.",
+  "req.fillPickup": "Sila isi butiran ambilan — di mana runner perlu mengambil barang?",
+  "req.fillDelivery": "Sila isi butiran penghantaran — ke mana runner perlu menghantar?",
   "req.loading": "Memuatkan…",
 
   // ── Broadcast page ────────────────────────────────────────────────────────
@@ -688,6 +691,7 @@ export const bm: Record<string, string> = {
   "rf.receiverPhone": "Nombor Telefon Penerima (Pilihan):",
   "rf.enterReceiverPhone": "Masukkan nombor telefon penerima",
   "rf.itemsDetails": "Barangan / Butiran Permintaan",
+  "rf.itemsDetailsOptional": "Barangan / Butiran Permintaan (pilihan)",
   "rf.parcelPlaceholder": "cth. Parcel atas nama Ahmad, nombor resit 88213",
   "rf.itemsPlaceholder": "cth. 2 guni beras, 1 kotak air mineral",
   "rf.extraService": "Perkhidmatan tambahan",

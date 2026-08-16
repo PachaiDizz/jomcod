@@ -232,7 +232,7 @@ export default function RunnerProfilePage() {
               </div>
             )}
             <Link
-              href={`/request?runner=${runner.id}`}
+              href={`/request?runner=${runner.id}&service=${encodeURIComponent(runner.services[0]?.name ?? "")}`}
               className="w-full rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-orange text-white transition-opacity hover:opacity-90"
             >
               {t("rpro.requestService")}
