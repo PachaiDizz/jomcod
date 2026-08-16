@@ -54,7 +54,7 @@ export const en: Record<string, string> = {
 
   // ── Landing ───────────────────────────────────────────────────────────────
   "home.heroTag": "// Your Local Runner Network. Mudah, Pantas, Dipercayai. Dari Jiran untuk Jiran.",
-  "home.heroTitle1": "Someone nearby",
+  "home.heroTitle1": "A nearby runner",
   "home.heroTitle2": "can run this for you.",
   "home.heroSub":
     "Groceries, parcel pickups, or a quick errand — find a runner in your area and chat with them directly on WhatsApp.",

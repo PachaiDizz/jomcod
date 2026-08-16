@@ -54,7 +54,7 @@ export const bm: Record<string, string> = {
 
   // ── Landing ───────────────────────────────────────────────────────────────
   "home.heroTag": "// Rangkaian Runner Tempatan Anda. Mudah, Pantas, Dipercayai. Dari Jiran untuk Jiran.",
-  "home.heroTitle1": "Jiran berdekatan",
+  "home.heroTitle1": "Runner berdekatan",
   "home.heroTitle2": "boleh uruskan ini untuk anda.",
   "home.heroSub":
     "Barangan runcit, ambilan parcel, atau tugasan kecil — cari runner di kawasan anda dan berbual terus melalui WhatsApp.",

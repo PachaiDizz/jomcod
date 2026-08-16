@@ -61,30 +61,13 @@ export default function InstallBanner() {
       return () => clearTimeout(timer);
     }
 
-    // Android/Chrome: wait for the native prompt, then try to auto-install
-    // once. If accepted, mark installed — no banner needed again. If dismissed
-    // or blocked, fall back to the banner button.
+    // Android/Chrome: capture the install event, then show the banner. We do
+    // NOT call prompt() here — firing it early consumes the event and makes
+    // the "Install app" button a no-op later. prompt() runs only on tap.
     const handler = (e: Event) => {
       e.preventDefault();
-      const ev = e as BeforeInstallPromptEvent;
-      setDeferred(ev);
-      try {
-        ev.prompt();
-        ev.userChoice.then((choice) => {
-          if (choice.outcome === "accepted") {
-            try {
-              localStorage.setItem(INSTALLED_KEY, "1");
-            } catch {
-              // ignore
-            }
-            setVisible(false);
-          } else {
-            setVisible(true);
-          }
-        });
-      } catch {
-        setVisible(true);
-      }
+      setDeferred(e as BeforeInstallPromptEvent);
+      setVisible(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
