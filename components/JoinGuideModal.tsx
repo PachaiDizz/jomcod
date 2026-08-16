@@ -117,6 +117,9 @@ export default function JoinGuideModal({
                 <li>
                   <Md text={t("guide.r7")} /> <b><Md text={t("guide.r7Bold")} /></b>.
                 </li>
+                <li>
+                  <Md text={t("guide.r8")} /> <b><Md text={t("guide.r8Bold")} /></b>
+                </li>
               </ul>
 
               <p>

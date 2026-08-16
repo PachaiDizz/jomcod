@@ -170,6 +170,9 @@ export const bm: Record<string, string> = {
   "guide.r7":
     "Jika anda mengalami tingkah laku tidak wajar, aktiviti mencurigakan, atau apa-apa yang membuat anda tidak selesa,",
   "guide.r7Bold": "sila laporkan kepada admin **JomCOD**",
+  "guide.r8": "Sebagai runner, komuniti hanya dapat melihat perkhidmatan yang anda senaraikan —",
+  "guide.r8Bold":
+    "pastikan anda menambah setiap perkhidmatan yang ditawarkan bersama harganya supaya orang ramai tahu apa yang anda buat.",
   "guide.p6": "Itu sahaja. Matlamatnya mudah:",
   "guide.p6Bold":
     "memudahkan jiran mencari seseorang yang berdekatan dan bersedia membantu.",
@@ -499,6 +502,8 @@ export const bm: Record<string, string> = {
   "req.pricing": "harga {name}",
   "req.payAfter": "Anda hanya bayar selepas tugasan selesai — tiada bayaran pendahuluan.",
   "req.waitingAccept": "Menunggu {name} menerima",
+  "req.accepted": "{name} menerima permintaan anda!",
+  "req.acceptedBody": "Kiraan masa telah hilang — berbual dengan {name} di WhatsApp untuk menyelaraskan butiran.",
   "req.expiredNoResponse": "Tamat tempoh — tiada respons daripada runner",
   "req.autoExpires": "Permintaan tamat automatik jika tiada respons",
   "req.broadcastInstead": "Siarkan sebaliknya",
@@ -522,6 +527,8 @@ export const bm: Record<string, string> = {
   "bcast.send": "⚡ Siarkan kepada {n} runner tersedia",
   "bcast.noAccepted": "Tiada siapa menerima dalam masa yang ditetapkan",
   "bcast.waitingAccept": "Menunggu seseorang menerima",
+  "bcast.claimed": "Seorang runner menuntut permintaan anda!",
+  "bcast.claimedBody": "Kiraan masa telah hilang — semak notifikasi anda dan berbual dengan runner di WhatsApp untuk menyelaraskan.",
   "bcast.firstAcceptNote": "Runner pertama yang menerima dapat tugasan — yang lain dimaklumkan ia telah diambil",
   "bcast.goesTo": "Pergi kepada semua runner — {n} dalam rangkaian sekarang",
   "bcast.more": "+{n} lagi",

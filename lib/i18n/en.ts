@@ -172,6 +172,9 @@ export const en: Record<string, string> = {
   "guide.r7":
     "If you experience inappropriate behaviour, suspicious activity, or anything that makes you uncomfortable,",
   "guide.r7Bold": "please report it to the **JomCOD** admin",
+  "guide.r8": "As a runner, the community can only see the services you list —",
+  "guide.r8Bold":
+    "make sure to add every service you offer with its price so people know what you do.",
   "guide.p6": "That's really it. The goal is simple:",
   "guide.p6Bold":
     "make it easier for neighbours to find someone nearby who's available to help.",
@@ -501,6 +504,8 @@ export const en: Record<string, string> = {
   "req.pricing": "{name}'s pricing",
   "req.payAfter": "You'll only pay after the job is done — no upfront payment needed.",
   "req.waitingAccept": "Waiting for {name} to accept",
+  "req.accepted": "{name} accepted your request!",
+  "req.acceptedBody": "The countdown is gone — chat with {name} on WhatsApp to coordinate the details.",
   "req.expiredNoResponse": "Expired — no response from runner",
   "req.autoExpires": "Request auto-expires if no response",
   "req.broadcastInstead": "Broadcast instead",
@@ -525,6 +530,8 @@ export const en: Record<string, string> = {
   "bcast.send": "⚡ Broadcast to {n} available runners",
   "bcast.noAccepted": "No one accepted in time",
   "bcast.waitingAccept": "Waiting for someone to accept",
+  "bcast.claimed": "A runner claimed your request!",
+  "bcast.claimedBody": "The countdown is gone — check your notifications and chat with the runner on WhatsApp to coordinate.",
   "bcast.firstAcceptNote":
     "First runner to accept gets the job — others are notified it's taken",
   "bcast.goesTo": "Goes to all runners — {n} in the network right now",

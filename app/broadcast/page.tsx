@@ -12,6 +12,7 @@ import RequestFields, {
   buildTakeFrom,
 } from "@/components/RequestFields";
 import { createJob, fetchRunners, getProfile } from "@/lib/queries";
+import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import type { RequestDetails } from "@/components/RequestFields";
 import type { Runner } from "@/lib/types";
@@ -21,8 +22,9 @@ function BroadcastForm() {
   const { t } = useI18n();
   const [recipients, setRecipients] = useState<Runner[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [status, setStatus] = useState<"idle" | "running" | "expired">("idle");
+  const [status, setStatus] = useState<"idle" | "running" | "accepted" | "expired">("idle");
   const [secondsLeft, setSecondsLeft] = useState(300);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [details, setDetails] = useState<RequestDetails>({
@@ -98,6 +100,7 @@ function BroadcastForm() {
       return;
     }
     setStatus("running");
+    setJobId(res.jobId ?? null);
     setSecondsLeft(300);
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
@@ -111,6 +114,38 @@ function BroadcastForm() {
       });
     }, 1000);
   };
+
+  // Once the broadcast exists, watch for a runner claiming it (status →
+  // confirmed) so the countdown auto-disappears on the community side.
+  useEffect(() => {
+    if (!jobId || status !== "running") return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`broadcast-${jobId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "jobs",
+          filter: `id=eq.${jobId}`,
+        },
+        (payload) => {
+          const row = payload.new as { status?: string };
+          if (row.status === "confirmed") {
+            setStatus("accepted");
+            if (intervalRef.current) clearInterval(intervalRef.current);
+          } else if (row.status === "cancelled") {
+            setStatus("expired");
+            if (intervalRef.current) clearInterval(intervalRef.current);
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [jobId, status]);
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
@@ -162,6 +197,8 @@ function BroadcastForm() {
   const statusMessage =
     status === "expired"
       ? t("bcast.noAccepted")
+      : status === "accepted"
+      ? t("bcast.claimed")
       : t("bcast.waitingAccept");
 
   return (
@@ -200,7 +237,7 @@ function BroadcastForm() {
         {sending ? t("common.sending") : t("bcast.send", { n: recipients.length })}
       </Button>
 
-      {status !== "idle" && (
+      {status !== "idle" && status !== "accepted" && (
         <div className="bg-ink text-paper rounded-card p-4.5 text-center my-3.5">
           <div className="text-xs text-[#B8BDB9]">{statusMessage}</div>
           <div className="font-mono text-[34px] font-semibold my-1.5 text-orange">
@@ -209,6 +246,14 @@ function BroadcastForm() {
           <div className="text-xs text-[#B8BDB9]">
             {t("bcast.firstAcceptNote")}
           </div>
+        </div>
+      )}
+
+      {status === "accepted" && (
+        <div className="bg-[#E4F3EC] border border-[#C8E6DA] rounded-card p-4.5 text-center my-3.5">
+          <div className="text-2xl mb-1">✅</div>
+          <div className="text-[14px] font-bold text-teal">{t("bcast.claimed")}</div>
+          <div className="text-[11.5px] text-slate mt-1 leading-snug">{t("bcast.claimedBody")}</div>
         </div>
       )}
 

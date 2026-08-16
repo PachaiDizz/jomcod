@@ -309,7 +309,7 @@ export async function createJob(input: {
   deliverTo: string;
   notes?: string;
   runnerId: string | null;
-}): Promise<JobActionResult> {
+}): Promise<JobActionResult & { jobId?: string }> {
   const supabase = createClient();
   const {
     data: { user },
@@ -318,7 +318,7 @@ export async function createJob(input: {
 
   // Creation runs through create_request() server-side: it validates the
   // input and enforces duplicate/spam guards in the database.
-  const { error } = await supabase.rpc("create_request", {
+  const { data, error } = await supabase.rpc("create_request", {
     p_service_type: input.serviceType,
     p_take_from: input.takeFrom,
     p_deliver_to: input.deliverTo,
@@ -327,7 +327,7 @@ export async function createJob(input: {
   });
 
   if (error) return { ok: false, message: error.message };
-  return { ok: true };
+  return { ok: true, jobId: data ? String(data) : undefined };
 }
 
 export async function fetchJobsForRunner(runnerId: string): Promise<JobRequest[]> {

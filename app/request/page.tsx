@@ -15,6 +15,7 @@ import RequestFields, {
 import { cleanServiceName, formatRM } from "@/lib/constants";
 import { pricingLabel } from "@/lib/mockData";
 import { createJob, fetchRunners, getProfile } from "@/lib/queries";
+import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import type { RequestDetails } from "@/components/RequestFields";
 import type { Runner } from "@/lib/types";
@@ -39,8 +40,9 @@ function RequestForm() {
     ? runners[0]
     : undefined;
 
-  const [status, setStatus] = useState<"idle" | "pending" | "expired">("idle");
+  const [status, setStatus] = useState<"idle" | "pending" | "accepted" | "expired">("idle");
   const [secondsLeft, setSecondsLeft] = useState(300);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [details, setDetails] = useState<RequestDetails>({
@@ -130,6 +132,7 @@ function RequestForm() {
       setError(res.message ?? t("common.tryAgain"));
       return;
     }
+    setJobId(res.jobId ?? null);
     setStatus("pending");
     setSecondsLeft(300);
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -144,6 +147,38 @@ function RequestForm() {
       });
     }, 1000);
   };
+
+  // Once the job exists, watch for the runner accepting (status → confirmed)
+  // so the countdown auto-disappears on the community side.
+  useEffect(() => {
+    if (!jobId || status !== "pending") return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`job-${jobId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "jobs",
+          filter: `id=eq.${jobId}`,
+        },
+        (payload) => {
+          const row = payload.new as { status?: string };
+          if (row.status === "confirmed") {
+            setStatus("accepted");
+            if (intervalRef.current) clearInterval(intervalRef.current);
+          } else if (row.status === "cancelled") {
+            setStatus("expired");
+            if (intervalRef.current) clearInterval(intervalRef.current);
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [jobId, status]);
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
@@ -245,7 +280,7 @@ function RequestForm() {
         {sending ? t("common.sending") : t("common.sendRequest")}
       </Button>
 
-      {status !== "idle" && (
+      {status !== "idle" && status !== "accepted" && (
         <div className="bg-ink text-paper rounded-card p-4.5 text-center my-3.5">
           <div className="text-xs text-[#B8BDB9]">
             {status === "pending" ? t("req.waitingAccept", { name: runner.name.split(" ")[0] }) : ""}
@@ -257,6 +292,18 @@ function RequestForm() {
             {status === "expired"
               ? t("req.expiredNoResponse")
               : t("req.autoExpires")}
+          </div>
+        </div>
+      )}
+
+      {status === "accepted" && (
+        <div className="bg-[#E4F3EC] border border-[#C8E6DA] rounded-card p-4.5 text-center my-3.5">
+          <div className="text-2xl mb-1">✅</div>
+          <div className="text-[14px] font-bold text-teal">
+            {t("req.accepted")}
+          </div>
+          <div className="text-[11.5px] text-slate mt-1 leading-snug">
+            {t("req.acceptedBody", { name: runner.name.split(" ")[0] })}
           </div>
         </div>
       )}

@@ -510,7 +510,7 @@ export default function RequestFields({
 
       {/* Items / request details */}
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">{t("rf.itemsDetailsOptional")}</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.itemsDetails")}</label>
         {itemList ? (
           <ItemRows items={details.items} onChange={(items) => set({ items })} />
         ) : (
