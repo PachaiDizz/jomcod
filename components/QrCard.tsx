@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 import { useI18n } from "@/lib/i18n";
 
 // Renders a scannable QR code for the current site origin (works on any
 // deployment/custom domain automatically). Generated client-side as an SVG,
 // with a native share button so visitors can send the link straight away.
+// The qrcode library is lazy-loaded so it never blocks first paint.
 export default function QrCard() {
   const { t } = useI18n();
   const [svg, setSvg] = useState("");
@@ -14,11 +14,13 @@ export default function QrCard() {
   useEffect(() => {
     let cancelled = false;
     const url = window.location.origin;
-    QRCode.toString(url, { type: "svg", margin: 1, width: 260, errorCorrectionLevel: "M" })
-      .then((data) => {
-        if (!cancelled) setSvg(data);
-      })
-      .catch(() => {});
+    import("qrcode").then((QRCode) => {
+      QRCode.toString(url, { type: "svg", margin: 1, width: 260, errorCorrectionLevel: "M" })
+        .then((data) => {
+          if (!cancelled) setSvg(data);
+        })
+        .catch(() => {});
+    });
     return () => {
       cancelled = true;
     };

@@ -1,7 +1,11 @@
-// JomCOD service worker — network-first so deployed updates always load.
-// Cache is only used as an offline fallback, so stale builds never get served.
+// JomCOD service worker — fast + fresh.
+//  - Navigation (HTML) & dynamic data: network-first, cache as offline fallback.
+//  - Hashed static assets (_next/static/... with content hashes): cache-first,
+//    so repeat visits load instantly without waiting on the network. Those
+//    files never change for a given build (the hash is in the URL), so
+//    serving them from cache is always correct.
 // Bump CACHE_NAME whenever you make big changes to clear old caches.
-const CACHE_NAME = "jomcod-cache-v7";
+const CACHE_NAME = "jomcod-cache-v8";
 // NOTE: no "/index.html" here — it redirects (307) on Vercel/Next.js, and
 // iOS Safari's cache.addAll rejects redirects, which would fail the whole
 // install and leave the service worker inactive.
@@ -36,11 +40,33 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: network first, then cache. Only same-origin GET requests are handled.
+// Fetch: cache-first for hashed static assets, network-first for everything
+// else (pages, images, manifest). Only same-origin GET requests are handled.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
   if (!request.url.startsWith(self.location.origin)) return;
+  const url = new URL(request.url);
+
+  // Hashed build assets (JS/CSS/fonts/images under _next/static) — serve from
+  // cache instantly, update in the background, never block on the network.
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const network = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return response;
+          })
+          .catch(() => cached || Response.error());
+        return cached || network;
+      })
+    );
+    return;
+  }
 
   event.respondWith(
     fetch(request)
