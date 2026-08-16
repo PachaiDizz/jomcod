@@ -1844,12 +1844,16 @@ export default function DashboardPage() {
                   <input
                     type="number"
                     min={0}
+                    inputMode="decimal"
                     className="flex-1 bg-transparent py-2 text-[12.5px] min-w-0"
-                    placeholder="0.00"
+                    placeholder="0"
                     value={svc.pricing.price ?? ""}
-                    onChange={(e) =>
-                      updatePricing(svc.id, { price: Number(e.target.value) })
-                    }
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      updatePricing(svc.id, {
+                        price: raw === "" ? undefined : Number(raw),
+                      });
+                    }}
                   />
                 </div>
               )}
