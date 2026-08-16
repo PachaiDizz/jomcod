@@ -97,10 +97,10 @@ function computeEarned(jobs: JobRequest[], services: Service[]): number {
 }
 
 const QUICK_SERVICES = [
-  { emoji: "📦", label: "Parcel", value: "Parcel Pickup", tKey: "dash.com.quickParcel" },
+  { emoji: "📦", label: "Parcel", value: "Parcel Pickup / Drop-off", tKey: "dash.com.quickParcel" },
   { emoji: "🛒", label: "Groceries", value: "Grocery Run", tKey: "dash.com.quickGroceries" },
   { emoji: "🧾", label: "Bills", value: "Pay Bills", tKey: "dash.com.quickBills" },
-  { emoji: "🏪", label: "Pickup", value: "Parcel Drop-off", tKey: "dash.com.quickPickup" },
+  { emoji: "🏪", label: "Pickup", value: "Parcel Pickup / Drop-off", tKey: "dash.com.quickPickup" },
   { emoji: "✏️", label: "Other", value: "", tKey: "dash.com.quickOther" },
 ];
 

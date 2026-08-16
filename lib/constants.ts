@@ -7,7 +7,7 @@ export const SERVICE_CATEGORIES: { emoji: string; label: string; services: strin
   {
     emoji: "📦",
     label: "Parcels & Documents",
-    services: ["Parcel Pickup", "Parcel Drop-off", "Documents Delivery"],
+    services: ["Parcel Pickup / Drop-off", "Documents Delivery"],
   },
   {
     emoji: "💳",
