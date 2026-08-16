@@ -189,6 +189,16 @@ export const en: Record<string, string> = {
 
   // ── Install prompt ────────────────────────────────────────────────────────
   "install.app": "⬇ Install app",
+  "install.banner": "📱 Install JomCOD on your phone",
+  "install.bannerBody": "Get the app on your home screen for a faster, cleaner experience — no browser tab needed.",
+  "install.install": "Install app",
+  "install.how": "Tap the share button, then choose \"Add to Home Screen\".",
+  "install.later": "Not now",
+
+  // ── QR share card ─────────────────────────────────────────────────────────
+  "qr.title": "Share JomCOD",
+  "qr.body": "Scan this code with your phone camera to open JomCOD instantly.",
+  "qr.hint": "Works with any camera — no app needed.",
 
   // ── Time picker ───────────────────────────────────────────────────────────
   "picker.set": "Set",

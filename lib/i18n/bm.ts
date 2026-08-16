@@ -187,6 +187,16 @@ export const bm: Record<string, string> = {
 
   // ── Install prompt ────────────────────────────────────────────────────────
   "install.app": "⬇ Pasang aplikasi",
+  "install.banner": "📱 Pasang JomCOD di telefon anda",
+  "install.bannerBody": "Dapatkan aplikasi di skrin utama anda untuk pengalaman yang lebih pantas dan kemas — tanpa perlu tab pelayar.",
+  "install.install": "Pasang aplikasi",
+  "install.how": "Ketuk butang kongsi, kemudian pilih \"Tambah ke Skrin Utama\".",
+  "install.later": "Bukan sekarang",
+
+  // ── QR share card ─────────────────────────────────────────────────────────
+  "qr.title": "Kongsi JomCOD",
+  "qr.body": "Imbas kod ini dengan kamera telefon anda untuk membuka JomCOD serta-merta.",
+  "qr.hint": "Berfungsi dengan mana-mana kamera — tiada aplikasi diperlukan.",
 
   // ── Time picker ───────────────────────────────────────────────────────────
   "picker.set": "Tetapkan",

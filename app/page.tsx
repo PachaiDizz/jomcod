@@ -6,6 +6,8 @@ import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import TimePicker from "@/components/TimePicker";
 import JoinGuideModal from "@/components/JoinGuideModal";
+import QrCard from "@/components/QrCard";
+import InstallBanner from "@/components/InstallBanner";
 import { createClient } from "@/lib/supabase/client";
 import { AREA_OPTIONS, isValidWhatsApp, normalizeWhatsApp } from "@/lib/constants";
 import { fetchLandingStats } from "@/lib/queries";
@@ -14,7 +16,7 @@ import type { LandingStats } from "@/lib/queries";
 
 export default function LandingPage() {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [role, setRole] = useState<"community" | "runner">("community");
 
@@ -174,6 +176,24 @@ export default function LandingPage() {
 
   return (
     <div>
+      {/* Language switcher — prominent so first-time visitors can pick before reading */}
+      <div className="flex justify-center mb-6">
+        <div className="flex items-center gap-1 border border-line bg-white rounded-full p-1 shadow-sm">
+          {(["en", "bm"] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`font-mono text-[12.5px] font-bold px-5 py-1.5 rounded-full transition-colors ${
+                lang === l ? "bg-ink text-paper" : "text-slate hover:text-ink"
+              }`}
+              aria-pressed={lang === l}
+            >
+              {l === "en" ? "English" : "Bahasa Melayu"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {oauthError && (
         <div className="max-w-[460px] mx-auto mb-4 rounded-[10px] border border-orange/30 bg-[#FDEFE3] px-3.5 py-2.5 text-[12px] text-orange">
           <b>{t("home.signInError")}</b> {oauthError}
@@ -458,7 +478,24 @@ export default function LandingPage() {
       </div>
       </div>
 
+      {/* QR share card */}
+      <div className="mt-8 flex flex-col sm:flex-row items-center gap-5 bg-white border border-line rounded-[18px] md:rounded-[24px] p-5 md:p-6 shadow-[0_20px_50px_-20px_rgba(28,35,33,0.18)]">
+        <QrCard />
+        <div className="text-center sm:text-left">
+          <div className="font-display font-bold text-[16px] md:text-[18px] mb-1">
+            {t("qr.title")}
+          </div>
+          <div className="text-[12.5px] text-slate leading-relaxed max-w-[420px]">
+            {t("qr.body")}
+          </div>
+          <div className="text-[10.5px] font-mono text-slate mt-1.5">
+            {t("qr.hint")}
+          </div>
+        </div>
+      </div>
+
       {showGuide && <JoinGuideModal onAccept={handleAcceptGuide} />}
+      <InstallBanner />
     </div>
   );
 }
