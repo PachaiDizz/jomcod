@@ -122,7 +122,7 @@ export default function AdminPage() {
       <div className="text-[19px] font-bold mb-1 font-display">{t("admin.title")}</div>
       <div className="text-[12.5px] text-slate mb-5">{t("admin.sub")}</div>
 
-      <div className="grid grid-cols-4 gap-2.5 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-5">
         <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
           <div className="font-mono font-bold text-xl">{runners.length}</div>
           <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">{t("admin.runners")}</div>

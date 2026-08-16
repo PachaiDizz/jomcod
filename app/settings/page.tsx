@@ -321,17 +321,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <Link
-            href="/about"
-            className="flex items-center justify-between gap-2 bg-white border border-line rounded-[12px] p-3.5 mb-4 hover:border-teal/50 transition-colors"
-          >
-            <div>
-              <div className="text-[13px] font-semibold">ℹ️ {t("nav.about")}</div>
-              <div className="text-[11px] text-slate mt-0.5">{t("set.aboutHint")}</div>
-            </div>
-            <span className="text-slate">→</span>
-          </Link>
-
           {isAdmin && (
             <Link
               href="/admin"
