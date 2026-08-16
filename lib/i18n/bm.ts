@@ -283,7 +283,7 @@ export const bm: Record<string, string> = {
   "dash.com.totalRequests": "Jumlah permintaan",
   "dash.com.completed": "Selesai",
   "dash.com.inProgress": "Dalam proses",
-  "dash.com.whatNeed": "Apa yang anda perlukan bantuan?",
+  "dash.com.whatNeed": "Anda perlukan bantuan untuk apa?",
   "dash.com.runnersAvailable": "{n} runner{s} tersedia berdekatan",
   "dash.com.runnersAvailableSub": "Sedia membantu di {area} sekarang.",
   "dash.com.viewRunners": "Lihat runner",

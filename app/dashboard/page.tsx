@@ -1352,11 +1352,13 @@ export default function DashboardPage() {
   return (
     <PhoneFrame>
       <div className="flex items-center gap-2 mb-1 flex-wrap">
-        <div className="text-[19px] md:text-[24px] font-bold font-display">{t("dash.run.yourDay")}</div>
+        <div className="text-[19px] md:text-[24px] font-bold font-display">
+          {greeting(t)}, {name?.split(" ")[0] || "runner"}
+        </div>
         <RoleBadge role="runner" />
       </div>
       <div className="text-[12.5px] text-slate mb-4.5">
-        {greeting(t)}, {name?.split(" ")[0] || "runner"} · {area || t("browse.yourArea")}
+        {area || t("browse.yourArea")}
       </div>
 
       {approved === false && (
