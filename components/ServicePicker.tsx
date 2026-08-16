@@ -22,6 +22,7 @@ export default function ServicePicker({
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,6 +45,12 @@ export default function ServicePicker({
 
   const display = value ? t(serviceNameKey(value)) : placeholder;
 
+  const filterList = (names: string[]) => {
+    const qq = q.trim().toLowerCase();
+    if (!qq) return names;
+    return names.filter((n) => t(serviceNameKey(n)).toLowerCase().includes(qq));
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -56,17 +63,27 @@ export default function ServicePicker({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 z-30 mt-1 bg-white border border-line rounded-[10px] shadow-lg max-h-[260px] overflow-y-auto">
+        <div className="absolute left-0 right-0 z-30 mt-1 bg-white border border-line rounded-[10px] shadow-lg max-h-[180px] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-line px-2 py-1.5">
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={placeholder}
+              className="w-full bg-paper2 border border-line rounded-md px-2 py-1 text-[11.5px]"
+            />
+          </div>
           {options ? (
-            options.map((name) => (
+            filterList(options).map((name) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => {
                   onChange(name);
                   setOpen(false);
+                  setQ("");
                 }}
-                className={`w-full text-left px-3 py-2 text-[12.5px] hover:bg-paper2 transition-colors ${
+                className={`w-full text-left px-3 py-1.5 text-[12px] hover:bg-paper2 transition-colors ${
                   value.toLowerCase() === name.toLowerCase()
                     ? "bg-[#FDF3EE] text-orange font-semibold"
                     : "text-ink"
@@ -77,38 +94,44 @@ export default function ServicePicker({
             ))
           ) : (
             <>
-              {SERVICE_CATEGORIES.map((cat) => (
-                <div key={cat.label}>
-                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-slate">
-                    {cat.emoji} {t(categoryLabelKey(cat.label))}
+              {SERVICE_CATEGORIES.map((cat) => {
+                const list = filterList(cat.services);
+                if (list.length === 0) return null;
+                return (
+                  <div key={cat.label}>
+                    <div className="px-3 pt-1.5 pb-0.5 text-[9px] font-bold uppercase tracking-wide text-slate">
+                      {cat.emoji} {t(categoryLabelKey(cat.label))}
+                    </div>
+                    {list.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => {
+                          onChange(name);
+                          setOpen(false);
+                          setQ("");
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-[12px] hover:bg-paper2 transition-colors ${
+                          value.toLowerCase() === name.toLowerCase()
+                            ? "bg-[#FDF3EE] text-orange font-semibold"
+                            : "text-ink"
+                        }`}
+                      >
+                        {t(serviceNameKey(name))}
+                      </button>
+                    ))}
                   </div>
-                  {cat.services.map((name) => (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => {
-                        onChange(name);
-                        setOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-[12.5px] hover:bg-paper2 transition-colors ${
-                        value.toLowerCase() === name.toLowerCase()
-                          ? "bg-[#FDF3EE] text-orange font-semibold"
-                          : "text-ink"
-                      }`}
-                    >
-                      {t(serviceNameKey(name))}
-                    </button>
-                  ))}
-                </div>
-              ))}
+                );
+              })}
               <div className="border-t border-line mt-1">
                 <button
                   type="button"
                   onClick={() => {
                     onChange("");
                     setOpen(false);
+                    setQ("");
                   }}
-                  className={`w-full text-left px-3 py-2 text-[12.5px] hover:bg-paper2 transition-colors ${
+                  className={`w-full text-left px-3 py-1.5 text-[12px] hover:bg-paper2 transition-colors ${
                     value === OTHER_SERVICE ? "bg-[#FDF3EE] text-orange font-semibold" : "text-ink"
                   }`}
                 >
