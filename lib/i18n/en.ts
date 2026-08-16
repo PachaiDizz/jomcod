@@ -29,6 +29,7 @@ export const en: Record<string, string> = {
   "nav.notifications": "Notifications",
   "nav.news": "News",
   "nav.settings": "Settings",
+  "nav.admin": "Admin",
   "nav.guide": "📋 Guide",
   "nav.signOut": "Sign out",
   "nav.directRequest": "Direct request",
@@ -574,6 +575,7 @@ export const en: Record<string, string> = {
   "admin.tabReports": "reports",
   "admin.checkingAccess": "Checking access…",
   "admin.loading": "loading…",
+  "admin.services": "Services:",
 
   // ── Runner profile ────────────────────────────────────────────────────────
   "rpro.notFound": "Runner not found",

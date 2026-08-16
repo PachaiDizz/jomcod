@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import LoadingState from "@/components/LoadingState";
@@ -172,6 +173,11 @@ export default function AdminPage() {
                     <div className="text-[10px] font-mono text-slate mt-1">
                       {t("admin.joined")} {new Date(r.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}
                     </div>
+                    {r.whatsapp && (
+                      <div className="text-[11px] font-mono text-teal mt-1 break-words">
+                        💬 {r.whatsapp}
+                      </div>
+                    )}
                   </div>
                   <span
                     className={`text-[9.5px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${
@@ -185,6 +191,24 @@ export default function AdminPage() {
                     {r.isSuspended ? t("admin.suspended") : r.isApproved ? t("admin.approved") : t("admin.pending")}
                   </span>
                 </div>
+                {Array.isArray(r.services) && r.services.length > 0 && (
+                  <div className="mt-2">
+                    <div className="text-[9.5px] font-mono uppercase tracking-wide text-slate mb-1">{t("admin.services")}</div>
+                    <div className="flex flex-wrap gap-1">
+                    {(r.services as { name?: string; pricing?: { price?: number; model?: string } }[])
+                      .filter((s) => s && typeof s === "object" && s.name)
+                      .map((s, i) => (
+                        <span
+                          key={i}
+                          className="text-[9.5px] bg-[#F0F7F4] text-teal border border-[#D7EBE1] px-1.5 py-0.5 rounded"
+                        >
+                          {translateServiceName(t, String(s.name))}
+                          {typeof s.pricing?.price === "number" ? ` · RM${s.pricing.price}` : ""}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-2 mt-3">
                   <Button
                     variant={r.isApproved ? "outline" : "primary"}
@@ -227,6 +251,15 @@ export default function AdminPage() {
                 <div className="text-[11.5px] text-slate mt-1 leading-snug break-words">
                   {j.takeFrom} → {j.deliverTo}
                 </div>
+                <div className="text-[11px] text-slate mt-1.5">
+                  <span className="font-semibold text-ink">{j.requesterName}</span> →{" "}
+                  <span className="font-semibold text-ink">{j.runnerName ?? "—"}</span>
+                </div>
+                {j.total && (
+                  <div className="inline-block font-mono font-bold text-[12.5px] text-teal bg-[#E4F3EC] border border-[#C8E6DA] px-2 py-0.5 rounded mt-1.5">
+                    {j.total}
+                  </div>
+                )}
                 <div className="text-[10px] font-mono text-slate mt-1.5">
                   {new Date(j.createdAt).toLocaleString("en-MY", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </div>
@@ -247,7 +280,9 @@ export default function AdminPage() {
               <div key={r.id} className="bg-white border border-line rounded-[10px] p-3.5">
                 <div className="flex justify-between items-start gap-2">
                   <div className="font-bold text-[13px]">
-                    {r.reportedName}
+                    <Link href={`/runner/${r.reportedId}`} className="hover:text-teal transition-colors">
+                      {r.reportedName}
+                    </Link>
                     <span className="text-slate font-normal"> — {r.reason}</span>
                   </div>
                   <span

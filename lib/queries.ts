@@ -671,6 +671,8 @@ export async function adminListRunners(): Promise<AdminRunnerRow[]> {
     name: String(r.name),
     area: r.area ? String(r.area) : null,
     status: r.status ? String(r.status) : null,
+    whatsapp: r.whatsapp ? String(r.whatsapp) : null,
+    services: r.services,
     isApproved: Boolean(r.is_approved),
     isSuspended: Boolean(r.is_suspended),
     createdAt: String(r.created_at),
@@ -687,6 +689,9 @@ export async function adminListJobs(): Promise<AdminJobRow[]> {
     status: String(j.status),
     takeFrom: String(j.take_from ?? ""),
     deliverTo: String(j.deliver_to ?? ""),
+    requesterName: String(j.requester_name ?? "Community"),
+    runnerName: j.runner_name ? String(j.runner_name) : null,
+    total: j.total ? String(j.total) : null,
     createdAt: String(j.created_at),
   }));
 }

@@ -29,6 +29,7 @@ export const bm: Record<string, string> = {
   "nav.notifications": "Notifikasi",
   "nav.news": "Berita",
   "nav.settings": "Tetapan",
+  "nav.admin": "Admin",
   "nav.guide": "📋 Panduan",
   "nav.signOut": "Log keluar",
   "nav.directRequest": "Permintaan terus",
@@ -570,6 +571,7 @@ export const bm: Record<string, string> = {
   "admin.tabReports": "laporan",
   "admin.checkingAccess": "Memeriksa akses…",
   "admin.loading": "memuatkan…",
+  "admin.services": "Perkhidmatan:",
 
   // ── Runner profile ────────────────────────────────────────────────────────
   "rpro.notFound": "Runner tidak dijumpai",

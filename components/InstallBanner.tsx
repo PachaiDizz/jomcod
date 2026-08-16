@@ -20,6 +20,17 @@ export default function InstallBanner() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // Already running as an installed PWA (Android Chrome standalone, iOS
+    // home-screen web app, desktop installed app) → never show the nudge.
+    try {
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as { standalone?: boolean }).standalone === true;
+      if (standalone) return;
+    } catch {
+      // ignore
+    }
+
     try {
       if (localStorage.getItem(STORAGE_KEY) === "1") return;
     } catch {
@@ -35,11 +46,21 @@ export default function InstallBanner() {
     const iOS = /iPad|iPhone|iPod/i.test(ua);
     setIsIOS(iOS);
 
-    // Android/Chrome: wait for the native prompt, then show the banner.
+    // Android/Chrome: wait for the native prompt, then try to auto-install
+    // once. If it's accepted, great — no banner needed. If dismissed (or the
+    // browser blocks a programmatic prompt), fall back to the banner button.
     const handler = (e: Event) => {
       e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
-      setVisible(true);
+      const ev = e as BeforeInstallPromptEvent;
+      setDeferred(ev);
+      try {
+        ev.prompt();
+        ev.userChoice.then((choice) => {
+          if (choice.outcome !== "accepted") setVisible(true);
+        });
+      } catch {
+        setVisible(true);
+      }
     };
     window.addEventListener("beforeinstallprompt", handler);
 

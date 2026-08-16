@@ -16,7 +16,7 @@ import type { LandingStats } from "@/lib/queries";
 
 export default function LandingPage() {
   const router = useRouter();
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [role, setRole] = useState<"community" | "runner">("community");
 
@@ -176,24 +176,6 @@ export default function LandingPage() {
 
   return (
     <div>
-      {/* Language switcher — prominent so first-time visitors can pick before reading */}
-      <div className="flex justify-center mb-6">
-        <div className="flex items-center gap-1 border border-line bg-white rounded-full p-1 shadow-sm">
-          {(["en", "bm"] as const).map((l) => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`font-mono text-[12.5px] font-bold px-5 py-1.5 rounded-full transition-colors ${
-                lang === l ? "bg-ink text-paper" : "text-slate hover:text-ink"
-              }`}
-              aria-pressed={lang === l}
-            >
-              {l === "en" ? "English" : "Bahasa Melayu"}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {oauthError && (
         <div className="max-w-[460px] mx-auto mb-4 rounded-[10px] border border-orange/30 bg-[#FDEFE3] px-3.5 py-2.5 text-[12px] text-orange">
           <b>{t("home.signInError")}</b> {oauthError}
@@ -342,7 +324,14 @@ export default function LandingPage() {
           <PhoneFrame className="max-w-[460px]">
             <div className="text-[19px] font-bold mb-1 font-display">{t("home.joinJomcod")}</div>
             <div className="text-[12.5px] text-slate mb-4.5">
-              {t("home.joinSub")}
+              {t("home.joinSub")}{" "}
+              <button
+                type="button"
+                onClick={() => setShowGuide(true)}
+                className="text-teal font-semibold underline"
+              >
+                {t("nav.guide")}
+              </button>
             </div>
 
             {googleButton}
@@ -494,7 +483,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {showGuide && <JoinGuideModal onAccept={handleAcceptGuide} />}
+      {showGuide && <JoinGuideModal onAccept={handleAcceptGuide} onClose={() => setShowGuide(false)} />}
       <InstallBanner />
     </div>
   );

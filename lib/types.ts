@@ -82,6 +82,8 @@ export interface AdminRunnerRow {
   name: string;
   area: string | null;
   status: string | null;
+  whatsapp: string | null;
+  services: unknown;
   isApproved: boolean;
   isSuspended: boolean;
   createdAt: string;
@@ -93,5 +95,8 @@ export interface AdminJobRow {
   status: string;
   takeFrom: string;
   deliverTo: string;
+  requesterName: string;
+  runnerName: string | null;
+  total: string | null;
   createdAt: string;
 }
