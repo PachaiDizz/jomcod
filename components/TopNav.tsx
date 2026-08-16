@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { fetchJobsForRunner, fetchUnreadCount, getProfile } from "@/lib/queries";
+import { fetchJobsForRunner, fetchUnreadCount } from "@/lib/queries";
 import { useI18n } from "@/lib/i18n";
 import RoleBadge from "./RoleBadge";
 import JoinGuideModal from "./JoinGuideModal";
@@ -27,7 +27,6 @@ export default function TopNav() {
   const [role, setRole] = useState("");
   const [pendingJobs, setPendingJobs] = useState(0);
   const [unread, setUnread] = useState(0);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
@@ -47,11 +46,6 @@ export default function TopNav() {
       })
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    if (!signedIn) return;
-    getProfile().then((p) => setIsAdmin(!!p?.is_admin)).catch(() => {});
-  }, [signedIn]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -213,18 +207,6 @@ export default function TopNav() {
                 )}
               </Link>
             ))}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className={`font-mono text-[11.5px] font-semibold rounded-full px-3 py-1.5 md:px-4 md:py-2 transition-colors flex items-center gap-1 whitespace-nowrap ${
-                  isActive("/admin")
-                    ? "bg-ink text-paper"
-                    : "text-slate hover:text-ink hover:bg-white border border-transparent"
-                }`}
-              >
-                🛠 {t("nav.admin")}
-              </Link>
-            )}
           </nav>
         </div>
       )}

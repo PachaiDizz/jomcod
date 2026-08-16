@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import Button from "@/components/Button";
+import Md from "@/components/Md";
 import { useI18n } from "@/lib/i18n";
 
 // Full "before you join" guide shown as a modal the FIRST time someone tries
@@ -57,11 +58,11 @@ export default function JoinGuideModal({
             </p>
 
             <div className="space-y-4 text-[13px] leading-relaxed text-ink">
-              <p>{t("guide.p1")}</p>
+              <p><Md text={t("guide.p1")} /></p>
               <p>
                 {t("guide.p2")} <b>{t("guide.p2Bold")}</b>
               </p>
-              <p>{t("guide.p3")}</p>
+              <p><Md text={t("guide.p3")} /></p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>{t("guide.list1")}</li>
                 <li>{t("guide.list2")}</li>
@@ -70,7 +71,7 @@ export default function JoinGuideModal({
                 <li>{t("guide.list5")}</li>
               </ul>
               <p>
-                {t("guide.p4")} <b>{t("guide.p4Bold")}</b>
+                <Md text={t("guide.p4")} /> <b>{t("guide.p4Bold")}</b>
               </p>
               <p>
                 {t("guide.p5")} <b>{t("guide.p5Bold")}</b> {t("guide.p5Post")}
@@ -96,25 +97,25 @@ export default function JoinGuideModal({
               <div className="font-bold">{t("guide.reminders")}</div>
               <ul className="list-disc pl-5 space-y-1.5">
                 <li>
-                  {t("guide.r1")} <b>{t("guide.r1Bold")}</b>.
+                  <Md text={t("guide.r1")} /> <b>{t("guide.r1Bold")}</b>.
                 </li>
                 <li>
                   {t("guide.r2")} <b>{t("guide.r2Bold")}</b>
                 </li>
                 <li>
-                  {t("guide.r3")} <b>{t("guide.r3Bold")}</b>. {t("guide.r3Post")}
+                  {t("guide.r3")} <b>{t("guide.r3Bold")}</b>. <Md text={t("guide.r3Post")} />
                 </li>
                 <li>
                   {t("guide.r4")} <b>{t("guide.r4Bold")}</b> {t("guide.r4Post")}
                 </li>
                 <li>
-                  {t("guide.r5")} <b>{t("guide.r5Bold")}</b> {t("guide.r5Post")}
+                  {t("guide.r5")} <b><Md text={t("guide.r5Bold")} /></b> {t("guide.r5Post")}
                 </li>
                 <li>
                   {t("guide.r6")} <b>{t("guide.r6Bold")}</b> {t("guide.r6Post")}
                 </li>
                 <li>
-                  {t("guide.r7")} <b>{t("guide.r7Bold")}</b>.
+                  <Md text={t("guide.r7")} /> <b><Md text={t("guide.r7Bold")} /></b>.
                 </li>
               </ul>
 
@@ -122,7 +123,7 @@ export default function JoinGuideModal({
                 {t("guide.p6")} <b>{t("guide.p6Bold")}</b>
               </p>
               <p className="text-slate">
-                {t("guide.p7")} <b className="text-ink">{t("guide.p7Bold")}</b>
+                {t("guide.p7")} <b className="text-ink"><Md text={t("guide.p7Bold")} /></b>
               </p>
             </div>
 

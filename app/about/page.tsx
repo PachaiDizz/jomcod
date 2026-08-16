@@ -1,31 +1,8 @@
 "use client";
 
 import PhoneFrame from "@/components/PhoneFrame";
+import Md from "@/components/Md";
 import { useI18n } from "@/lib/i18n";
-
-function Md({ text }: { text: string }) {
-  // Tiny inline renderer for **bold** and *italic* inside i18n strings.
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
-  return (
-    <>
-      {parts.map((p, i) => {
-        if (p.startsWith("**") && p.endsWith("**"))
-          return (
-            <b key={i} className="text-ink">
-              {p.slice(2, -2)}
-            </b>
-          );
-        if (p.startsWith("*") && p.endsWith("*") && p.length > 2)
-          return (
-            <em key={i} className="text-ink">
-              {p.slice(1, -1)}
-            </em>
-          );
-        return <span key={i}>{p}</span>;
-      })}
-    </>
-  );
-}
 
 export default function AboutPage() {
   const { t } = useI18n();
