@@ -73,8 +73,6 @@ export default function InstallBanner() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  if (!visible) return null;
-
   const dismiss = () => {
     try {
       sessionStorage.setItem(DISMISSED_KEY, "1");
@@ -106,7 +104,8 @@ export default function InstallBanner() {
     setVisible(false);
   };
 
-  // iOS step-by-step guide.
+  // iOS step-by-step guide — must be checked BEFORE the `visible` early return,
+  // because tapping "Install app" hides the banner AND shows the guide.
   if (showGuide) {
     return (
       <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
@@ -137,6 +136,8 @@ export default function InstallBanner() {
       </div>
     );
   }
+
+  if (!visible) return null;
 
   return (
     <div className="fixed bottom-4 inset-x-4 md:inset-x-auto md:right-4 md:left-auto md:max-w-sm z-50 bg-ink text-paper rounded-[14px] p-3.5 shadow-[0_20px_50px_-16px_rgba(28,35,33,0.5)] border border-white/10">
