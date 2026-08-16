@@ -4,6 +4,7 @@ import "./globals.css";
 import TopNav from "@/components/TopNav";
 import InstallPrompt from "@/components/InstallPrompt";
 import PushBanner from "@/components/PushBanner";
+import { I18nProvider } from "@/lib/i18n";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -40,12 +41,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} ${plexMono.variable}`}>
       <body className="font-body min-h-screen flex justify-center">
-        <div className="w-full max-w-7xl px-5 md:px-8 py-4 pb-16">
-          <TopNav />
-          <main>{children}</main>
-        </div>
-        <InstallPrompt />
-        <PushBanner />
+        <I18nProvider>
+          <div className="w-full max-w-7xl px-5 md:px-8 py-4 pb-16">
+            <TopNav />
+            <main>{children}</main>
+          </div>
+          <InstallPrompt />
+          <PushBanner />
+        </I18nProvider>
       </body>
     </html>
   );

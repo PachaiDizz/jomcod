@@ -1,4 +1,9 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
+
 export default function RoleBadge({ role }: { role?: string }) {
+  const { t } = useI18n();
   if (!role) return null;
   const isRunner = role === "runner";
   return (
@@ -9,7 +14,7 @@ export default function RoleBadge({ role }: { role?: string }) {
           : "bg-[#E4F3EC] text-teal border-[#C8E6DA]"
       }`}
     >
-      {isRunner ? "🛵 Runner" : "🏠 Community"}
+      {isRunner ? `🛵 ${t("role.runner")}` : `🏠 ${t("role.community")}`}
     </span>
   );
 }

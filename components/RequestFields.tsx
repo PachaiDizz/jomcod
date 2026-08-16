@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatRM, SERVICE_CATEGORIES } from "@/lib/constants";
+import { useI18n } from "@/lib/i18n";
 import type { Pricing } from "@/lib/types";
 
 // The full categorized preset list — community picks from the same services a
@@ -244,6 +245,7 @@ function ItemRows({
   items: RequestItem[];
   onChange: (items: RequestItem[]) => void;
 }) {
+  const { t } = useI18n();
   const update = (i: number, patch: Partial<RequestItem>) =>
     onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
@@ -255,10 +257,10 @@ function ItemRows({
     <>
       <div className="grid grid-cols-[1fr_58px_auto] gap-1.5 mb-1.5">
         <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
-          Item
+          {t("rf.itemName")}
         </span>
         <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
-          Qty
+          {t("rf.qty")}
         </span>
         <span />
       </div>
@@ -266,7 +268,7 @@ function ItemRows({
         <div key={i} className="grid grid-cols-[1fr_58px_auto] gap-1.5 mb-1.5">
           <input
             className="bg-white border border-line rounded-[10px] px-3 py-2 text-[13px] min-w-0"
-            placeholder="e.g. Rice 5kg"
+            placeholder={t("rf.itemPlaceholder")}
             value={it.name}
             onChange={(e) => update(i, { name: e.target.value })}
           />
@@ -281,7 +283,7 @@ function ItemRows({
             type="button"
             onClick={() => remove(i)}
             className="text-[12px] text-orange font-semibold px-1"
-            aria-label="Remove item"
+            aria-label={t("rf.removeItem")}
           >
             ✕
           </button>
@@ -293,10 +295,10 @@ function ItemRows({
           onClick={add}
           className="text-[12px] font-semibold text-teal hover:underline"
         >
-          + Add item
+          {t("rf.addItem")}
         </button>
         <div className="text-[12px] text-slate">
-          {count} item{count === 1 ? "" : "s"}
+          {t("rf.countItems", { n: count, s: count === 1 ? "" : "s" })}
         </div>
       </div>
     </>
@@ -310,6 +312,7 @@ function CourierRows({
   couriers: ParcelCourier[];
   onChange: (couriers: ParcelCourier[]) => void;
 }) {
+  const { t } = useI18n();
   const update = (i: number, patch: Partial<ParcelCourier>) =>
     onChange(couriers.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
   const remove = (i: number) => onChange(couriers.filter((_, idx) => idx !== i));
@@ -319,10 +322,10 @@ function CourierRows({
     <>
       <div className="grid grid-cols-[1fr_80px_auto] gap-1.5 mb-1.5">
         <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
-          Courier
+          {t("rf.courier")}
         </span>
         <span className="text-[10px] text-slate font-semibold uppercase tracking-wide px-0.5">
-          Items
+          {t("rf.items")}
         </span>
         <span />
       </div>
@@ -333,7 +336,7 @@ function CourierRows({
             value={c.courier}
             onChange={(e) => update(i, { courier: e.target.value })}
           >
-            <option value="">Select courier…</option>
+            <option value="">{t("rf.selectCourier")}</option>
             {PARCEL_SERVICES.map((name) => (
               <option key={name}>{name}</option>
             ))}
@@ -349,7 +352,7 @@ function CourierRows({
             type="button"
             onClick={() => remove(i)}
             className="text-[12px] text-orange font-semibold px-1"
-            aria-label="Remove courier"
+            aria-label={t("rf.removeCourier")}
           >
             ✕
           </button>
@@ -360,7 +363,7 @@ function CourierRows({
         onClick={add}
         className="text-[12px] font-semibold text-teal hover:underline"
       >
-        + Add another courier
+        {t("rf.addCourier")}
       </button>
     </>
   );
@@ -377,6 +380,7 @@ export default function RequestFields({
   serviceOptions?: string[];
   pricingFor?: (serviceType: string) => Pricing | undefined;
 }) {
+  const { t } = useI18n();
   const set = (patch: Partial<RequestDetails>) => onChange({ ...details, ...patch });
   const selected = details.serviceType || serviceOptions[0];
   const itemList = isItemListService(selected);
@@ -390,9 +394,9 @@ export default function RequestFields({
     set({ extraServices: details.extraServices.filter((e) => e.id !== id) });
 
   const timeOptions = [
-    { value: "asap" as const, label: "⚡ ASAP" },
-    { value: "today" as const, label: "Today" },
-    { value: "scheduled" as const, label: "📅 Scheduled" },
+    { value: "asap" as const, label: t("rf.asap") },
+    { value: "today" as const, label: t("rf.today") },
+    { value: "scheduled" as const, label: t("rf.scheduled") },
   ];
 
   // Use the effective service type: the dropdown shows `selected` even before
@@ -405,7 +409,7 @@ export default function RequestFields({
     <>
       {/* Service type */}
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">Service Type</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.serviceType")}</label>
         <select
           className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]"
           value={selected}
@@ -427,7 +431,7 @@ export default function RequestFields({
 
       {/* Pickup details */}
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">Pickup Details</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.pickupDetails")}</label>
         {isParcelService(selected) ? (
           <CourierRows
             couriers={details.couriers}
@@ -435,10 +439,10 @@ export default function RequestFields({
           />
         ) : (
           <>
-            <label className="text-xs font-semibold mb-1.5 block">Pickup Location:</label>
+            <label className="text-xs font-semibold mb-1.5 block">{t("rf.pickupLocation")}</label>
             <input
               className={INPUT_CLASS}
-              placeholder="Enter pickup location"
+              placeholder={t("rf.enterPickup")}
               value={details.pickupLocation}
               onChange={(e) => set({ pickupLocation: e.target.value })}
             />
@@ -448,15 +452,15 @@ export default function RequestFields({
 
       {/* Delivery details */}
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">Delivery Details</label>
-        <label className="text-xs font-semibold mb-1.5 block">Delivery Area:</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.deliveryDetails")}</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.deliveryArea")}</label>
         <input
           className={INPUT_CLASS}
           placeholder="e.g. Felda Wilayah Sahabat"
           value={details.deliveryArea}
           onChange={(e) => set({ deliveryArea: e.target.value })}
         />
-        <label className="text-xs font-semibold mb-1.5 block">Sahabat:</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.sahabat")}</label>
         <input
           className={INPUT_CLASS}
           placeholder="e.g. 05"
@@ -465,7 +469,7 @@ export default function RequestFields({
         />
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-semibold mb-1.5 block">No. Rumah (No R):</label>
+            <label className="text-xs font-semibold mb-1.5 block">{t("rf.noRumah")}</label>
             <input
               className={INPUT_CLASS}
               placeholder="e.g. 203"
@@ -474,7 +478,7 @@ export default function RequestFields({
             />
           </div>
           <div>
-            <label className="text-xs font-semibold mb-1.5 block">Unit Number:</label>
+            <label className="text-xs font-semibold mb-1.5 block">{t("rf.unitNumber")}</label>
             <input
               className={INPUT_CLASS}
               placeholder="e.g. 3A"
@@ -483,26 +487,26 @@ export default function RequestFields({
             />
           </div>
         </div>
-        <label className="text-xs font-semibold mb-1.5 block">Block:</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.block")}</label>
         <input
           className={INPUT_CLASS}
           placeholder="e.g. 04"
           value={details.block}
           onChange={(e) => set({ block: e.target.value })}
         />
-        <label className="text-xs font-semibold mb-1.5 block">Receiver Name:</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.receiverName")}</label>
         <input
           className={INPUT_CLASS}
-          placeholder="Enter receiver name"
+          placeholder={t("rf.enterReceiverName")}
           value={details.receiverName}
           onChange={(e) => set({ receiverName: e.target.value })}
         />
         <label className="text-xs font-semibold mb-1.5 block">
-          Receiver Phone (Optional):
+          {t("rf.receiverPhone")}
         </label>
         <input
           className={`${INPUT_CLASS} mb-0`}
-          placeholder="Enter receiver phone"
+          placeholder={t("rf.enterReceiverPhone")}
           value={details.receiverPhone}
           onChange={(e) => set({ receiverPhone: e.target.value })}
         />
@@ -510,7 +514,7 @@ export default function RequestFields({
 
       {/* Items / request details */}
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">Items / Request Details</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.itemsDetails")}</label>
         {itemList ? (
           <ItemRows items={details.items} onChange={(items) => set({ items })} />
         ) : (
@@ -518,8 +522,8 @@ export default function RequestFields({
             className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px] min-h-[80px]"
             placeholder={
               isParcelService(selected)
-                ? "e.g. Parcel under the name Ahmad, receipt number 88213"
-                : "e.g. 2 bags of rice, 1 carton of mineral water"
+                ? t("rf.parcelPlaceholder")
+                : t("rf.itemsPlaceholder")
             }
             value={details.itemsText}
             onChange={(e) => set({ itemsText: e.target.value })}
@@ -535,17 +539,17 @@ export default function RequestFields({
         >
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="text-[12px] font-bold text-orange">
-              + {titleCaseService(e.serviceType || "Extra service")}
+              + {titleCaseService(e.serviceType || t("rf.extraService"))}
             </div>
             <button
               type="button"
               onClick={() => removeExtra(e.id)}
               className="text-[11px] text-orange font-semibold"
             >
-              Remove
+              {t("common.remove")}
             </button>
           </div>
-          <label className="text-xs font-semibold mb-1.5 block">Service Type:</label>
+          <label className="text-xs font-semibold mb-1.5 block">{t("rf.serviceTypeColon")}</label>
           <select
             className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px] mb-2.5"
             value={e.serviceType}
@@ -567,10 +571,10 @@ export default function RequestFields({
             />
           ) : (
             <>
-              <label className="text-xs font-semibold mb-1.5 block">Pickup Location:</label>
+              <label className="text-xs font-semibold mb-1.5 block">{t("rf.pickupLocation")}</label>
               <input
                 className={INPUT_CLASS}
-                placeholder="Enter pickup location"
+                placeholder={t("rf.enterPickup")}
                 value={e.pickupLocation}
                 onChange={(ev) => updateExtra(e.id, { pickupLocation: ev.target.value })}
               />
@@ -586,7 +590,7 @@ export default function RequestFields({
           ) : (
             <textarea
               className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px] min-h-[70px] mt-2.5"
-              placeholder="Details for this extra service"
+              placeholder={t("rf.detailsExtra")}
               value={e.itemsText}
               onChange={(ev) => updateExtra(e.id, { itemsText: ev.target.value })}
             />
@@ -613,12 +617,14 @@ export default function RequestFields({
         }
         className="w-full mb-3.5 rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-orange bg-[#FDF3EE] border border-dashed border-orange/40 hover:bg-orange/10 transition-colors"
       >
-        ＋ Add another service for {serviceOptions[0] ? "this runner" : "the same runner"}
+        {t("rf.addAnother", {
+          who: serviceOptions[0] ? t("rf.thisRunner") : t("rf.sameRunner"),
+        })}
       </button>
 
       {/* Delivery time */}
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">Delivery Time</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("rf.deliveryTime")}</label>
         <div className="flex gap-1.5 mb-1.5">
           {timeOptions.map((opt) => (
             <button
@@ -638,13 +644,13 @@ export default function RequestFields({
         {details.deliveryTime === "scheduled" && (
           <input
             className={INPUT_CLASS}
-            placeholder="Preferred Time — e.g. 3:00 PM – 4:00 PM"
+            placeholder={t("rf.preferredTime")}
             value={details.preferredTime}
             onChange={(e) => set({ preferredTime: e.target.value })}
           />
         )}
         <div className="text-[11px] text-slate bg-paper2 rounded-lg px-3 py-2">
-          Needed By: <b className="text-ink">{neededBy(details)}</b>
+          {t("rf.neededBy")} <b className="text-ink">{neededBy(details)}</b>
         </div>
       </div>
 
@@ -653,14 +659,15 @@ export default function RequestFields({
         <div className="rounded-[12px] border-[1.5px] border-teal/30 bg-[#E4F3EC] px-3.5 py-3 mb-3.5">
           <div className="flex items-center justify-between gap-2">
             <div className="text-[12px] font-semibold text-teal">
-              You&apos;ll pay the runner
+              {t("rf.youllPay")}
             </div>
             <div className="font-mono font-bold text-[17px] text-teal">{formatRM(grandTotal)}</div>
           </div>
           <div className="text-[10.5px] text-slate mt-0.5">
-            Auto-calculated from {totalItemCount(details)} item
-            {totalItemCount(details) === 1 ? "" : "s"} × the runner&apos;s service price — both
-            sides see this.
+            {t("rf.autoCalc", {
+              count: totalItemCount(details),
+              s: totalItemCount(details) === 1 ? "" : "s",
+            })}
           </div>
         </div>
       )}

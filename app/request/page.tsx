@@ -15,11 +15,13 @@ import RequestFields, {
 import { cleanServiceName, formatRM } from "@/lib/constants";
 import { pricingLabel } from "@/lib/mockData";
 import { createJob, fetchRunners, getProfile } from "@/lib/queries";
+import { useI18n } from "@/lib/i18n";
 import type { RequestDetails } from "@/components/RequestFields";
 import type { Runner } from "@/lib/types";
 
 function RequestForm() {
   const params = useSearchParams();
+  const { t } = useI18n();
   const [runners, setRunners] = useState<Runner[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -119,7 +121,7 @@ function RequestForm() {
     });
     setSending(false);
     if (!res.ok) {
-      setError(res.message ?? "Couldn't save your request. Please try again.");
+      setError(res.message ?? t("common.tryAgain"));
       return;
     }
     setStatus("pending");
@@ -143,7 +145,7 @@ function RequestForm() {
   if (!loaded) {
     return (
       <PhoneFrame narrow>
-        <div className="text-center py-10 text-[12.5px] text-slate">Loading…</div>
+        <div className="text-center py-10 text-[12.5px] text-slate">{t("req.loading")}</div>
       </PhoneFrame>
     );
   }
@@ -153,28 +155,27 @@ function RequestForm() {
       <PhoneFrame narrow>
         <div className="flex bg-paper2 rounded-[10px] p-[3px] mb-4">
           <div className="flex-1 text-center py-2.5 text-xs font-semibold rounded-lg bg-white text-ink shadow-sm">
-            Direct request
+            {t("nav.directRequest")}
           </div>
           <Link
             href="/broadcast"
             className="flex-1 text-center py-2.5 text-xs font-semibold rounded-lg text-ink hover:bg-white/60"
           >
-            Broadcast to all
+            {t("nav.broadcastToAll")}
           </Link>
         </div>
 
-        <div className="text-[19px] font-bold mb-1 font-display">Request a runner</div>
-        <div className="text-[12.5px] text-slate mb-4.5">Fill in your errand details</div>
+        <div className="text-[19px] font-bold mb-1 font-display">{t("req.requestRunner")}</div>
+        <div className="text-[12.5px] text-slate mb-4.5">{t("req.fillDetails")}</div>
 
         <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-10 mb-3.5">
           <div className="text-3xl mb-2.5">🧑‍🤝‍🧑</div>
-          <div className="font-display font-bold text-[16px] mb-1">Pick a runner first</div>
+          <div className="font-display font-bold text-[16px] mb-1">{t("req.pickRunner")}</div>
           <div className="text-[12px] text-slate leading-relaxed mb-4">
-            Direct requests go to one specific runner. Head to Browse and choose someone nearby,
-            or broadcast to everyone at once.
+            {t("req.pickRunnerBody")}
           </div>
           <Link href="/browse" className="w-full block">
-            <Button>Find a runner</Button>
+            <Button>{t("common.findRunner")}</Button>
           </Link>
         </div>
       </PhoneFrame>
@@ -187,18 +188,18 @@ function RequestForm() {
     <PhoneFrame narrow>
       <div className="flex bg-paper2 rounded-[10px] p-[3px] mb-4">
         <div className="flex-1 text-center py-2.5 text-xs font-semibold rounded-lg bg-white text-ink shadow-sm">
-          Direct request
+          {t("nav.directRequest")}
         </div>
         <Link
           href="/broadcast"
           className="flex-1 text-center py-2.5 text-xs font-semibold rounded-lg text-ink hover:bg-white/60"
         >
-          Broadcast to all
+          {t("nav.broadcastToAll")}
         </Link>
       </div>
 
-      <div className="text-[19px] font-bold mb-1 font-display">Request {runner.name}</div>
-      <div className="text-[12.5px] text-slate mb-4.5">Fill in your errand details</div>
+      <div className="text-[19px] font-bold mb-1 font-display">{t("req.requestName", { name: runner.name })}</div>
+      <div className="text-[12.5px] text-slate mb-4.5">{t("req.fillDetails")}</div>
 
       <RequestFields
         details={details}
@@ -217,7 +218,7 @@ function RequestForm() {
         <div className="bg-white border border-line rounded-[12px] px-3.5 py-3 my-3.5">
           <div className="flex justify-between items-center">
             <div>
-              <div className="text-xs text-slate mb-1">{runner.name.split(" ")[0]}&apos;s pricing</div>
+              <div className="text-xs text-slate mb-1">{t("req.pricing", { name: runner.name.split(" ")[0] })}</div>
               <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-paper2 text-ink">
                 {pricingLabel(firstService.pricing.model)}
               </span>
@@ -229,27 +230,27 @@ function RequestForm() {
             </span>
           </div>
           <div className="text-[11px] text-slate mt-1.5">
-            You&apos;ll only pay after the job is done — no upfront payment needed.
+            {t("req.payAfter")}
           </div>
         </div>
       )}
 
       <Button onClick={sendRequest} disabled={sending}>
-        {sending ? "Sending…" : "Send request"}
+        {sending ? t("common.sending") : t("common.sendRequest")}
       </Button>
 
       {status !== "idle" && (
         <div className="bg-ink text-paper rounded-card p-4.5 text-center my-3.5">
           <div className="text-xs text-[#B8BDB9]">
-            {status === "pending" ? `Waiting for ${runner.name.split(" ")[0]} to accept` : ""}
+            {status === "pending" ? t("req.waitingAccept", { name: runner.name.split(" ")[0] }) : ""}
           </div>
           <div className="font-mono text-[34px] font-semibold my-1.5 text-orange">
             {mm}:{ss}
           </div>
           <div className="text-xs text-[#B8BDB9]">
             {status === "expired"
-              ? "Expired — no response from runner"
-              : "Request auto-expires if no response"}
+              ? t("req.expiredNoResponse")
+              : t("req.autoExpires")}
           </div>
         </div>
       )}
@@ -257,18 +258,16 @@ function RequestForm() {
       {status === "expired" && (
         <div className="flex gap-2 mt-3.5">
           <Link href="/browse" className="w-full">
-            <Button variant="outline">Find another runner</Button>
+            <Button variant="outline">{t("common.findAnotherRunner")}</Button>
           </Link>
           <Link href="/broadcast" className="w-full">
-            <Button variant="secondary">Broadcast instead</Button>
+            <Button variant="secondary">{t("req.broadcastInstead")}</Button>
           </Link>
         </div>
       )}
 
       <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 mt-2.5 italic">
-        If {runner.name.split(" ")[0]} doesn&apos;t respond in 5 minutes, this request
-        auto-revokes. You can then pick another runner directly, or broadcast to everyone
-        available.
+        {t("req.autoRevokeNote", { name: runner.name.split(" ")[0] })}
       </div>
     </PhoneFrame>
   );

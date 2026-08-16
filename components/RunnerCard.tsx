@@ -3,6 +3,7 @@ import { cleanServiceName, titleCase } from "@/lib/constants";
 import { Runner, RunnerStatus } from "@/lib/types";
 import StatusPill from "./StatusPill";
 import { pricingDisplay, pricingLabel } from "@/lib/mockData";
+import { useI18n } from "@/lib/i18n";
 
 const STATUS_EDGE: Record<RunnerStatus, string> = {
   available: "#2E6E62",
@@ -12,6 +13,7 @@ const STATUS_EDGE: Record<RunnerStatus, string> = {
 };
 
 export default function RunnerCard({ runner }: { runner: Runner }) {
+  const { t } = useI18n();
   const firstService = runner.services[0];
   const isCustom = firstService?.pricing.model === "custom";
 
@@ -25,7 +27,7 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
       : "—";
   const hasThird = thirdValue !== "—";
   const thirdLabel =
-    runner.distanceKm > 0 ? "Distance" : runner.acceptRate !== null ? "Accept" : "Distance";
+    runner.distanceKm > 0 ? t("runcard.distance") : runner.acceptRate !== null ? t("runcard.accept") : t("runcard.distance");
 
   return (
     <Link
@@ -83,12 +85,12 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
                     ? "bg-[#FDF6E3] border-[#EDD38A]"
                     : "bg-[#FBF6E9] border-dashed border-line"
                 }`}
-                title={hasRating ? undefined : "No reviews yet"}
+                title={hasRating ? undefined : t("runcard.noReviews")}
               >
                 <div className={`font-mono font-bold text-[12px] ${hasRating ? "text-[#8A6D00]" : "text-slate"}`}>
-                  <span className="text-yellow">★</span> {hasRating ? runner.rating : "New"}
+                  <span className="text-yellow">★</span> {hasRating ? runner.rating : t("runcard.new")}
                 </div>
-                <div className="text-[7.5px] text-slate uppercase tracking-wide mt-0.5">Rating</div>
+                <div className="text-[7.5px] text-slate uppercase tracking-wide mt-0.5">{t("runcard.rating")}</div>
               </div>
 
               {/* Jobs done — soft teal */}
@@ -100,7 +102,7 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
                 <div className={`font-mono font-bold text-[12px] ${hasJobs ? "text-teal" : "text-slate"}`}>
                   {runner.jobsCompleted}
                 </div>
-                <div className="text-[7.5px] text-slate uppercase tracking-wide mt-0.5">Jobs</div>
+                <div className="text-[7.5px] text-slate uppercase tracking-wide mt-0.5">{t("runcard.jobs")}</div>
               </div>
 
               {/* Distance / accept rate — soft gray */}
@@ -108,20 +110,20 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
                 className={`rounded-[6px] py-1.5 text-center border ${
                   hasThird ? "bg-[#F1EFE8] border-[#D8D0BC]" : "bg-[#F3F1EA] border-dashed border-line"
                 }`}
-                title={hasThird ? undefined : "Not available yet"}
+                title={hasThird ? undefined : t("runcard.notAvailable")}
               >
                 <div className={`font-mono font-bold text-[12px] ${hasThird ? "text-ink" : "text-slate"}`}>
                   {thirdValue}
                 </div>
                 <div className="text-[7.5px] text-slate uppercase tracking-wide mt-0.5">
-                  {thirdLabel === "Accept" ? "Accept" : "Dist"}
+                  {thirdLabel === t("runcard.accept") ? t("runcard.accept") : t("runcard.dist")}
                 </div>
               </div>
             </div>
 
             <div className="mt-2">
               <div className="text-[8.5px] font-semibold uppercase tracking-wide text-slate">
-                Service:
+                {t("runcard.service")}
               </div>
               <div className="flex flex-wrap gap-1 mt-1">
                 {runner.services.length > 0 ? (
@@ -134,7 +136,7 @@ export default function RunnerCard({ runner }: { runner: Runner }) {
                     </span>
                   ))
                 ) : (
-                  <span className="text-[10px] text-slate italic">No services listed yet</span>
+                  <span className="text-[10px] text-slate italic">{t("runcard.noServices")}</span>
                 )}
               </div>
             </div>

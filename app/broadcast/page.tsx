@@ -12,11 +12,13 @@ import RequestFields, {
   buildTakeFrom,
 } from "@/components/RequestFields";
 import { createJob, fetchRunners, getProfile } from "@/lib/queries";
+import { useI18n } from "@/lib/i18n";
 import type { RequestDetails } from "@/components/RequestFields";
 import type { Runner } from "@/lib/types";
 
 function BroadcastForm() {
   const params = useSearchParams();
+  const { t } = useI18n();
   const [recipients, setRecipients] = useState<Runner[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState<"idle" | "running" | "expired">("idle");
@@ -116,7 +118,7 @@ function BroadcastForm() {
   if (!loaded) {
     return (
       <PhoneFrame narrow>
-        <div className="text-center py-10 text-[12.5px] text-slate">Loading…</div>
+        <div className="text-center py-10 text-[12.5px] text-slate">{t("bcast.loading")}</div>
       </PhoneFrame>
     );
   }
@@ -127,10 +129,10 @@ function BroadcastForm() {
         href="/request"
         className="flex-1 text-center py-2.5 text-xs font-semibold rounded-lg text-ink hover:bg-white/60"
       >
-        Direct request
+        {t("nav.directRequest")}
       </Link>
       <div className="flex-1 text-center py-2.5 text-xs font-semibold rounded-lg bg-white text-ink shadow-sm">
-        Broadcast to all
+        {t("nav.broadcastToAll")}
       </div>
     </div>
   );
@@ -139,19 +141,18 @@ function BroadcastForm() {
     return (
       <PhoneFrame narrow>
         {tabs}
-        <div className="text-[19px] font-bold mb-1 font-display">Broadcast request</div>
+        <div className="text-[19px] font-bold mb-1 font-display">{t("bcast.title")}</div>
         <div className="text-[12.5px] text-slate mb-4.5">
-          Sent to every available runner nearby — first to accept gets the job
+          {t("bcast.sub")}
         </div>
         <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-10 mb-3.5">
           <div className="text-3xl mb-2.5">📣</div>
-          <div className="font-display font-bold text-[16px] mb-1">No available runners yet</div>
+          <div className="font-display font-bold text-[16px] mb-1">{t("bcast.noRunners")}</div>
           <div className="text-[12px] text-slate leading-relaxed mb-4">
-            There&apos;s no one to broadcast to in your area right now. Check back soon, or be the
-            first to offer a hand to your neighbours.
+            {t("bcast.noRunnersBody")}
           </div>
           <Link href="/browse" className="w-full block">
-            <Button>Find a runner</Button>
+            <Button>{t("common.findRunner")}</Button>
           </Link>
         </div>
       </PhoneFrame>
@@ -160,16 +161,16 @@ function BroadcastForm() {
 
   const statusMessage =
     status === "expired"
-      ? "No one accepted in time"
-      : "Waiting for someone to accept";
+      ? t("bcast.noAccepted")
+      : t("bcast.waitingAccept");
 
   return (
     <PhoneFrame narrow>
       {tabs}
 
-      <div className="text-[19px] font-bold mb-1 font-display">Broadcast request</div>
+      <div className="text-[19px] font-bold mb-1 font-display">{t("bcast.title")}</div>
       <div className="text-[12.5px] text-slate mb-4.5">
-        Sent to every available runner nearby — first to accept gets the job
+        {t("bcast.sub")}
       </div>
 
       <RequestFields details={details} onChange={setDetails} />
@@ -183,21 +184,20 @@ function BroadcastForm() {
       <div className="bg-white border border-line rounded-[12px] px-3.5 py-3 mb-3.5">
         <div className="flex justify-between items-center">
           <div>
-            <div className="text-xs text-slate mb-1">Pricing</div>
+            <div className="text-xs text-slate mb-1">{t("bcast.pricing")}</div>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-paper2 text-ink">
-              varies by runner
+              {t("bcast.varies")}
             </span>
           </div>
           <span className="font-mono font-bold text-[17px] text-teal">—</span>
         </div>
         <div className="text-[11px] text-slate mt-1.5">
-          Once a runner claims this, you&apos;ll both see the exact price on the job — no upfront
-          payment needed.
+          {t("bcast.payNote")}
         </div>
       </div>
 
       <Button onClick={startBroadcast} disabled={sending}>
-        {sending ? "Sending…" : `⚡ Broadcast to ${recipients.length} available runners`}
+        {sending ? t("common.sending") : t("bcast.send", { n: recipients.length })}
       </Button>
 
       {status !== "idle" && (
@@ -207,7 +207,7 @@ function BroadcastForm() {
             {mm}:{ss}
           </div>
           <div className="text-xs text-[#B8BDB9]">
-            First runner to accept gets the job — others are notified it&apos;s taken
+            {t("bcast.firstAcceptNote")}
           </div>
         </div>
       )}
@@ -215,7 +215,7 @@ function BroadcastForm() {
       {status !== "idle" && (
         <>
           <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4 mb-2">
-            Goes to all runners — {recipients.length} in the network right now
+            {t("bcast.goesTo", { n: recipients.length })}
           </div>
           <div className="flex flex-wrap mb-1.5">
             {recipients.slice(0, 8).map((r) => (
@@ -234,7 +234,7 @@ function BroadcastForm() {
             ))}
             {recipients.length > 8 && (
               <div className="text-[11px] text-slate py-1.5">
-                +{recipients.length - 8} more
+                {t("bcast.more", { n: recipients.length - 8 })}
               </div>
             )}
           </div>
@@ -243,7 +243,7 @@ function BroadcastForm() {
 
       {status === "expired" && (
         <Link href="/browse" className="block mt-3.5">
-          <Button variant="outline">Back to browse</Button>
+          <Button variant="outline">{t("bcast.backBrowse")}</Button>
         </Link>
       )}
     </PhoneFrame>

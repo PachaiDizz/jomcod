@@ -15,6 +15,7 @@ import {
   getProfile,
 } from "@/lib/queries";
 import type { AdminJobRow, AdminRunnerRow, ReportRow } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
 
 type Tab = "runners" | "jobs" | "reports";
 
@@ -27,6 +28,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function AdminPage() {
+  const { t } = useI18n();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [uid, setUid] = useState("");
   const [tab, setTab] = useState<Tab>("runners");
@@ -87,7 +89,7 @@ export default function AdminPage() {
   if (isAdmin === null) {
     return (
       <PhoneFrame wide>
-        <LoadingState label="Checking access…" />
+        <LoadingState label={t("admin.checkingAccess")} />
       </PhoneFrame>
     );
   }
@@ -95,15 +97,15 @@ export default function AdminPage() {
   if (!isAdmin) {
     return (
       <PhoneFrame>
-        <div className="text-[19px] font-bold mb-1 font-display">Admin only</div>
+        <div className="text-[19px] font-bold mb-1 font-display">{t("admin.only")}</div>
         <div className="text-[12.5px] text-slate mb-4.5">
-          This panel is restricted. To enable it, run this once in the Supabase SQL editor:
+          {t("admin.onlyBody")}
         </div>
         <pre className="bg-ink text-paper rounded-card p-3.5 text-[11.5px] overflow-x-auto mb-3.5 font-mono">
           {`update public.profiles\nset is_admin = true\nwhere id = '${uid || "<your-user-id>"}';`}
         </pre>
         <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 italic">
-          Your user id: <span className="font-mono">{uid || "loading…"}</span>
+          {t("admin.yourUserId")} <span className="font-mono">{uid || t("admin.loading")}</span>
         </div>
       </PhoneFrame>
     );
@@ -115,38 +117,38 @@ export default function AdminPage() {
 
   return (
     <PhoneFrame wide>
-      <div className="text-[19px] font-bold mb-1 font-display">Admin panel</div>
-      <div className="text-[12.5px] text-slate mb-5">Approve runners, moderate jobs, review reports</div>
+      <div className="text-[19px] font-bold mb-1 font-display">{t("admin.title")}</div>
+      <div className="text-[12.5px] text-slate mb-5">{t("admin.sub")}</div>
 
       <div className="grid grid-cols-4 gap-2.5 mb-5">
         <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
           <div className="font-mono font-bold text-xl">{runners.length}</div>
-          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Runners</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">{t("admin.runners")}</div>
         </div>
         <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
           <div className="font-mono font-bold text-xl text-orange">{pendingApproval}</div>
-          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Pending approval</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">{t("admin.pendingApproval")}</div>
         </div>
         <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
           <div className="font-mono font-bold text-xl text-teal">{activeJobs}</div>
-          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Active jobs</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">{t("admin.activeJobs")}</div>
         </div>
         <div className="bg-white border border-line rounded-[10px] p-3.5 text-center">
           <div className="font-mono font-bold text-xl text-orange">{openReports}</div>
-          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">Open reports</div>
+          <div className="text-[10px] text-slate mt-0.5 uppercase tracking-wide">{t("admin.openReports")}</div>
         </div>
       </div>
 
       <div className="flex bg-paper2 rounded-[10px] p-[3px] mb-5 w-fit">
-        {(["runners", "jobs", "reports"] as Tab[]).map((t) => (
+        {(["runners", "jobs", "reports"] as Tab[]).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-4 py-2 text-xs font-semibold rounded-lg capitalize transition-colors ${
-              tab === t ? "bg-white text-ink shadow-sm" : "text-slate hover:text-ink"
+              tab === tabKey ? "bg-white text-ink shadow-sm" : "text-slate hover:text-ink"
             }`}
           >
-            {t}
+            {t(`admin.tab${tabKey[0].toUpperCase()}${tabKey.slice(1)}`)}
           </button>
         ))}
       </div>
@@ -155,7 +157,7 @@ export default function AdminPage() {
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
           {runners.length === 0 ? (
             <div className="col-span-full text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
-              No runners yet.
+              {t("admin.noRunners")}
             </div>
           ) : (
             runners.map((r) => (
@@ -164,10 +166,10 @@ export default function AdminPage() {
                   <div className="min-w-0">
                     <div className="font-bold text-[13.5px] break-words">{r.name}</div>
                     <div className="text-[11px] text-slate mt-0.5">
-                      {r.area || "No area"} · {r.status ?? "offline"}
+                      {r.area || t("admin.noArea")} · {r.status ?? "offline"}
                     </div>
                     <div className="text-[10px] font-mono text-slate mt-1">
-                      joined {new Date(r.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}
+                      {t("admin.joined")} {new Date(r.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}
                     </div>
                   </div>
                   <span
@@ -179,7 +181,7 @@ export default function AdminPage() {
                         : "bg-[#FDF6E3] text-[#8A6D00]"
                     }`}
                   >
-                    {r.isSuspended ? "Suspended" : r.isApproved ? "Approved" : "Pending"}
+                    {r.isSuspended ? t("admin.suspended") : r.isApproved ? t("admin.approved") : t("admin.pending")}
                   </span>
                 </div>
                 <div className="flex gap-2 mt-3">
@@ -189,7 +191,7 @@ export default function AdminPage() {
                     disabled={busy === r.id}
                     onClick={() => toggleApproved(r)}
                   >
-                    {r.isApproved ? "Unapprove" : "Approve"}
+                    {r.isApproved ? t("admin.unapprove") : t("admin.approve")}
                   </Button>
                   <Button
                     variant={r.isSuspended ? "secondary" : "outline"}
@@ -197,7 +199,7 @@ export default function AdminPage() {
                     disabled={busy === r.id}
                     onClick={() => toggleSuspended(r)}
                   >
-                    {r.isSuspended ? "Reinstate" : "Suspend"}
+                    {r.isSuspended ? t("admin.reinstate") : t("admin.suspend")}
                   </Button>
                 </div>
               </div>
@@ -210,7 +212,7 @@ export default function AdminPage() {
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
           {jobs.length === 0 ? (
             <div className="col-span-full text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
-              No jobs yet.
+              {t("admin.noJobs")}
             </div>
           ) : (
             jobs.map((j) => (
@@ -237,7 +239,7 @@ export default function AdminPage() {
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
           {reports.length === 0 ? (
             <div className="col-span-full text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
-              No reports yet.
+              {t("admin.noReports")}
             </div>
           ) : (
             reports.map((r) => (
@@ -261,15 +263,15 @@ export default function AdminPage() {
                 </div>
                 {r.details && <div className="text-[12px] text-[#4B5250] mt-1.5 break-words">{r.details}</div>}
                 <div className="text-[10.5px] font-mono text-slate mt-1.5">
-                  reported by {r.reporterName} · {new Date(r.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}
+                  {t("admin.reportedBy")} {r.reporterName} · {new Date(r.createdAt).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}
                 </div>
                 {r.status === "open" && (
                   <div className="flex gap-2 mt-3">
                     <Button variant="secondary" className="flex-1 px-3 py-1.5 text-[11px] rounded-lg" onClick={() => setReportStatus(r.id, "resolved")}>
-                      Resolve
+                      {t("admin.resolve")}
                     </Button>
                     <Button variant="outline" className="flex-1 px-3 py-1.5 text-[11px] rounded-lg" onClick={() => setReportStatus(r.id, "dismissed")}>
-                      Dismiss
+                      {t("admin.dismiss")}
                     </Button>
                   </div>
                 )}

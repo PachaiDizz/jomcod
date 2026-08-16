@@ -23,6 +23,7 @@ import {
   setJobTotal,
 } from "@/lib/queries";
 import { estimateJobTotal } from "@/lib/estimate";
+import { useI18n } from "@/lib/i18n";
 import type { JobRequest, Review } from "@/lib/types";
 
 const JOB_STYLES: Record<JobRequest["status"], string> = {
@@ -95,6 +96,7 @@ function parseNotesExtended(notes: string): {
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useI18n();
   const [job, setJob] = useState<JobRequest | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -209,7 +211,7 @@ export default function JobDetailPage() {
   if (!loaded) {
     return (
       <PhoneFrame>
-        <LoadingState label="Loading job…" />
+        <LoadingState label={t("common.loading")} />
       </PhoneFrame>
     );
   }
@@ -217,12 +219,12 @@ export default function JobDetailPage() {
   if (notFound || !job) {
     return (
       <PhoneFrame>
-        <div className="text-[19px] font-bold mb-1 font-display">Job not found</div>
+        <div className="text-[19px] font-bold mb-1 font-display">{t("job.jobNotFound")}</div>
         <div className="text-[12.5px] text-slate mb-4.5">
-          This job doesn&apos;t exist or you&apos;re not part of it.
+          {t("job.jobNotFoundBody")}
         </div>
         <Link href="/dashboard" className="w-full block">
-          <Button variant="outline">Back to dashboard</Button>
+          <Button variant="outline">{t("job.backDashboard")}</Button>
         </Link>
       </PhoneFrame>
     );
@@ -233,7 +235,7 @@ export default function JobDetailPage() {
   return (
     <PhoneFrame>
       <Link href="/dashboard" className="text-[11.5px] font-semibold text-teal hover:underline mb-3 inline-block">
-        ← Dashboard
+        {t("job.backDashboard")}
       </Link>
 
       <div className="bg-white border border-line rounded-card overflow-hidden mb-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -249,7 +251,7 @@ export default function JobDetailPage() {
               </div>
               {contact?.name && (
                 <div className="text-[11.5px] text-slate truncate">
-                  {isRequester ? `Runner: ${contact.name}` : `Requested by ${contact.name}`}
+                  {isRequester ? `${t("job.runner")} ${contact.name}` : t("job.requestedBy", { name: contact.name })}
                 </div>
               )}
             </div>
@@ -263,7 +265,7 @@ export default function JobDetailPage() {
           <RouteInfo job={job} />
 
           <div className="flex items-center justify-between gap-2 rounded-[10px] bg-paper2 border border-line px-3 py-2">
-            <span className="text-[11px] font-semibold text-slate">Created</span>
+            <span className="text-[11px] font-semibold text-slate">{t("job.created")}</span>
             <span className="text-[12px] text-ink font-medium">
               {new Date(job.createdAt).toLocaleString("en-MY", {
                 day: "numeric",
@@ -289,11 +291,11 @@ export default function JobDetailPage() {
               const m = it.match(/^(.*?)\s*[×x*]\s*([\d.]+)\s*(?:@\s*(RM[\d.]+))?/i);
               if (m) return { name: m[1]!.trim(), qty: m[2]!.trim(), price: m[3]?.trim() ?? "" };
               return { name: it, qty: "", price: "" };
-            })} title="What to buy / pick up" />
+            })} title={t("itemlist.title")} />
           )}
           {total && (
             <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3.5 py-2.5 mt-1">
-              <span className="text-[12px] font-semibold text-teal">Estimated total</span>
+              <span className="text-[12px] font-semibold text-teal">{t("job.estimatedTotal")}</span>
               <span className="font-mono font-bold text-[15px] text-teal">{total}</span>
             </div>
           )}
@@ -318,7 +320,7 @@ export default function JobDetailPage() {
           rel="noopener noreferrer"
           className="mb-3 w-full rounded-[10px] px-4 py-3 text-[13px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-[#25D366] text-white hover:opacity-90"
         >
-          💬 Chat on WhatsApp
+          {t("job.chatWhatsapp")}
         </a>
       )}
 
@@ -328,24 +330,24 @@ export default function JobDetailPage() {
           onClick={handleClaim}
           disabled={claiming}
         >
-          {claiming ? "Claiming…" : "⚡ Claim this job"}
+          {claiming ? t("job.claiming") : t("job.claimJob")}
         </Button>
       )}
 
       {isRunner && job.status === "pending" && (
         <div className="flex gap-2 mb-3">
           <Button className="flex-1" onClick={() => act(() => acceptJob(job.id), "confirmed")}>
-            Accept job
+            {t("job.acceptJob")}
           </Button>
           <Button variant="outline" className="flex-1" onClick={() => act(() => declineJob(job.id), "cancelled")}>
-            Decline
+            {t("job.decline")}
           </Button>
         </div>
       )}
 
       {isRunner && job.status === "confirmed" && (
         <Button className="w-full mb-3" onClick={() => act(() => markJobDone(job.id), "done")}>
-          ✓ Mark as done
+          {t("job.markDone")}
         </Button>
       )}
 
@@ -362,20 +364,20 @@ export default function JobDetailPage() {
             act(() => cancelJob(job.id), "cancelled");
           }}
         >
-          {confirming ? "Tap again to confirm cancel" : "Cancel request"}
+          {confirming ? t("job.confirmCancel") : t("job.cancelRequest")}
         </Button>
       )}
 
       {isRequester && job.status === "done" && review && (
         <div className="mb-3 bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3.5 py-3 text-[12.5px]">
-          <span className="text-yellow font-semibold">{"★".repeat(review.rating)}</span> You rated {review.rating}/5
+          <span className="text-yellow font-semibold">{"★".repeat(review.rating)}</span> {t("job.youRated", { n: review.rating })}
           {review.text ? ` — "${review.text}"` : ""}
         </div>
       )}
 
       {isRequester && job.status === "done" && !review && (
         <div className="mb-3 bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3.5 py-3">
-          <div className="text-[12px] font-semibold mb-2">Rate your runner</div>
+          <div className="text-[12px] font-semibold mb-2">{t("job.rateRunner")}</div>
           <div className="flex gap-1 mb-2">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
@@ -389,12 +391,12 @@ export default function JobDetailPage() {
           </div>
           <textarea
             className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px] min-h-[54px] mb-2"
-            placeholder="How was the service? (optional)"
+            placeholder={t("job.howService")}
             value={ratingText}
             onChange={(e) => setRatingText(e.target.value)}
           />
           <Button variant="secondary" className="w-auto px-3 py-1.5 text-[11.5px] rounded-lg" onClick={submitRating} disabled={savingRating || rating < 1}>
-            {savingRating ? "Submitting…" : "Submit rating"}
+            {savingRating ? t("job.submitting") : t("job.submitRating")}
           </Button>
           {ratingMsg && <div className="text-[11.5px] mt-2">{ratingMsg}</div>}
         </div>
@@ -405,7 +407,7 @@ export default function JobDetailPage() {
           href={`/request?runner=${job.runnerId ?? ""}&service=${encodeURIComponent(job.serviceType)}&take=${encodeURIComponent(job.takeFrom)}&notes=${encodeURIComponent(job.notes ?? "")}`}
           className="block w-full rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-center bg-orange/10 text-orange border border-orange/30 hover:bg-orange hover:text-white transition-colors"
         >
-          🔄 Request again
+          {t("job.requestAgain")}
         </Link>
       )}
     </PhoneFrame>

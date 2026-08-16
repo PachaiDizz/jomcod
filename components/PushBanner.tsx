@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { isPushEnabled, pushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/push";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 const DISMISS_KEY = "jomcod_push_dismissed";
 
@@ -10,6 +11,7 @@ const DISMISS_KEY = "jomcod_push_dismissed";
 // miss a request even when the app is closed. Dismissing remembers via
 // localStorage (never auto-reappears unless they change devices/browsers).
 export default function PushBanner() {
+  const { t } = useI18n();
   const [state, setState] = useState<"hidden" | "shown" | "enabled">("hidden");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -64,7 +66,7 @@ export default function PushBanner() {
         }}
         className="fixed bottom-4 right-4 sm:right-auto sm:left-4 font-mono text-[11.5px] font-semibold bg-paper text-slate border border-line rounded-full px-4 py-2 shadow-lg z-50"
       >
-        🔔 Notifications on
+        {t("push.on")}
       </button>
     );
   }
@@ -75,10 +77,10 @@ export default function PushBanner() {
         <span className="text-[18px] flex-shrink-0">🔔</span>
         <div className="min-w-0 flex-1">
           <div className="text-[12.5px] font-bold text-paper">
-            Get notified on your phone
+            {t("push.getNotified")}
           </div>
           <div className="text-[11px] text-[#C7CBC7] leading-snug mt-0.5">
-            Turn on notifications so you never miss a request — even when the app is closed.
+            {t("push.desc")}
           </div>
           {error && (
             <div className="text-[11px] text-orange leading-snug mt-1.5">{error}</div>
@@ -89,14 +91,14 @@ export default function PushBanner() {
               disabled={busy}
               className="text-[11.5px] font-semibold bg-orange text-white rounded-[8px] px-3 py-1.5 hover:opacity-90 disabled:opacity-50"
             >
-              {busy ? "Enabling…" : "Allow notifications"}
+              {busy ? t("push.enabling") : t("push.allow")}
             </button>
             <button
               onClick={dismiss}
               disabled={busy}
               className="text-[11.5px] font-semibold text-[#C7CBC7] px-2 py-1.5"
             >
-              Not now
+              {t("push.notNow")}
             </button>
           </div>
         </div>

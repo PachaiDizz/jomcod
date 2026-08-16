@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 function parseTime(value: string): { hour: number; minute: number; ampm: "AM" | "PM" } {
   const match = value?.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
@@ -21,12 +22,14 @@ const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5); // 00, 05, …, 55
 export default function TimePicker({
   value,
   onChange,
-  placeholder = "Set a time",
+  placeholder,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }) {
+  const { t } = useI18n();
+  const effectivePlaceholder = placeholder ?? t("picker.placeholder");
   const [open, setOpen] = useState(false);
   const [hour, setHour] = useState(8);
   const [minute, setMinute] = useState(0);
@@ -108,7 +111,7 @@ export default function TimePicker({
         onClick={toggle}
         className="w-full min-w-0 text-left bg-white border border-line rounded-[10px] px-3 py-2.5 text-[12.5px] flex items-center justify-between gap-2"
       >
-        <span className={value ? "truncate" : "text-slate truncate"}>{value || placeholder}</span>
+        <span className={value ? "truncate" : "text-slate truncate"}>{value || effectivePlaceholder}</span>
         <span className="text-[11px] text-slate flex-shrink-0">🕐</span>
       </button>
 
@@ -127,13 +130,13 @@ export default function TimePicker({
                 onClick={save}
                 className="bg-orange text-white rounded-[8px] px-3 py-1 text-[11px] font-semibold"
               >
-                Set
+                {t("picker.set")}
               </button>
             </div>
             <div className="flex items-stretch gap-1.5">
               <label className="flex-1 min-w-0 block">
                 <span className="block text-[9px] text-slate font-semibold uppercase tracking-wide text-center mb-0.5">
-                  Hour
+                  {t("picker.hour")}
                 </span>
                 <select
                   value={hour}
@@ -149,7 +152,7 @@ export default function TimePicker({
               </label>
               <label className="flex-1 min-w-0 block">
                 <span className="block text-[9px] text-slate font-semibold uppercase tracking-wide text-center mb-0.5">
-                  Min
+                  {t("picker.minute")}
                 </span>
                 <select
                   value={minute}
@@ -191,7 +194,7 @@ export default function TimePicker({
                 onClick={save}
                 className="bg-orange text-white rounded-[8px] px-4 py-1.5 text-[11.5px] font-semibold"
               >
-                Set
+                {t("picker.set")}
               </button>
             </div>
 
@@ -225,7 +228,7 @@ export default function TimePicker({
               </button>
               <div className="flex-1">
                 <div className="text-[9px] text-slate font-semibold uppercase tracking-wide text-center mb-0.5">
-                  Hour
+                  {t("picker.hour")}
                 </div>
                 <input
                   type="range"
@@ -258,7 +261,7 @@ export default function TimePicker({
               </button>
               <div className="flex-1">
                 <div className="text-[9px] text-slate font-semibold uppercase tracking-wide text-center mb-0.5">
-                  Minute
+                  {t("picker.minute")}
                 </div>
                 <input
                   type="range"

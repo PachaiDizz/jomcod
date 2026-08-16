@@ -19,20 +19,22 @@ import {
   unblockUser,
 } from "@/lib/queries";
 import { waLink } from "@/lib/constants";
+import { useI18n } from "@/lib/i18n";
 import type { Review, Runner } from "@/lib/types";
 
 const REPORT_REASONS = [
-  "Fake runner",
-  "No response",
-  "Abusive behaviour",
-  "Fraud / scam",
-  "Wrong service",
-  "Inappropriate content",
-  "Other",
+  "report.reason1",
+  "report.reason2",
+  "report.reason3",
+  "report.reason4",
+  "report.reason5",
+  "report.reason6",
+  "report.reason7",
 ];
 
 export default function RunnerProfilePage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useI18n();
   const [runner, setRunner] = useState<Runner | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
@@ -86,12 +88,12 @@ export default function RunnerProfilePage() {
   if (notFound) {
     return (
       <PhoneFrame>
-        <div className="text-[19px] font-bold mb-1 font-display">Runner not found</div>
+        <div className="text-[19px] font-bold mb-1 font-display">{t("rpro.notFound")}</div>
         <div className="text-[12.5px] text-slate mb-4.5">
-          This profile doesn&apos;t exist or is no longer a runner.
+          {t("rpro.notFoundBody")}
         </div>
         <Link href="/browse" className="w-full block">
-          <Button variant="outline">Back to browse</Button>
+          <Button variant="outline">{t("rpro.backBrowse")}</Button>
         </Link>
       </PhoneFrame>
     );
@@ -100,7 +102,7 @@ export default function RunnerProfilePage() {
   if (!runner) {
     return (
       <PhoneFrame>
-        <LoadingState label="Loading profile…" />
+        <LoadingState label={t("rpro.loading")} />
       </PhoneFrame>
     );
   }
@@ -131,17 +133,17 @@ export default function RunnerProfilePage() {
       <div className="grid grid-cols-3 gap-2 my-4">
         <div className="bg-white border border-line rounded-[10px] p-3 text-center">
           <div className="font-mono font-semibold text-[17px] md:text-[20px]">{runner.jobsCompleted}</div>
-          <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">Jobs done</div>
+          <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">{t("rpro.jobsDone")}</div>
         </div>
         <div className="bg-white border border-line rounded-[10px] p-3 text-center">
           <div className="font-mono font-semibold text-[17px] md:text-[20px]">{avgRating ?? "—"}</div>
-          <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">Rating</div>
+          <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">{t("rpro.rating")}</div>
         </div>
         <div className="bg-white border border-line rounded-[10px] p-3 text-center">
           <div className="font-mono font-semibold text-[17px] md:text-[20px]">
             {runner.acceptRate === null ? "—" : `${runner.acceptRate}%`}
           </div>
-          <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">Accept rate</div>
+          <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">{t("rpro.acceptRate")}</div>
         </div>
       </div>
 
@@ -159,12 +161,11 @@ export default function RunnerProfilePage() {
       )}
 
       <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4.5 mb-2">
-        Services & pricing
+        {t("rpro.services")}
       </div>
       {runner.services.length === 0 ? (
         <div className="text-[12px] text-slate bg-paper2 rounded-lg px-3 py-3 italic">
-          This runner hasn&apos;t set up their services yet — send a request and chat on WhatsApp
-          once it&apos;s accepted to arrange the details.
+          {t("rpro.noServices")}
         </div>
       ) : (
         runner.services.map((s) => (
@@ -187,7 +188,7 @@ export default function RunnerProfilePage() {
       {reviews.length > 0 && (
         <>
           <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4.5 mb-2">
-            Recent reviews
+            {t("rpro.recentReviews")}
           </div>
           <div className="grid gap-2.5 md:grid-cols-2">
           {reviews.map((r) => (
@@ -205,7 +206,7 @@ export default function RunnerProfilePage() {
 
       {reviews.length === 0 && (
         <div className="text-[12px] text-slate bg-paper2 rounded-lg px-3 py-3 italic mt-4.5">
-          No reviews yet — be the first to let the neighbourhood know how this runner did.
+          {t("rpro.noReviews")}
         </div>
       )}
       </div>
@@ -221,20 +222,20 @@ export default function RunnerProfilePage() {
                 rel="noopener noreferrer"
                 className="w-full rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-[#25D366] text-white transition-opacity hover:opacity-90"
               >
-                💬 WhatsApp
+                {t("rpro.whatsapp")}
               </a>
             ) : (
               <div className="w-full rounded-[10px] px-4 py-3 text-[13.5px] text-center bg-paper2 text-slate">
                 {contactLoaded
-                  ? "🔒 WhatsApp unlocks after your request is accepted"
-                  : "Loading contact…"}
+                  ? t("rpro.whatsappLocked")
+                  : t("rpro.loadingContact")}
               </div>
             )}
             <Link
               href={`/request?runner=${runner.id}`}
               className="w-full rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-orange text-white transition-opacity hover:opacity-90"
             >
-              Request service
+              {t("rpro.requestService")}
             </Link>
 
             <div className="flex gap-2">
@@ -245,7 +246,7 @@ export default function RunnerProfilePage() {
                 }}
                 className="flex-1 rounded-[10px] px-3 py-2.5 text-[12px] font-semibold text-slate border border-line hover:border-orange hover:text-orange transition-colors"
               >
-                🚩 Report
+                {t("rpro.report")}
               </button>
               <button
                 onClick={async () => {
@@ -264,27 +265,29 @@ export default function RunnerProfilePage() {
                 {blocked === null
                   ? "…"
                   : blocked
-                  ? "Unblock ✅"
-                  : "🚫 Block runner"}
+                  ? t("rpro.blocked")
+                  : t("rpro.block")}
               </button>
             </div>
 
             {showReport && (
               <div className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] p-3">
-                <div className="text-[11.5px] font-semibold mb-2">Report {runner.name.split(" ")[0]}</div>
+                <div className="text-[11.5px] font-semibold mb-2">{t("rpro.reportRunner", { name: runner.name.split(" ")[0] })}</div>
                 <select
                   className="w-full bg-white border border-line rounded-[10px] px-2.5 py-2 text-[12px] mb-2"
                   value={reportReason}
                   onChange={(e) => setReportReason(e.target.value)}
                 >
-                  <option value="">Choose a reason…</option>
-                  {REPORT_REASONS.map((r) => (
-                    <option key={r}>{r}</option>
+                  <option value="">{t("rpro.chooseReason")}</option>
+                  {REPORT_REASONS.map((reasonKey) => (
+                    <option key={reasonKey} value={t(reasonKey)}>
+                      {t(reasonKey)}
+                    </option>
                   ))}
                 </select>
                 <textarea
                   className="w-full bg-white border border-line rounded-[10px] px-2.5 py-2 text-[12px] min-h-[54px] mb-2"
-                  placeholder="Anything the admin should know? (optional)"
+                  placeholder={t("rpro.reportPlaceholder")}
                   value={reportDetails}
                   onChange={(e) => setReportDetails(e.target.value)}
                 />
@@ -303,16 +306,16 @@ export default function RunnerProfilePage() {
                       });
                       setReporting(false);
                       if (res.ok) {
-                        setReportMsg("Report sent. Thanks for keeping the community safe. ✓");
+                        setReportMsg(t("rpro.reportSent"));
                         setReportReason("");
                         setReportDetails("");
                         setShowReport(false);
                       } else {
-                        setReportMsg(res.message ?? "Couldn't send your report.");
+                        setReportMsg(res.message ?? t("rpro.reportFail"));
                       }
                     }}
                   >
-                    {reporting ? "Sending…" : "Send report"}
+                    {reporting ? t("rpro.sending") : t("rpro.sendReport")}
                   </Button>
                   {reportMsg && <span className="text-[10.5px] text-slate">{reportMsg}</span>}
                 </div>
@@ -322,16 +325,16 @@ export default function RunnerProfilePage() {
 
           <div className="mt-4 pt-4 border-t border-line space-y-2.5">
             <div className="flex items-center justify-between gap-2 text-[12.5px]">
-              <span className="text-slate">Area</span>
+              <span className="text-slate">{t("rpro.area")}</span>
               <span className="font-semibold text-right">{runner.area}</span>
             </div>
             <div className="flex items-center justify-between gap-2 text-[12.5px]">
-              <span className="text-slate">Status</span>
+              <span className="text-slate">{t("rpro.status")}</span>
               <StatusPill status={runner.status} note={runner.statusNote} />
             </div>
             {runner.scheduleFrom && runner.scheduleTo && (
               <div className="flex items-center justify-between gap-2 text-[12.5px]">
-                <span className="text-slate">Schedule</span>
+                <span className="text-slate">{t("rpro.schedule")}</span>
                 <span className="font-semibold text-right">
                   {runner.scheduleFrom} – {runner.scheduleTo}
                 </span>

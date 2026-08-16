@@ -7,6 +7,7 @@ import RoleBadge from "@/components/RoleBadge";
 import LoadingState from "@/components/LoadingState";
 import { fetchNotifications, markAllNotificationsRead } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/lib/i18n";
 import type { AppNotification } from "@/lib/types";
 
 const KIND_STYLE: Record<string, { emoji: string; tile: string; bar: string }> = {
@@ -22,21 +23,22 @@ const KIND_STYLE: Record<string, { emoji: string; tile: string; bar: string }> =
 
 const KIND_FALLBACK = { emoji: "🔔", tile: "bg-[#F1EFE8]", bar: "bg-[#9AA09C]" };
 
-function timeAgo(t: number): string {
-  const s = Math.floor((Date.now() - t) / 1000);
-  if (s < 60) return "just now";
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-}
-
 export default function NotificationsPage() {
+  const { t } = useI18n();
   const [notifs, setNotifs] = useState<AppNotification[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [role, setRole] = useState("");
+
+  const timeAgo = (timestamp: number): string => {
+    const s = Math.floor((Date.now() - timestamp) / 1000);
+    if (s < 60) return t("notif.justNow");
+    const m = Math.floor(s / 60);
+    if (m < 60) return t("notif.mAgo", { n: m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("notif.hAgo", { n: h });
+    const d = Math.floor(h / 24);
+    return t("notif.dAgo", { n: d });
+  };
 
   useEffect(() => {
     createClient()
@@ -66,25 +68,24 @@ export default function NotificationsPage() {
   return (
     <PhoneFrame>
       <div className="flex items-center gap-2 mb-1 flex-wrap">
-        <div className="text-[19px] md:text-[26px] font-bold font-display">Notifications</div>
+        <div className="text-[19px] md:text-[26px] font-bold font-display">{t("notif.title")}</div>
         <RoleBadge role={role} />
       </div>
       <div className="text-[12.5px] text-slate mb-4.5">
-        Your request and job updates, all in one place.
+        {t("notif.sub")}
       </div>
 
       {!loaded ? (
-        <LoadingState label="Loading notifications…" />
+        <LoadingState label={t("notif.loading")} />
       ) : notifs.length === 0 ? (
         <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
           <div className="text-2xl mb-2.5">🔕</div>
-          <div className="font-display font-bold text-[16px] mb-1">No notifications yet</div>
+          <div className="font-display font-bold text-[16px] mb-1">{t("notif.empty")}</div>
           <div className="text-[12px] text-slate leading-relaxed">
-            When someone accepts your request, sends a broadcast, or marks a job done, it&apos;ll
-            show up here.
+            {t("notif.emptyBody")}
           </div>
           <Link href="/browse" className="mt-4 inline-block bg-orange text-white rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold">
-            Find a runner
+            {t("notif.findRunner")}
           </Link>
         </div>
       ) : (

@@ -8,6 +8,7 @@ import RoleBadge from "@/components/RoleBadge";
 import LoadingState from "@/components/LoadingState";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeWhatsApp, isValidWhatsApp } from "@/lib/constants";
+import { useI18n } from "@/lib/i18n";
 import {
   getProfile,
   updateProfile,
@@ -31,6 +32,7 @@ function parseTime12(t: string): { h: number; m: number } | null {
 }
 
 function ScheduleBanner({ from, to }: { from: string; to: string }) {
+  const { t } = useI18n();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30000);
@@ -52,16 +54,16 @@ function ScheduleBanner({ from, to }: { from: string; to: string }) {
       const m = totalMin % 60;
       return h > 0 ? `${h}h ${m}m` : `${m}m`;
     };
-    if (now < startD.getTime()) timerText = `⏱ Starts in ${pad(startD.getTime() - now)}`;
-    else if (now < endD.getTime()) timerText = `⏱ ${pad(endD.getTime() - now)} left`;
-    else timerText = "✅ Done for today";
+    if (now < startD.getTime()) timerText = t("set.startsIn", { time: pad(startD.getTime() - now) });
+    else if (now < endD.getTime()) timerText = t("set.left", { time: pad(endD.getTime() - now) });
+    else timerText = t("set.doneToday");
   }
 
   return (
     <div className="bg-[#E4F3EC] border border-[#C8E6DA] rounded-[10px] px-3 py-2.5 mt-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="text-[12px] font-semibold text-teal">
-          🕐 Your schedule: {from} – {to}
+          {t("set.scheduleBanner", { from, to })}
         </span>
         {timerText && (
           <span className="font-mono text-[11px] font-bold text-teal bg-white border border-[#C8E6DA] rounded-full px-2.5 py-1">
@@ -74,6 +76,7 @@ function ScheduleBanner({ from, to }: { from: string; to: string }) {
 }
 
 export default function SettingsPage() {
+  const { t } = useI18n();
   const [loaded, setLoaded] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
@@ -132,7 +135,7 @@ export default function SettingsPage() {
 
     const trimmedWhatsApp = whatsapp.trim();
     if (trimmedWhatsApp && !isValidWhatsApp(trimmedWhatsApp)) {
-      setError("Enter a valid Malaysian WhatsApp number, e.g. 012-3456789.");
+      setError(t("home.validWhatsApp"));
       setSaving(false);
       return;
     }
@@ -171,7 +174,7 @@ export default function SettingsPage() {
     };
     const ok = await updateProfile(updates);
     if (!ok) {
-      setError("Couldn't save your profile. Please try again.");
+      setError(t("set.profileSaveFailed"));
       setSaving(false);
       return;
     }
@@ -188,17 +191,17 @@ export default function SettingsPage() {
       schedule_to: scheduleTo,
     });
     if (!ok) {
-      setScheduleMsg("Couldn't save — please try again.");
+      setScheduleMsg(t("set.saveFailed"));
       return;
     }
-    setScheduleMsg("Schedule saved ✓");
+    setScheduleMsg(t("set.scheduleSaved"));
     setTimeout(() => setScheduleMsg(""), 3000);
   };
 
   if (!loaded) {
     return (
       <PhoneFrame>
-        <LoadingState label="Loading settings…" />
+        <LoadingState label={t("set.loading")} />
       </PhoneFrame>
     );
   }
@@ -207,11 +210,11 @@ export default function SettingsPage() {
     <PhoneFrame>
       <div className="mb-5">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="text-[22px] md:text-[30px] font-bold font-display">Settings</div>
+          <div className="text-[22px] md:text-[30px] font-bold font-display">{t("set.title")}</div>
           <RoleBadge role={role} />
         </div>
         <div className="text-[13px] text-slate mt-0.5">
-          {role === "runner" ? "Your profile, contact, and availability." : "Your profile and contact."}
+          {role === "runner" ? t("set.subRunner") : t("set.subCommunity")}
         </div>
       </div>
 
@@ -219,11 +222,11 @@ export default function SettingsPage() {
         {/* Left: profile */}
         <div>
           <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-            Profile
+            {t("set.profile")}
           </div>
           <div className="bg-white border border-line rounded-[12px] p-3.5 mb-4">
             <div className="mb-3">
-              <label className="text-[10.5px] font-semibold text-slate block mb-1">Username</label>
+              <label className="text-[10.5px] font-semibold text-slate block mb-1">{t("set.username")}</label>
               <input
                 className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13px]"
                 placeholder="e.g. speedyAhmad"
@@ -231,12 +234,12 @@ export default function SettingsPage() {
                 onChange={(e) => setUsername(e.target.value)}
               />
               <div className="text-[10.5px] text-slate mt-1">
-                This is the name runners see when you request their service.
+                {t("set.usernameHint")}
               </div>
             </div>
             <div className="mb-3">
               <label className="text-[10.5px] font-semibold text-slate block mb-1">
-                WhatsApp Number
+                {t("set.whatsapp")}
               </label>
               <input
                 className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13px]"
@@ -245,12 +248,12 @@ export default function SettingsPage() {
                 onChange={(e) => setWhatsapp(e.target.value)}
               />
               <div className="text-[10.5px] text-slate mt-1">
-                Runners use this to chat with you on WhatsApp.
+                {t("set.whatsappHint")}
               </div>
             </div>
             <div className="mb-2">
               <label className="text-[10.5px] font-semibold text-slate block mb-1">
-                Area / Neighbourhood
+                {t("home.area")}
               </label>
               <input
                 className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13px]"
@@ -285,7 +288,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[10.5px] font-semibold text-slate block mb-1">Block</label>
+                    <label className="text-[10.5px] font-semibold text-slate block mb-1">{t("home.block")}</label>
                     <input
                       className="w-full bg-white border border-line rounded-[10px] px-2.5 py-2.5 text-[13px]"
                       placeholder="e.g. A"
@@ -295,23 +298,22 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div className="text-[10.5px] text-slate mt-2">
-                  Your delivery address — runners use this to find you. It&apos;s also prefilled when
-                  you request a service.
+                  {t("home.deliveryAddressHint")}
                 </div>
               </>
             )}
           </div>
 
           <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-            Account
+            {t("set.account")}
           </div>
           <div className="bg-white border border-line rounded-[12px] p-3.5 mb-4">
             <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-[13px] font-semibold">Email</span>
+              <span className="text-[13px] font-semibold">{t("home.email")}</span>
               <span className="text-[12px] text-slate font-mono">{email}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[13px] font-semibold">Role</span>
+              <span className="text-[13px] font-semibold">{t("set.role")}</span>
               <span className="text-[12px] capitalize text-slate font-mono">{role}</span>
             </div>
           </div>
@@ -327,11 +329,11 @@ export default function SettingsPage() {
             disabled={saving}
             className="!w-auto !px-4 !py-2 text-[12px]"
           >
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? t("common.saving") : t("set.saveChanges")}
           </Button>
           {saved && (
             <div className="text-[12.5px] text-teal font-semibold mt-2">
-              Saved ✓
+              {t("common.saved")}
             </div>
           )}
         </div>
@@ -341,10 +343,10 @@ export default function SettingsPage() {
           {role === "runner" && (
             <>
               <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-                Availability (runners)
+                {t("set.availability")}
               </div>
               <div className="bg-white border border-line rounded-[12px] p-3.5 mb-4">
-                <div className="text-[10.5px] font-semibold text-slate block mb-2">Your status</div>
+                <div className="text-[10.5px] font-semibold text-slate block mb-2">{t("set.yourStatus")}</div>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {STATUS_OPTIONS.map((opt) => (
                     <button
@@ -358,23 +360,23 @@ export default function SettingsPage() {
                         className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ background: opt.color }}
                       />
-                      {opt.label}
+                      {t(`status.${opt.value}`)}
                     </button>
                   ))}
                 </div>
                 <div className="text-[10.5px] font-semibold text-slate block mb-1">
-                  Schedule (optional)
+                  {t("set.schedule")}
                 </div>
                 <div className="flex flex-wrap gap-2 mb-2 min-w-0">
                   <TimePicker
                     value={scheduleFrom}
                     onChange={setScheduleFrom}
-                    placeholder="From e.g. 8:00 AM"
+                    placeholder={t("picker.from")}
                   />
                   <TimePicker
                     value={scheduleTo}
                     onChange={setScheduleTo}
-                    placeholder="To e.g. 5:00 PM"
+                    placeholder={t("picker.to")}
                   />
                 </div>
                 <div className="flex items-center gap-2 mb-2">
@@ -382,7 +384,7 @@ export default function SettingsPage() {
                     className="!w-auto !px-3.5 !py-2 text-[11.5px] rounded-lg !bg-teal !text-white shadow-[0_6px_16px_-6px_rgba(46,110,98,0.5)]"
                     onClick={saveSchedule}
                   >
-                    🕐 Save schedule
+                    {t("set.saveSchedule")}
                   </Button>
                   {scheduleMsg && (
                     <span
@@ -395,7 +397,7 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div className="text-[10.5px] text-slate">
-                  Set the clock when you usually run errands (or type it, e.g. 8:00 AM).
+                  {t("set.scheduleHint")}
                 </div>
                 {scheduleFrom && scheduleTo && (
                   <ScheduleBanner from={scheduleFrom} to={scheduleTo} />

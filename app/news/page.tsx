@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import RoleBadge from "@/components/RoleBadge";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 interface NewsItem {
   title: string;
@@ -12,25 +13,16 @@ interface NewsItem {
   date: string;
 }
 
-const FALLBACK: NewsItem[] = [
-  {
-    title: "JomCOD is live in your neighbourhood — request a runner now",
-    link: "/browse",
-    source: "JomCOD",
-    date: "",
-  },
-  {
-    title: "New runners can sign up in under a minute",
-    link: "/",
-    source: "JomCOD",
-    date: "",
-  },
-];
-
 export default function NewsPage() {
+  const { t } = useI18n();
   const [items, setItems] = useState<NewsItem[] | null>(null);
   const [error, setError] = useState("");
   const [role, setRole] = useState("");
+
+  const FALLBACK: NewsItem[] = [
+    { title: t("news.fallback1"), link: "/browse", source: "JomCOD", date: "" },
+    { title: t("news.fallback2"), link: "/", source: "JomCOD", date: "" },
+  ];
 
   useEffect(() => {
     createClient()
@@ -58,11 +50,11 @@ export default function NewsPage() {
           }))
         );
       } else {
-        setError("Couldn't load live news right now.");
+        setError(t("news.loadError"));
         setItems(FALLBACK);
       }
     } catch {
-      setError("Couldn't load live news right now.");
+      setError(t("news.loadError"));
       setItems(FALLBACK);
     }
   };
@@ -81,24 +73,24 @@ export default function NewsPage() {
   return (
     <PhoneFrame>
       <div className="flex items-center gap-2 mb-1 flex-wrap">
-        <div className="text-[19px] md:text-[26px] font-bold font-display">Community news</div>
+        <div className="text-[19px] md:text-[26px] font-bold font-display">{t("news.title")}</div>
         <RoleBadge role={role} />
       </div>
       <div className="text-[12.5px] text-slate mb-4.5">
-        Things happening around Malaysia that neighbours talk about.
+        {t("news.sub")}
       </div>
 
       {error && (
         <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-3">
-          {error} Showing a placeholder for now.{" "}
+          {error} {t("news.placeholder")}{" "}
           <button onClick={loadNews} className="font-semibold underline">
-            Try again
+            {t("common.tryAgain")}
           </button>
         </div>
       )}
 
       {!items ? (
-        <div className="text-center py-10 text-[12.5px] text-slate">Loading news…</div>
+        <div className="text-center py-10 text-[12.5px] text-slate">{t("news.loading")}</div>
       ) : (
         <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
         {items.map((item, i) => (
@@ -130,8 +122,7 @@ export default function NewsPage() {
       )}
 
       <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 mt-2.5 italic">
-        News is pulled from a public Google News feed. JomCOD doesn&apos;t own these stories —
-        tap one to read it on the source site.
+        {t("news.note")}
       </div>
     </PhoneFrame>
   );

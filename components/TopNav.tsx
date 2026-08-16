@@ -5,20 +5,22 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { fetchJobsForRunner, fetchUnreadCount } from "@/lib/queries";
+import { useI18n } from "@/lib/i18n";
 import RoleBadge from "./RoleBadge";
 import JoinGuideModal from "./JoinGuideModal";
 
 const NAV = [
-  { href: "/browse", label: "Browse" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/history", label: "History" },
-  { href: "/notifications", label: "Notifications" },
-  { href: "/news", label: "News" },
-  { href: "/settings", label: "Settings" },
+  { href: "/browse", key: "nav.browse" },
+  { href: "/dashboard", key: "nav.dashboard" },
+  { href: "/history", key: "nav.history" },
+  { href: "/notifications", key: "nav.notifications" },
+  { href: "/news", key: "nav.news" },
+  { href: "/settings", key: "nav.settings" },
 ];
 
 export default function TopNav() {
   const pathname = usePathname();
+  const { t, lang, setLang } = useI18n();
   const [time, setTime] = useState("");
   const [signedIn, setSignedIn] = useState(false);
   const [role, setRole] = useState("");
@@ -142,15 +144,29 @@ export default function TopNav() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-2.5 flex-wrap">
           <span className="font-mono text-[12px] text-slate hidden sm:inline">{time}</span>
+          <div className="flex items-center gap-0.5 border border-line rounded-full p-0.5">
+            {(["en", "bm"] as const).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`font-mono text-[10.5px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                  lang === l ? "bg-ink text-paper" : "text-slate hover:text-ink"
+                }`}
+                aria-pressed={lang === l}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
           {signedIn && <RoleBadge role={role} />}
           {signedIn && (
             <button
               onClick={() => setShowGuide(true)}
               className="font-mono text-[11.5px] font-semibold text-slate border border-line rounded-full px-3 py-1.5 hover:bg-white transition-colors"
             >
-              📋 Guide
+              {t("nav.guide")}
             </button>
           )}
           {signedIn && (
@@ -158,7 +174,7 @@ export default function TopNav() {
               onClick={handleSignOut}
               className="font-mono text-[11.5px] font-semibold text-orange border border-orange/40 rounded-full px-3 py-1.5 hover:bg-orange hover:text-white transition-colors"
             >
-              Sign out
+              {t("nav.signOut")}
             </button>
           )}
         </div>
@@ -177,7 +193,7 @@ export default function TopNav() {
                     : "text-slate hover:text-ink hover:bg-white border border-transparent"
                 }`}
               >
-                {item.label}
+                {t(item.key)}
                 {item.href === "/dashboard" && pendingJobs > 0 && (
                   <span className="bg-orange text-white rounded-full px-1.5 text-[10px] leading-4">
                     {pendingJobs}
@@ -195,7 +211,7 @@ export default function TopNav() {
       )}
 
       {showGuide && (
-        <JoinGuideModal onAccept={() => setShowGuide(false)} acceptLabel="Got it — close" />
+        <JoinGuideModal onAccept={() => setShowGuide(false)} acceptLabel={t("guide.acceptNav")} />
       )}
     </header>
   );

@@ -1,5 +1,8 @@
+"use client";
+
 import { formatDelivery, formatTakeFromLines } from "@/lib/jobFormat";
 import type { JobRequest } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
 
 // Organized route display shared across every card so pickup couriers/locations,
 // the delivery address and the receiver name/phone are always clearly separated.
@@ -14,6 +17,7 @@ export default function RouteInfo({
   job: JobRequest;
   variant?: "block" | "current";
 }) {
+  const { t } = useI18n();
   const takeLines = formatTakeFromLines(job.takeFrom);
   const delivery = formatDelivery(job.deliverTo);
   const isCourier = takeLines.length > 1 || /×\s*\d+\s*item/i.test(job.takeFrom);
@@ -23,7 +27,7 @@ export default function RouteInfo({
       <div className="mt-3 rounded-[10px] bg-paper2 border border-line px-3 py-2.5 space-y-1.5">
         <div className="text-[12px] leading-snug">
           <span className="text-slate">
-            {isCourier ? "Courier:" : "Pickup:"}
+            {isCourier ? t("route.courier") : t("route.pickup") + ":"}
           </span>
           {takeLines.length === 0 ? (
             <span className="text-ink break-words"> {job.takeFrom || "—"}</span>
@@ -38,18 +42,18 @@ export default function RouteInfo({
           )}
         </div>
         <div className="text-[12px] leading-snug">
-          <span className="text-slate">Address:</span>{" "}
+          <span className="text-slate">{t("route.address")}</span>{" "}
           <span className="text-ink break-words">{delivery.address}</span>
         </div>
         {delivery.receiverName && (
           <div className="text-[12px] leading-snug">
-            <span className="text-slate">Receiver Name:</span>{" "}
+            <span className="text-slate">{t("route.receiverName")}</span>{" "}
             <span className="text-ink break-words">{delivery.receiverName}</span>
           </div>
         )}
         {delivery.receiverPhone && (
           <div className="text-[12px] leading-snug">
-            <span className="text-slate">Phone Number:</span>{" "}
+            <span className="text-slate">{t("route.phoneNumber")}</span>{" "}
             <span className="text-ink">{delivery.receiverPhone}</span>
           </div>
         )}
@@ -61,7 +65,7 @@ export default function RouteInfo({
     <div className="mt-3 rounded-[10px] bg-paper2 border border-line px-3 py-2.5 space-y-2.5">
       <div>
         <span className="text-[9.5px] font-semibold uppercase tracking-wide text-slate block mb-0.5">
-          Pickup
+          {t("route.pickup")}
         </span>
         {takeLines.length === 0 ? (
           <div className="text-[12px] text-ink leading-snug break-words">
@@ -79,14 +83,14 @@ export default function RouteInfo({
       </div>
       <div className="border-t border-line/70 pt-2">
         <span className="text-[9.5px] font-semibold uppercase tracking-wide text-slate block mb-0.5">
-          Delivery
+          {t("route.delivery")}
         </span>
         <div className="text-[12px] text-ink leading-snug break-words">
           {delivery.address}
         </div>
         {delivery.receiverName && (
           <div className="text-[11.5px] text-slate leading-snug mt-0.5 break-words">
-            Receiver:{" "}
+            {t("route.receiver")}{" "}
             <span className="text-ink">{delivery.receiverName}</span>
             {delivery.receiverPhone && (
               <span className="text-ink"> · {delivery.receiverPhone}</span>

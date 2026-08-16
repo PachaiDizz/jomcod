@@ -7,8 +7,10 @@ import TimePicker from "@/components/TimePicker";
 import { createClient } from "@/lib/supabase/client";
 import { upsertProfile } from "@/lib/queries";
 import { AREA_OPTIONS, isValidWhatsApp, normalizeWhatsApp } from "@/lib/constants";
+import { useI18n } from "@/lib/i18n";
 
 export default function OnboardingPage() {
+  const { t } = useI18n();
   const [role, setRole] = useState<"community" | "runner">("community");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
@@ -42,7 +44,7 @@ export default function OnboardingPage() {
 
     const trimmedPhone = phone.trim();
     if (trimmedPhone && !isValidWhatsApp(trimmedPhone)) {
-      setError("Enter a valid Malaysian WhatsApp number, e.g. 012-3456789.");
+      setError(t("home.validWhatsApp"));
       setSaving(false);
       return;
     }
@@ -64,7 +66,7 @@ export default function OnboardingPage() {
         },
       });
       if (err) {
-        setError(err.message || "Couldn't save your details. Please try again.");
+        setError(err.message || t("onb.saveDetailsError"));
         setSaving(false);
         return;
       }
@@ -81,7 +83,7 @@ export default function OnboardingPage() {
         schedule_to: scheduleTo,
       });
       if (profileErr) {
-        setError(profileErr.message || "Couldn't save your profile. Please try again.");
+        setError(profileErr.message || t("onb.saveProfileError"));
         setSaving(false);
         return;
       }
@@ -91,7 +93,7 @@ export default function OnboardingPage() {
       const { data: refreshed } = await supabase.auth.refreshSession();
       const savedRole = refreshed?.user?.user_metadata?.role ?? updated.user?.user_metadata?.role;
       if (savedRole !== role) {
-        setError("Your role didn't save. Please try again.");
+        setError(t("onb.roleNotSaved"));
         setSaving(false);
         return;
       }
@@ -103,7 +105,7 @@ export default function OnboardingPage() {
       window.location.href = "/dashboard";
     } catch (e) {
       console.error("Onboarding error:", e);
-      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setError(e instanceof Error ? e.message : t("onb.somethingWrong"));
       setSaving(false);
     }
   };
@@ -111,10 +113,10 @@ export default function OnboardingPage() {
   return (
     <PhoneFrame narrow>
       <div className="text-[19px] md:text-[24px] font-bold mb-1 font-display">
-        {displayName ? `Welcome, ${displayName.split(" ")[0]}` : "Tell us a bit more"}
+        {displayName ? t("onb.welcome", { name: displayName.split(" ")[0] }) : t("onb.tellMore")}
       </div>
       <div className="text-[12.5px] text-slate mb-4.5">
-        Pick how you&apos;ll use JomCOD — you can be both later.
+        {t("onb.pickHow")}
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 mb-4">
@@ -125,9 +127,9 @@ export default function OnboardingPage() {
           }`}
         >
           <div className="text-xl mb-1.5">🏠</div>
-          <div className="font-bold text-[13px] mb-1">Community</div>
+          <div className="font-bold text-[13px] mb-1">{t("role.community")}</div>
           <div className="text-[11px] text-slate leading-snug">
-            Request errands & parcel pickups nearby
+            {t("home.roleCommunitySub")}
           </div>
         </button>
         <button
@@ -137,41 +139,41 @@ export default function OnboardingPage() {
           }`}
         >
           <div className="text-xl mb-1.5">🛵</div>
-          <div className="font-bold text-[13px] mb-1">Runner</div>
+          <div className="font-bold text-[13px] mb-1">{t("role.runner")}</div>
           <div className="text-[11px] text-slate leading-snug">
-            Offer your service, set your price
+            {t("home.roleRunnerSub")}
           </div>
         </button>
       </div>
 
       <div className="mb-3.5">
         <label className="text-xs font-semibold mb-1.5 block">
-          Username <span className="text-slate font-normal">(shown to runners when you request)</span>
+          {t("home.username")} <span className="text-slate font-normal">{t("onb.usernameHint")}</span>
         </label>
         <input
           className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]"
-          placeholder="Enter username"
+          placeholder={t("onb.enterUsername")}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
       </div>
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">Phone / WhatsApp Number</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("home.phoneWhatsapp")}</label>
         <input
           className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]"
-          placeholder="Enter phone / WhatsApp number"
+          placeholder={t("onb.enterPhone")}
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         />
       </div>
       <div className="mb-3.5">
-        <label className="text-xs font-semibold mb-1.5 block">Area / Neighbourhood</label>
+        <label className="text-xs font-semibold mb-1.5 block">{t("home.area")}</label>
         <select
           className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13.5px]"
           value={area}
           onChange={(e) => setArea(e.target.value)}
         >
-          <option value="">Select your area…</option>
+          <option value="">{t("home.selectArea")}</option>
           {AREA_OPTIONS.map((name) => (
             <option key={name}>{name}</option>
           ))}
@@ -180,32 +182,32 @@ export default function OnboardingPage() {
       {role === "community" && (
         <>
           <div className="text-[10.5px] text-slate mb-2">
-            Your delivery address (optional) — prefilled when you request a service.
+            {t("home.deliveryAddressHint")}
           </div>
           <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 mb-3.5">
           <div>
-            <label className="text-[10.5px] font-semibold text-slate block mb-1">Sahabat</label>
+            <label className="text-[10.5px] font-semibold text-slate block mb-1">{t("home.sahabat")}</label>
             <input
               className="w-full bg-white border border-line rounded-[10px] px-2.5 py-2.5 text-[13px]"
-              placeholder="Enter sahabat"
+              placeholder={t("onb.enterSahabat")}
               value={sahabat}
               onChange={(e) => setSahabat(e.target.value)}
             />
           </div>
           <div>
-            <label className="text-[10.5px] font-semibold text-slate block mb-1">No. Rumah</label>
+            <label className="text-[10.5px] font-semibold text-slate block mb-1">{t("home.noRumah")}</label>
             <input
               className="w-full bg-white border border-line rounded-[10px] px-2.5 py-2.5 text-[13px]"
-              placeholder="Enter no. rumah"
+              placeholder={t("onb.enterNoRumah")}
               value={noRumah}
               onChange={(e) => setNoRumah(e.target.value)}
             />
           </div>
           <div>
-            <label className="text-[10.5px] font-semibold text-slate block mb-1">Block</label>
+            <label className="text-[10.5px] font-semibold text-slate block mb-1">{t("home.block")}</label>
             <input
               className="w-full bg-white border border-line rounded-[10px] px-2.5 py-2.5 text-[13px]"
-              placeholder="Enter block"
+              placeholder={t("onb.enterBlock")}
               value={block}
               onChange={(e) => setBlock(e.target.value)}
             />
@@ -216,18 +218,18 @@ export default function OnboardingPage() {
       {role === "runner" && (
         <div className="mb-3.5">
           <label className="text-xs font-semibold mb-1.5 block">
-            Availability schedule (optional)
+            {t("home.availabilitySchedule")}
           </label>
           <div className="flex gap-2">
             <TimePicker
               value={scheduleFrom}
               onChange={setScheduleFrom}
-              placeholder="From"
+              placeholder={t("picker.fromShort")}
             />
             <TimePicker
               value={scheduleTo}
               onChange={setScheduleTo}
-              placeholder="To"
+              placeholder={t("picker.toShort")}
             />
           </div>
         </div>
@@ -240,7 +242,7 @@ export default function OnboardingPage() {
       )}
 
       <Button onClick={handleFinish} disabled={saving || loading}>
-        {saving ? "Saving…" : "Finish setup"}
+        {saving ? t("common.saving") : t("onb.finishSetup")}
       </Button>
     </PhoneFrame>
   );

@@ -8,6 +8,7 @@ import RoleBadge from "@/components/RoleBadge";
 import LoadingState from "@/components/LoadingState";
 import { fetchRunners, refreshAvailability } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/lib/i18n";
 import type { Runner } from "@/lib/types";
 
 const minPriceFor = (r: Runner): number | null => {
@@ -18,6 +19,7 @@ const minPriceFor = (r: Runner): number | null => {
 };
 
 export default function BrowsePage() {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "available">("all");
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -82,7 +84,7 @@ export default function BrowsePage() {
   }, [runners, query, statusFilter, selectedServices, selectedAreas, priceLimit, maxPrice]);
 
   const availableCount = runners.filter((r) => r.status === "available").length;
-  const areaLabel = area || "your area";
+  const areaLabel = area || t("browse.yourArea");
   const activeFilterCount =
     (selectedServices.length > 0 ? 1 : 0) +
     (selectedAreas.length > 0 ? 1 : 0) +
@@ -108,11 +110,11 @@ export default function BrowsePage() {
     <PhoneFrame>
       <div className="mb-5">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="text-[22px] md:text-[30px] font-bold font-display">Find a runner</div>
+          <div className="text-[22px] md:text-[30px] font-bold font-display">{t("browse.findRunner")}</div>
           <RoleBadge role={role} />
         </div>
         <div className="text-[13px] text-slate mt-0.5">
-          Nearby neighbours offering their time in {areaLabel}.
+          {t("browse.sub", { area: areaLabel })}
         </div>
       </div>
 
@@ -121,7 +123,7 @@ export default function BrowsePage() {
         <div className="bg-white border border-line rounded-[12px] p-3 text-center">
           <div className="font-mono font-semibold text-[18px] md:text-[22px]">{runners.length}</div>
           <div className="text-[9.5px] md:text-[10px] text-slate uppercase tracking-wide mt-0.5">
-            Runners
+            {t("browse.runners")}
           </div>
         </div>
         <div className="bg-white border border-line rounded-[12px] p-3 text-center">
@@ -129,7 +131,7 @@ export default function BrowsePage() {
             {availableCount}
           </div>
           <div className="text-[9.5px] md:text-[10px] text-slate uppercase tracking-wide mt-0.5">
-            Available now
+            {t("browse.availableNow")}
           </div>
         </div>
         <div className="bg-white border border-line rounded-[12px] p-3 text-center">
@@ -137,7 +139,7 @@ export default function BrowsePage() {
             {runners.filter((r) => r.services.length > 0).length}
           </div>
           <div className="text-[9.5px] md:text-[10px] text-slate uppercase tracking-wide mt-0.5">
-            Have pricing
+            {t("browse.havePricing")}
           </div>
         </div>
       </div>
@@ -147,19 +149,19 @@ export default function BrowsePage() {
         <aside className="mb-4 md:mb-0 md:sticky md:top-24">
           <div className="md:bg-white md:border md:border-line md:rounded-card md:p-4">
             <div className="hidden md:flex items-center justify-between mb-3">
-              <div className="text-[11px] font-mono uppercase tracking-wide text-ink">Filter</div>
+              <div className="text-[11px] font-mono uppercase tracking-wide text-ink">{t("browse.filter")}</div>
               {activeFilterCount > 0 && (
                 <button
                   onClick={clearFilters}
                   className="text-[11px] font-semibold text-orange hover:underline"
                 >
-                  Clear ({activeFilterCount})
+                  {t("browse.clearN", { n: activeFilterCount })}
                 </button>
               )}
             </div>
             <input
               className="w-full bg-white border border-line rounded-[10px] px-3.5 py-2.5 text-[13.5px]"
-              placeholder="Search name, area, or service..."
+              placeholder={t("browse.searchPlaceholder")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -174,7 +176,7 @@ export default function BrowsePage() {
                       : "bg-white text-slate border-line hover:border-teal hover:text-teal"
                   }`}
                 >
-                  {f === "all" ? "All runners" : "🟢 Available now"}
+                  {f === "all" ? t("browse.allRunners") : t("browse.availableNowFilter")}
                 </button>
               ))}
             </div>
@@ -182,10 +184,10 @@ export default function BrowsePage() {
             {/* Advanced filters — desktop sidebar only */}
             <div className="hidden md:block">
               <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4 mb-2">
-                Service
+                {t("browse.service")}
               </div>
               {allServices.length === 0 ? (
-                <div className="text-[11.5px] text-slate italic">No services listed yet.</div>
+                <div className="text-[11.5px] text-slate italic">{t("browse.noServices")}</div>
               ) : (
                 <div className="max-h-[130px] overflow-y-auto space-y-1.5 pr-1">
                   {allServices.map((name) => {
@@ -212,10 +214,10 @@ export default function BrowsePage() {
               )}
 
               <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4 mb-2">
-                Area
+                {t("browse.area")}
               </div>
               {allAreas.length === 0 ? (
-                <div className="text-[11.5px] text-slate italic">No areas listed yet.</div>
+                <div className="text-[11.5px] text-slate italic">{t("browse.noAreas")}</div>
               ) : (
                 <div className="max-h-[130px] overflow-y-auto space-y-1.5 pr-1">
                   {allAreas.map((a) => {
@@ -242,15 +244,15 @@ export default function BrowsePage() {
               )}
 
               <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4 mb-2">
-                Max price
+                {t("browse.maxPrice")}
               </div>
               <div className="flex items-center justify-between text-[12.5px] mb-1.5">
                 <span className="text-slate">
                   {priceLimit === null || priceLimit >= maxPrice
-                    ? "Any price"
-                    : `Up to RM${priceLimit}`}
+                    ? t("browse.anyPrice")
+                    : t("browse.upTo", { price: priceLimit })}
                 </span>
-                <span className="font-mono text-[11px] text-slate">max RM{maxPrice}</span>
+                <span className="font-mono text-[11px] text-slate">{t("browse.maxRm", { max: maxPrice })}</span>
               </div>
               <input
                 type="range"
@@ -271,32 +273,32 @@ export default function BrowsePage() {
         {/* Runner grid */}
         <div className="min-w-0">
           {!loaded ? (
-            <LoadingState label="Loading runners…" />
+            <LoadingState label={t("browse.loadingRunners")} />
           ) : runners.length === 0 ? (
             <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-10 mb-3.5">
               <div className="text-3xl mb-2.5">🧑‍🤝‍🧑</div>
-              <div className="font-display font-bold text-[16px] mb-1">No runners nearby yet</div>
+              <div className="font-display font-bold text-[16px] mb-1">{t("browse.noRunnersYet")}</div>
               <div className="text-[12px] text-slate leading-relaxed mb-4">
-                JomCOD is just getting started in {areaLabel}. Want to help out your neighbours?
+                {t("browse.noRunnersBody", { area: areaLabel })}
               </div>
               <Link href="/dashboard">
                 <span className="inline-block bg-orange text-white rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold">
-                  Become a runner
+                  {t("browse.becomeRunner")}
                 </span>
               </Link>
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-10">
               <div className="text-2xl mb-2">🔍</div>
-              <div className="font-display font-bold text-[16px] mb-1">Nothing matches</div>
+              <div className="font-display font-bold text-[16px] mb-1">{t("browse.nothingMatches")}</div>
               <div className="text-[12px] text-slate leading-relaxed">
-                Try a different name, area, or service, or switch back to &quot;All&quot;.
+                {t("browse.nothingMatchesBody")}
               </div>
               <button
                 onClick={clearFilters}
                 className="mt-4 inline-block bg-orange text-white rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold"
               >
-                Clear filters
+                {t("browse.clearFilters")}
               </button>
             </div>
           ) : (
@@ -309,8 +311,7 @@ export default function BrowsePage() {
 
           {runners.length > 0 && (
             <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 mt-5 italic">
-              Runners marked &quot;Offline&quot; stay visible so the community still knows they exist —
-              just can&apos;t be requested until they toggle back on.
+              {t("browse.offlineNote")}
             </div>
           )}
         </div>

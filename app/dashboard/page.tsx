@@ -36,12 +36,13 @@ import {
   type ProfileRow,
 } from "@/lib/queries";
 import { estimateJobTotal } from "@/lib/estimate";
+import { useI18n } from "@/lib/i18n";
 
-const greeting = () => {
+const greeting = (t: (k: string) => string) => {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return t("dash.greetingMorning");
+  if (h < 18) return t("dash.greetingAfternoon");
+  return t("dash.greetingEvening");
 };
 
 function parseTime12(t: string): { h: number; m: number } | null {
@@ -96,11 +97,11 @@ function computeEarned(jobs: JobRequest[], services: Service[]): number {
 }
 
 const QUICK_SERVICES = [
-  { emoji: "📦", label: "Parcel", value: "Parcel Pickup" },
-  { emoji: "🛒", label: "Groceries", value: "Grocery Run" },
-  { emoji: "🧾", label: "Bills", value: "Pay Bills" },
-  { emoji: "🏪", label: "Pickup", value: "Parcel Drop-off" },
-  { emoji: "✏️", label: "Other", value: "" },
+  { emoji: "📦", label: "Parcel", value: "Parcel Pickup", tKey: "dash.com.quickParcel" },
+  { emoji: "🛒", label: "Groceries", value: "Grocery Run", tKey: "dash.com.quickGroceries" },
+  { emoji: "🧾", label: "Bills", value: "Pay Bills", tKey: "dash.com.quickBills" },
+  { emoji: "🏪", label: "Pickup", value: "Parcel Drop-off", tKey: "dash.com.quickPickup" },
+  { emoji: "✏️", label: "Other", value: "", tKey: "dash.com.quickOther" },
 ];
 
 interface ParsedNotes {
@@ -247,6 +248,7 @@ function RatingCard({
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useI18n();
 
   const submit = async () => {
     if (rating < 1 || !job.runnerId) return;
@@ -255,15 +257,15 @@ function RatingCard({
     const res = await addReview({ jobId: job.id, runnerId: job.runnerId, rating, text });
     setSaving(false);
     if (!res.ok) {
-      setError(res.message ?? "Couldn't save your rating. Please try again.");
+      setError(res.message ?? t("dash.rating.saveError"));
       return;
     }
-    onSubmitted({ id: newId(), authorName: "You", rating, text });
+    onSubmitted({ id: newId(), authorName: t("dash.rating.you"), rating, text });
   };
 
   return (
     <div className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3.5 py-3 mt-2.5">
-      <div className="text-[12px] font-semibold mb-2">Rate this runner</div>
+      <div className="text-[12px] font-semibold mb-2">{t("dash.rating.rateThisRunner")}</div>
       <div className="flex gap-1 mb-2.5" onMouseLeave={() => setHover(0)}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button
@@ -278,7 +280,7 @@ function RatingCard({
       </div>
       <textarea
         className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px] min-h-[54px] mb-2"
-        placeholder="How was the service? (optional)"
+        placeholder={t("dash.rating.howService")}
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
@@ -289,7 +291,7 @@ function RatingCard({
         onClick={submit}
         disabled={saving || rating < 1}
       >
-        {saving ? "Submitting…" : "Submit rating"}
+        {saving ? t("dash.rating.submitting") : t("dash.rating.submit")}
       </Button>
     </div>
   );
@@ -311,11 +313,12 @@ function JobInfoTile({
 }
 
 function RequestSteps({ status }: { status: JobRequest["status"] }) {
+  const { t } = useI18n();
   const steps = [
-    "Request sent",
-    "Runner accepted",
-    "Task in progress",
-    "Completed",
+    t("dash.steps.sent"),
+    t("dash.steps.accepted"),
+    t("dash.steps.inProgress"),
+    t("dash.steps.completed"),
   ];
   const doneUpTo =
     status === "pending"
@@ -360,6 +363,7 @@ function RequestSteps({ status }: { status: JobRequest["status"] }) {
 }
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const [role, setRole] = useState("");
   const [status, setStatus] = useState<RunnerStatus>("offline");
   const [name, setName] = useState("");
@@ -541,7 +545,7 @@ export default function DashboardPage() {
     if (res.ok) {
       setJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, status: next } : j)));
     } else {
-      setToast({ kind: "error", message: res.message ?? "Couldn't update the job." });
+      setToast({ kind: "error", message: res.message ?? t("common.errorJobUpdate") });
     }
   };
 
@@ -768,7 +772,7 @@ export default function DashboardPage() {
     const res = await setAvailability(value);
     if (!res.ok) {
       setStatusAndRef(prev);
-      setToast({ kind: "error", message: res.message ?? "Couldn't update your status." });
+      setToast({ kind: "error", message: res.message ?? t("common.errorStatusUpdate") });
     }
   };
 
@@ -799,7 +803,7 @@ export default function DashboardPage() {
   if (!loaded) {
     return (
       <PhoneFrame>
-        <div className="text-center py-10 text-[12.5px] text-slate">Loading…</div>
+        <div className="text-center py-10 text-[12.5px] text-slate">{t("common.loading")}</div>
       </PhoneFrame>
     );
   }
@@ -820,7 +824,7 @@ export default function DashboardPage() {
               </Link>
               <div className="mt-1.5 space-y-1 text-[12.5px]">
                 <div className="leading-snug">
-                  <span className="text-slate">Take from:</span>{" "}
+                  <span className="text-slate">{t("dash.com.takeFrom")}</span>{" "}
                   {takeLines.length === 0 ? (
                     <span className="text-ink break-words">{job.takeFrom || "—"}</span>
                   ) : (
@@ -834,21 +838,21 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="leading-snug">
-                  <span className="text-slate">Received By:</span>{" "}
+                  <span className="text-slate">{t("dash.com.receivedBy")}</span>{" "}
                   <span className="text-ink break-words">
                     {delivery.receiverName || "—"}
                   </span>
                 </div>
                 <div className="leading-snug">
-                  <span className="text-slate">Delivered To (Location):</span>{" "}
+                  <span className="text-slate">{t("dash.com.deliveredTo")}</span>{" "}
                   <span className="text-ink break-words">
                     {delivery.address}
                   </span>
                 </div>
                 <div className="leading-snug">
-                  <span className="text-slate">Runner:</span>{" "}
+                  <span className="text-slate">{t("dash.com.runner")}</span>{" "}
                   <span className="text-ink break-words">
-                    {contact?.name ?? (job.runnerId ? "…" : "Broadcast")}
+                    {contact?.name ?? (job.runnerId ? "…" : t("dash.com.broadcast"))}
                   </span>
                 </div>
               </div>
@@ -856,7 +860,7 @@ export default function DashboardPage() {
               {parseNotes(job.notes ?? "").items.length > 0 && (
                 <div className="rounded-[10px] bg-[#F0F7F4] border border-[#D7EBE1] px-3 py-2 mt-2.5">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-teal mb-1.5">
-                    Items ordered
+                    {t("itemlist.itemsOrdered")}
                   </div>
                   <div className="space-y-1">
                     {parseNotes(job.notes ?? "").items.map((it, i) => (
@@ -873,7 +877,7 @@ export default function DashboardPage() {
               )}
               {parseNotes(job.notes ?? "").total && (
                 <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2">
-                  <span className="text-[11.5px] font-semibold text-teal">You pay the runner</span>
+                  <span className="text-[11.5px] font-semibold text-teal">{t("dash.com.youPay")}</span>
                   <span className="font-mono font-bold text-[14px] text-teal">
                     {parseNotes(job.notes ?? "").total}
                   </span>
@@ -883,7 +887,7 @@ export default function DashboardPage() {
             <span
               className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
             >
-              {JOB_LABELS[job.status]}
+              {t(`job.status.${job.status}`)}
             </span>
           </div>
 
@@ -896,7 +900,7 @@ export default function DashboardPage() {
               rel="noopener noreferrer"
               className="mt-2.5 w-full rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-[#25D366] text-white hover:opacity-90"
             >
-              💬 Chat with {contact.name.split(" ")[0]} on WhatsApp
+              {t("dash.com.chatWith", { name: contact.name.split(" ")[0] })}
             </a>
           )}
 
@@ -920,18 +924,18 @@ export default function DashboardPage() {
                   );
                   setToast({ kind: "cancelled", job });
                 } else {
-                  setToast({ kind: "error", message: res.message ?? "Couldn't cancel the request." });
+                  setToast({ kind: "error", message: res.message ?? t("common.errorCancel") });
                 }
               }}
             >
-              {confirmingCancel === job.id ? "Tap again to confirm cancel" : "Cancel request"}
+              {confirmingCancel === job.id ? t("dash.com.confirmCancel") : t("dash.com.cancelRequest")}
             </Button>
           )}
 
           {job.status === "done" &&
             (review ? (
               <div className="mt-2.5 text-[12px] text-teal font-semibold">
-                You rated {review.rating}★ {review.text ? `— "${review.text}"` : ""}
+                {t("dash.com.youRated", { rating: review.rating })} {review.text ? `— "${review.text}"` : ""}
               </div>
             ) : (
               <RatingCard
@@ -948,7 +952,7 @@ export default function DashboardPage() {
               href={requestAgainHref(job)}
               className="mt-2.5 w-full rounded-[10px] px-4 py-2.5 text-[12.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-orange/10 text-orange border border-orange/30 hover:bg-orange hover:text-white transition-colors"
             >
-              🔄 Request again
+              {t("dash.com.requestAgain")}
             </Link>
           )}
         </div>
@@ -957,11 +961,11 @@ export default function DashboardPage() {
     return (
       <PhoneFrame>
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <div className="text-[19px] md:text-[24px] font-bold font-display">Find help</div>
+          <div className="text-[19px] md:text-[24px] font-bold font-display">{t("dash.com.findHelp")}</div>
           <RoleBadge role="community" />
         </div>
         <div className="text-[12.5px] text-slate mb-4.5">
-          {greeting()}, {name?.split(" ")[0] || "neighbour"} · {area || "your area"}
+          {greeting(t)}, {name?.split(" ")[0] || "neighbour"} · {area || t("browse.yourArea")}
         </div>
 
         {toast && toast.kind === "error" && (
@@ -981,7 +985,7 @@ export default function DashboardPage() {
                 className="w-auto px-4 py-2 text-[11.5px] rounded-[10px]"
                 onClick={() => setToast(null)}
               >
-                OK
+                {t("common.ok")}
               </Button>
             </div>
           </div>
@@ -1002,11 +1006,11 @@ export default function DashboardPage() {
                 <div className="min-w-0">
                   <div className="text-[13.5px] font-bold text-ink">
                     {toast.kind === "accepted" &&
-                      `${toast.contact?.name ?? "Your runner"} accepted!`}
-                    {toast.kind === "done" && "Request completed!"}
-                    {toast.kind === "expired" && "Your request expired"}
-                    {toast.kind === "cancelled" && "Request cancelled"}
-                    {toast.kind === "new" && "Request sent"}
+                      t("dash.toast.accepted", { name: toast.contact?.name ?? "Your runner" })}
+                    {toast.kind === "done" && t("dash.toast.done")}
+                    {toast.kind === "expired" && t("dash.toast.expired")}
+                    {toast.kind === "cancelled" && t("dash.toast.cancelled")}
+                    {toast.kind === "new" && t("dash.toast.sent")}
                   </div>
                   <div className="text-[11.5px] text-slate mt-0.5">
                     {toast.kind !== "cancelled" && toast.job.serviceType && (
@@ -1019,9 +1023,9 @@ export default function DashboardPage() {
                       </>
                     )}
                     {toast.kind === "accepted" && toast.contact?.whatsapp
-                      ? " — reach them on WhatsApp below."
+                      ? t("dash.toast.reachWhatsApp")
                       : toast.kind === "done"
-                      ? " — don&apos;t forget to rate your runner!"
+                      ? t("dash.toast.rateRunner")
                       : ""}
                   </div>
                 </div>
@@ -1036,7 +1040,7 @@ export default function DashboardPage() {
                 className="w-auto px-4 py-2 text-[11.5px] rounded-[10px] mt-3"
                 onClick={() => setToast(null)}
               >
-                ★ Rate your runner
+                ★ {t("job.rateRunner")}
               </Button>
             )}
           </div>
@@ -1045,25 +1049,25 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-2 mb-5">
           <div className="bg-white border border-line rounded-[10px] p-3 text-center">
             <div className="font-mono font-semibold text-[17px] md:text-[20px]">{myJobs.length}</div>
-            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">Total requests</div>
+            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">{t("dash.com.totalRequests")}</div>
           </div>
           <div className="bg-white border border-line rounded-[10px] p-3 text-center">
             <div className="font-mono font-semibold text-[17px] md:text-[20px] text-teal">
               {myJobs.filter((j) => j.status === "done").length}
             </div>
-            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">Completed</div>
+            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">{t("dash.com.completed")}</div>
           </div>
           <div className="bg-white border border-line rounded-[10px] p-3 text-center">
             <div className="font-mono font-semibold text-[17px] md:text-[20px] text-orange">
               {myJobs.filter((j) => j.status === "pending" || j.status === "confirmed").length}
             </div>
-            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">In progress</div>
+            <div className="text-[9.5px] text-slate uppercase tracking-wide mt-0.5">{t("dash.com.inProgress")}</div>
           </div>
         </div>
 
         {/* Quick request — pick a service first */}
         <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-          What do you need help with?
+          {t("dash.com.whatNeed")}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-5">
           {QUICK_SERVICES.map((svc) => (
@@ -1073,7 +1077,7 @@ export default function DashboardPage() {
               className="bg-white border border-line rounded-[12px] p-3 text-center hover:border-orange transition-colors"
             >
               <div className="text-xl mb-1">{svc.emoji}</div>
-              <div className="text-[12px] font-semibold">{svc.label}</div>
+              <div className="text-[12px] font-semibold">{t(svc.tKey)}</div>
             </Link>
           ))}
         </div>
@@ -1084,16 +1088,16 @@ export default function DashboardPage() {
             <span className="w-2.5 h-2.5 rounded-full bg-teal inline-block flex-shrink-0" />
             <div className="min-w-0">
               <div className="text-[13px] font-bold text-teal">
-                {availableRunners} runner{availableRunners === 1 ? "" : "s"} available nearby
+                {t("dash.com.runnersAvailable", { n: availableRunners, s: availableRunners === 1 ? "" : "s" })}
               </div>
               <div className="text-[11px] text-slate">
-                Ready to help in {area || "your area"} right now.
+                {t("dash.com.runnersAvailableSub", { area: area || t("browse.yourArea") })}
               </div>
             </div>
           </div>
           <Link href="/browse" className="shrink-0">
             <span className="inline-block bg-teal text-white rounded-[10px] px-3.5 py-2 text-[12px] font-semibold">
-              View runners
+              {t("dash.com.viewRunners")}
             </span>
           </Link>
         </div>
@@ -1101,10 +1105,10 @@ export default function DashboardPage() {
         {/* Your requests */}
         <div className="flex items-center justify-between mb-2">
           <div className="text-[11px] font-mono uppercase tracking-wide text-ink">
-            Your requests
+            {t("dash.com.yourRequests")}
           </div>
           <Link href="/history" className="text-[11px] font-semibold text-teal hover:underline">
-            History →
+            {t("dash.com.history")}
           </Link>
         </div>
         {(() => {
@@ -1118,12 +1122,12 @@ export default function DashboardPage() {
             return (
           <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-8 mb-3.5">
             <div className="text-2xl mb-2">📦</div>
-            <div className="font-display font-bold text-[14.5px] mb-1">No requests yet</div>
+            <div className="font-display font-bold text-[14.5px] mb-1">{t("dash.com.noRequests")}</div>
             <div className="text-[12px] text-slate leading-relaxed mb-4">
-              Pick a service above, or find a runner from Browse — your requests will be tracked here.
+              {t("dash.com.noRequestsBody")}
             </div>
             <Link href="/browse" className="block">
-              <Button variant="outline">Find a runner</Button>
+              <Button variant="outline">{t("common.findRunner")}</Button>
             </Link>
           </div>
             );
@@ -1137,18 +1141,18 @@ export default function DashboardPage() {
           )}
           {active.length === 0 && (
             <div className="text-center bg-paper2 border border-dashed border-line rounded-card px-4 py-6 mb-3.5">
-              <div className="text-[13px] font-semibold text-ink">No active requests</div>
+              <div className="text-[13px] font-semibold text-ink">{t("dash.com.noActive")}</div>
               <div className="text-[11.5px] text-slate mt-0.5">
-                Past requests are shown below — send a new one anytime.
+                {t("dash.com.noActiveBody")}
               </div>
             </div>
           )}
           {past.length > 0 && (
             <div className="mt-3.5">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10.5px] font-mono uppercase tracking-wide text-slate">Recent</span>
+                <span className="text-[10.5px] font-mono uppercase tracking-wide text-slate">{t("dash.com.recent")}</span>
                 <Link href="/history" className="text-[11px] font-semibold text-teal hover:underline">
-                  View all →
+                  {t("common.viewAll")}
                 </Link>
               </div>
               <div className="grid gap-2.5 md:grid-cols-2">
@@ -1161,7 +1165,7 @@ export default function DashboardPage() {
         })()}
 
         <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 mt-3.5 italic">
-          Want to earn instead? Switch your role to Runner anytime — you can be both.
+          {t("dash.com.wantEarn")}
         </div>
       </PhoneFrame>
     );
@@ -1219,17 +1223,17 @@ export default function DashboardPage() {
           <span
             className={`text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${JOB_STYLES[job.status]}`}
           >
-            {JOB_LABELS[job.status]}
+            {t(`job.status.${job.status}`)}
           </span>
         </div>
 
         <div className="px-3.5 py-3">
           {/* Detail tiles */}
           <div className="grid grid-cols-2 gap-2 mt-3">
-            <JobInfoTile label="Pickup" value={takeFromDisplay} />
-            <JobInfoTile label="Delivery address" value={delivery.address} />
-            <JobInfoTile label="Received by" value={delivery.receiverName || "—"} />
-            <JobInfoTile label="Needed by" value={neededBy ?? "—"} />
+            <JobInfoTile label={t("dash.run.pickupTile")} value={takeFromDisplay} />
+            <JobInfoTile label={t("dash.run.deliveryTile")} value={delivery.address} />
+            <JobInfoTile label={t("dash.run.receivedByTile")} value={delivery.receiverName || "—"} />
+            <JobInfoTile label={t("dash.run.neededBy")} value={neededBy ?? "—"} />
           </div>
 
           {/* Extra services */}
@@ -1245,10 +1249,10 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
-          <ItemList items={items} title="What to buy / pick up" />
+          <ItemList items={items} title={t("itemlist.title")} />
           {total && (
             <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
-              <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
+              <span className="text-[11.5px] font-semibold text-teal">{t("dash.run.communityPays")}</span>
               <span className="font-mono font-bold text-[14px] text-teal">{total}</span>
             </div>
           )}
@@ -1270,14 +1274,14 @@ export default function DashboardPage() {
                 className="flex-1 px-3 py-2 text-[11.5px] rounded-lg"
                 onClick={() => changeJobStatus(job, "confirmed")}
               >
-                Accept job
+                {t("dash.run.acceptJob")}
               </Button>
               <Button
                 variant="outline"
                 className="flex-1 px-3 py-2 text-[11.5px] rounded-lg"
                 onClick={() => changeJobStatus(job, "cancelled")}
               >
-                Decline
+                {t("dash.run.decline")}
               </Button>
             </div>
           )}
@@ -1311,7 +1315,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
                   <div className="text-[10.5px] font-mono text-slate mt-1">
-                    {review.rating}/5 from {review.authorName}
+                    {review.rating}/5 {t("dash.run.from")} {review.authorName}
                   </div>
                   {review.text ? (
                     <div className="text-[12px] text-[#4B5250] italic mt-1">
@@ -1319,7 +1323,7 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div className="text-[12px] text-[#4B5250] mt-1">
-                      No message left.
+                      {t("dash.run.noMessage")}
                     </div>
                   )}
                 </div>
@@ -1329,13 +1333,14 @@ export default function DashboardPage() {
                   onClick={() => setShowRatingFor(job.id)}
                   className="w-full rounded-[10px] px-4 py-2 text-[12px] font-semibold text-center inline-flex items-center justify-center gap-1.5 bg-[#FDF6E3] text-[#8A6D00] border border-[#F0E0A8] hover:bg-yellow/20 transition-colors"
                 >
-                  ★ View rating from{" "}
-                  {contact?.name?.split(" ")[0] ?? review.authorName ?? "community"}
+                  {t("dash.run.viewRating", {
+                    name: contact?.name?.split(" ")[0] ?? review.authorName ?? "community",
+                  })}
                 </button>
               )
             ) : (
               <div className="text-center text-[12px] text-slate italic">
-                No rating yet from the community
+                {t("dash.run.noRatingYet")}
               </div>
             )}
           </div>
@@ -1347,19 +1352,18 @@ export default function DashboardPage() {
   return (
     <PhoneFrame>
       <div className="flex items-center gap-2 mb-1 flex-wrap">
-        <div className="text-[19px] md:text-[24px] font-bold font-display">Your day</div>
+        <div className="text-[19px] md:text-[24px] font-bold font-display">{t("dash.run.yourDay")}</div>
         <RoleBadge role="runner" />
       </div>
       <div className="text-[12.5px] text-slate mb-4.5">
-        {greeting()}, {name?.split(" ")[0] || "runner"} · {area || "your area"}
+        {greeting(t)}, {name?.split(" ")[0] || "runner"} · {area || t("browse.yourArea")}
       </div>
 
       {approved === false && (
         <div className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-card px-3.5 py-3 mb-4">
-          <div className="text-[13px] font-bold text-[#8A6D00]">🕐 Awaiting approval</div>
+          <div className="text-[13px] font-bold text-[#8A6D00]">{t("dash.run.awaitingApproval")}</div>
           <div className="text-[11.5px] text-slate mt-0.5 leading-snug">
-            Your runner profile isn&apos;t visible in Browse yet. An admin needs to approve it —
-            keep it to {name?.split(" ")[0] || "you"} while you wait.
+            {t("dash.run.awaitingApprovalBody")}
           </div>
         </div>
       )}
@@ -1385,7 +1389,7 @@ export default function DashboardPage() {
                   status === "available" ? "text-teal" : "text-paper"
                 }`}
               >
-                {status === "available" ? "You are available" : "You are offline"}
+                {status === "available" ? t("dash.run.youAreAvailable") : t("dash.run.youAreOffline")}
               </div>
               <div
                 className={`text-[11.5px] ${
@@ -1393,8 +1397,8 @@ export default function DashboardPage() {
                 }`}
               >
                 {status === "available"
-                  ? "You can receive jobs now."
-                  : "You won't receive jobs right now."}
+                  ? t("dash.run.youCanReceive")
+                  : t("dash.run.wontReceive")}
               </div>
             </div>
           </div>
@@ -1403,7 +1407,7 @@ export default function DashboardPage() {
             className="w-auto px-4 py-2 text-[12px]"
             onClick={() => setRunnerStatus(status === "available" ? "offline" : "available")}
           >
-            {status === "available" ? "Go offline" : "Go available"}
+            {status === "available" ? t("dash.run.goOffline") : t("dash.run.goAvailable")}
           </Button>
         </div>
       </div>
@@ -1418,7 +1422,7 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <div className="text-[13.5px] font-bold text-ink">
-                  {toast.kind === "broadcast" ? "New broadcast request!" : "New request!"}
+                  {toast.kind === "broadcast" ? t("dash.run.newBroadcastToast") : t("dash.run.newRequestToast")}
                 </div>
                 <div className="text-[11.5px] text-slate mt-0.5">
                   <span className="text-orange font-semibold">{titleCase(toast.job.serviceType)}</span>
@@ -1426,7 +1430,7 @@ export default function DashboardPage() {
                   {toast.job.takeFrom} → {toast.job.deliverTo}
                   {toast.kind === "broadcast" && (
                     <span className="block mt-1 text-[10.5px] text-slate">
-                      Open to all runners — first to accept wins.
+                      {t("dash.run.openToAll")}
                     </span>
                   )}
                   {parseNotes(toast.job.notes ?? "").items.length > 0 && (
@@ -1460,14 +1464,14 @@ export default function DashboardPage() {
                 setToast(null);
               }}
             >
-              {toast.kind === "broadcast" ? "⚡ Claim this job" : "✓ Accept"}
+              {toast.kind === "broadcast" ? t("dash.run.claim") : t("dash.run.accept")}
             </Button>
             <Button
               variant="outline"
               className="w-auto px-3 py-2 text-[11.5px] rounded-[10px]"
               onClick={() => setToast(null)}
             >
-              {toast.kind === "broadcast" ? "Pass" : "Decline"}
+              {toast.kind === "broadcast" ? t("dash.run.pass") : t("dash.run.decline")}
             </Button>
           </div>
         </div>
@@ -1490,7 +1494,7 @@ export default function DashboardPage() {
               className="w-auto px-4 py-2 text-[11.5px] rounded-[10px]"
               onClick={() => setToast(null)}
             >
-              OK
+              {t("common.ok")}
             </Button>
           </div>
         </div>
@@ -1504,7 +1508,7 @@ export default function DashboardPage() {
               🎉
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[13.5px] font-bold text-ink">You got the job!</div>
+              <div className="text-[13.5px] font-bold text-ink">{t("dash.run.gotJob")}</div>
               <div className="text-[11.5px] text-slate mt-0.5">
                 <span className="text-teal font-semibold">{titleCase(toast.job.serviceType)}</span>
                 <span className="mx-1.5 text-line">·</span>
@@ -1518,7 +1522,7 @@ export default function DashboardPage() {
               className="w-auto px-4 py-2 text-[11.5px] rounded-[10px] flex-1"
               onClick={() => setToast(null)}
             >
-              Nice
+              {t("common.ok")}
             </Button>
           </div>
         </div>
@@ -1532,9 +1536,9 @@ export default function DashboardPage() {
               ⏱️
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[13.5px] font-bold text-ink">Just missed it</div>
+              <div className="text-[13.5px] font-bold text-ink">{t("dash.run.justMissed")}</div>
               <div className="text-[11.5px] text-slate mt-0.5">
-                Another runner claimed that job first. Keep an eye out for the next one.
+                {t("dash.run.justMissedBody")}
               </div>
             </div>
           </div>
@@ -1544,7 +1548,7 @@ export default function DashboardPage() {
               className="w-auto px-4 py-2 text-[11.5px] rounded-[10px]"
               onClick={() => setToast(null)}
             >
-              OK
+              {t("common.ok")}
             </Button>
           </div>
         </div>
@@ -1560,10 +1564,10 @@ export default function DashboardPage() {
           <div className="bg-white border-[1.5px] border-orange rounded-card p-4 mb-4 shadow-[0_10px_30px_-12px_rgba(232,93,44,0.4)]">
             <div className="flex items-center justify-between gap-2 mb-1">
               <div className="text-[11px] font-mono uppercase tracking-wide text-orange">
-                Current job
+                {t("dash.run.currentJob")}
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap bg-[#F0F8F5] text-teal">
-                Confirmed
+                {t("job.status.confirmed")}
               </span>
             </div>
             <div className="text-[15px] font-bold font-display">{titleCase(active.serviceType)}</div>
@@ -1580,10 +1584,10 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
-            <ItemList items={noteData.items} title="What to buy / pick up" />
+            <ItemList items={noteData.items} title={t("itemlist.title")} />
             {noteData.total && (
               <div className="flex items-center justify-between rounded-[10px] bg-[#E4F3EC] border border-[#C8E6DA] px-3 py-2 mt-2.5">
-                <span className="text-[11.5px] font-semibold text-teal">Community pays</span>
+                <span className="text-[11.5px] font-semibold text-teal">{t("dash.run.communityPays")}</span>
                 <span className="font-mono font-bold text-[14px] text-teal">{noteData.total}</span>
               </div>
             )}
@@ -1596,7 +1600,7 @@ export default function DashboardPage() {
             )}
             {contact?.name && (
               <div className="text-[11px] font-mono text-slate mt-2">
-                Requested by {contact.name}
+                {t("dash.run.requestedBy", { name: contact.name })}
               </div>
             )}
             <div className="flex gap-2 mt-3">
@@ -1615,7 +1619,7 @@ export default function DashboardPage() {
                 className="flex-1 px-3 py-2.5 text-[12.5px]"
                 onClick={() => changeJobStatus(active, "done")}
               >
-                ✓ Mark as done
+                {t("dash.run.markAsDone")}
               </Button>
             </div>
           </div>
@@ -1623,16 +1627,16 @@ export default function DashboardPage() {
       })()}
 
       <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-        Open requests from the community
+        {t("dash.run.openRequests")}
       </div>
       {(() => {
         const live = openJobs.filter((j) => Date.now() - j.createdAt < 5 * 60 * 1000);
         return live.length === 0 ? (
         <div className="bg-white border border-dashed border-line rounded-card px-4 py-5 mb-4 text-center">
           <div className="text-xl mb-1.5">📣</div>
-          <div className="font-display font-bold text-[13.5px] mb-0.5">No open broadcasts</div>
+          <div className="font-display font-bold text-[13.5px] mb-0.5">{t("dash.run.noBroadcasts")}</div>
           <div className="text-[11.5px] text-slate">
-            When someone broadcasts to all runners, it appears here for you to claim.
+            {t("dash.run.noBroadcastsBody")}
           </div>
         </div>
         ) : (
@@ -1650,12 +1654,12 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 bg-[#F0F8F5] text-teal">
-                  {minsLeft}m left
+                  {t("dash.run.minutesLeft", { n: minsLeft })}
                 </span>
               </div>
               <div className="px-3.5 py-3">
                 <RouteInfo job={job} />
-                <ItemList items={bNotes.items} title="Items requested" />
+                <ItemList items={bNotes.items} title={t("itemlist.itemsOrdered")} />
                 {bNotes.extra.length > 0 && (
                   <div className="mt-2 space-y-0.5">
                     {bNotes.extra.map((line, i) => (
@@ -1670,7 +1674,7 @@ export default function DashboardPage() {
                   className="w-full px-3 py-2 text-[12px] rounded-lg mt-2.5"
                   onClick={() => claimJob(job)}
                 >
-                  ⚡ Claim this job
+                  {t("dash.run.claim")}
                 </Button>
               </div>
             </div>
@@ -1683,7 +1687,7 @@ export default function DashboardPage() {
       <div className="md:grid md:grid-cols-2 md:gap-6 md:items-start">
       <div className="min-w-0">
       <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-        Your status
+        {t("dash.run.yourStatus")}
       </div>
       <div className="grid grid-cols-2 gap-2 mb-4">
         {STATUS_OPTIONS.map((opt) => (
@@ -1695,44 +1699,44 @@ export default function DashboardPage() {
             }`}
           >
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: opt.color }} />
-            {opt.label}
+            {t(`status.${opt.value}`)}
           </button>
         ))}
       </div>
 
       <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
-        My performance
+        {t("dash.run.myPerformance")}
       </div>
       <div className="grid grid-cols-2 gap-2 mb-4">
         <div className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] p-3 text-center">
           <div className="font-mono font-bold text-[18px] text-[#8A6D00]">
-            ⭐ {runnerRating ?? "New"}
+            ⭐ {runnerRating ?? t("runcard.new")}
           </div>
-          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">Rating</div>
+          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">{t("dash.run.rating")}</div>
         </div>
         <div className="bg-[#E4F3EC] border border-[#C8E6DA] rounded-[10px] p-3 text-center">
           <div className="font-mono font-bold text-[18px] text-teal">✓ {doneCount}</div>
-          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">Jobs done</div>
+          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">{t("dash.run.jobsDone")}</div>
         </div>
         <div className="bg-paper2 rounded-[10px] p-3 text-center">
           <div className="font-mono font-bold text-[18px]">
             {completionRate !== null ? `${completionRate}%` : "—"}
           </div>
-          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">Completion</div>
+          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">{t("dash.run.completion")}</div>
         </div>
         <div className="bg-white border border-line rounded-[10px] p-3 text-center">
           <div className="font-mono font-bold text-[18px] text-orange">{liveOpenCount}</div>
-          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">Open now</div>
+          <div className="text-[9px] text-slate uppercase tracking-wide mt-0.5">{t("dash.run.openNow")}</div>
         </div>
       </div>
 
       <div className="flex items-center justify-between bg-white border border-line rounded-[10px] px-3 py-2.5 mb-4">
-        <span className="text-[11.5px] text-slate">💰 Est. earned</span>
+        <span className="text-[11.5px] text-slate">{t("dash.run.estEarned")}</span>
         <span className="font-mono font-bold text-[14px]">{formatRM(runnerEarned)}</span>
       </div>
 
       <div className="text-[11px] font-mono uppercase tracking-wide text-ink mt-4 mb-2">
-        Your services & pricing
+        {t("dash.run.yourServices")}
       </div>
       <div className="grid gap-2.5">
       {services.map((svc) => {
@@ -1743,7 +1747,7 @@ export default function DashboardPage() {
           <div key={svc.id} className="bg-white border border-line rounded-[10px] p-3">
             <div className="mb-2">
               <label className="text-[10px] font-semibold text-slate block mb-1">
-                Service Name
+                {t("dash.run.serviceName")}
               </label>
               <select
                 className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px]"
@@ -1773,12 +1777,12 @@ export default function DashboardPage() {
                 <>
                   <input
                     className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px] mt-1.5"
-                    placeholder="Write your own service name"
+                    placeholder={t("dash.run.writeOwn")}
                     value={svc.name}
                     onChange={(e) => updateService(svc.id, { name: e.target.value })}
                   />
                   <div className="text-[10.5px] text-slate mt-1">
-                    No courier names (JNT / SPX / GDEX) — those are just for parcel pickup details.
+                    {t("dash.run.noCourierNames")}
                   </div>
                 </>
               )}
@@ -1793,14 +1797,14 @@ export default function DashboardPage() {
                   })
                 }
               >
-                <option value="flat_rate">Flat Rate</option>
-                <option value="per_item">Per Item</option>
-                <option value="custom">Custom</option>
+                <option value="flat_rate">{t("dash.run.flatRate")}</option>
+                <option value="per_item">{t("dash.run.perItem")}</option>
+                <option value="custom">{t("dash.run.custom")}</option>
               </select>
               {svc.pricing.model === "custom" ? (
                 <input
                   className="flex-1 bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px]"
-                  placeholder="e.g. RM6 trip fee + RM1/stop"
+                  placeholder={t("dash.run.customPlaceholder")}
                   value={svc.pricing.description ?? ""}
                   onChange={(e) =>
                     updatePricing(svc.id, { description: e.target.value })
@@ -1827,7 +1831,7 @@ export default function DashboardPage() {
                 }
                 className="text-[11px] text-orange font-semibold px-2 py-2"
               >
-                Remove
+                {t("common.remove")}
               </button>
             </div>
           </div>
@@ -1841,25 +1845,25 @@ export default function DashboardPage() {
           className="w-auto px-3 py-2 text-[12px]"
           onClick={() => setServices((prev) => [...prev, emptyService()])}
         >
-          + Add service
+          {t("dash.run.addService")}
         </Button>
         <Button variant="secondary" className="w-auto px-3 py-2 text-[12px]" onClick={saveServices}>
-          Save services
+          {t("dash.run.saveServices")}
         </Button>
-        {servicesSaved && <span className="text-[11px] text-teal font-semibold">Saved ✓</span>}
+        {servicesSaved && <span className="text-[11px] text-teal font-semibold">{t("common.saved")}</span>}
       </div>
       <div className="text-[11.5px] text-slate bg-paper2 rounded-lg px-3 py-2.5 italic">
-        These show on your public profile so neighbours know what you offer and how much.
+        {t("dash.run.servicesNote")}
       </div>
       </div>
 
       <div className="min-w-0">
       <div className="flex items-center justify-between mb-2">
         <div className="text-[11px] font-mono uppercase tracking-wide text-ink">
-          Recent jobs
+          {t("dash.run.recentJobs")}
         </div>
         <Link href="/history" className="text-[11px] font-semibold text-teal hover:underline">
-          View all →
+          {t("common.viewAll")}
         </Link>
       </div>
       {(() => {
@@ -1869,9 +1873,9 @@ export default function DashboardPage() {
           return (
         <div className="text-center bg-white border border-dashed border-line rounded-card px-5 py-8 mb-3.5">
           <div className="text-2xl mb-2">📭</div>
-          <div className="font-display font-bold text-[14.5px] mb-1">No jobs yet</div>
+          <div className="font-display font-bold text-[14.5px] mb-1">{t("dash.run.noJobs")}</div>
           <div className="text-[12px] text-slate leading-relaxed">
-            Jobs you accept from the community will appear here.
+            {t("dash.run.noJobsBody")}
           </div>
         </div>
           );

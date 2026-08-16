@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -10,6 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 // Captures the browser's install prompt and shows our own button instead
 // of relying on default browser UI. Also registers the service worker.
 export default function InstallPrompt() {
+  const { t } = useI18n();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -52,7 +54,7 @@ export default function InstallPrompt() {
       onClick={handleInstall}
       className="fixed bottom-4 right-4 font-mono text-[11.5px] font-semibold bg-orange text-white rounded-full px-4 py-2 shadow-lg z-50"
     >
-      ⬇ Install app
+      {t("install.app")}
     </button>
   );
 }
