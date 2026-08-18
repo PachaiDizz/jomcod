@@ -1,21 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import PhoneFrame from "@/components/PhoneFrame";
 import Button from "@/components/Button";
 import TimePicker from "@/components/TimePicker";
 import RoleBadge from "@/components/RoleBadge";
 import LoadingState from "@/components/LoadingState";
+import ServicePicker from "@/components/ServicePicker";
 import { createClient } from "@/lib/supabase/client";
-import { normalizeWhatsApp, isValidWhatsApp } from "@/lib/constants";
+import {
+  cleanServiceName,
+  OTHER_SERVICE,
+  SERVICE_PRESETS,
+  titleCase,
+  normalizeWhatsApp,
+  isValidWhatsApp,
+} from "@/lib/constants";
 import { useI18n } from "@/lib/i18n";
 import {
+  deleteAccount,
+  fetchActiveJobs,
   getProfile,
+  switchRole,
   updateProfile,
   type ProfileRow,
 } from "@/lib/queries";
-import type { RunnerStatus } from "@/lib/types";
+import type { RunnerStatus, Service } from "@/lib/types";
 
 const STATUS_OPTIONS: { value: RunnerStatus; label: string; color: string }[] = [
   { value: "available", label: "Available", color: "#2E6E62" },
@@ -76,6 +88,111 @@ function ScheduleBanner({ from, to }: { from: string; to: string }) {
   );
 }
 
+const newId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+
+const emptyService = (): Service => ({
+  id: newId(),
+  name: SERVICE_PRESETS[0],
+  pricing: { model: "flat_rate", price: 8 },
+});
+
+// Two-step account deletion: typed confirmation + a separate confirm button,
+// so a single stray tap can never delete an account.
+function DeleteAccountModal({
+  onCancel,
+  onConfirm,
+  busy,
+  error,
+  confirmText,
+  setConfirmText,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+  busy: boolean;
+  error: string;
+  confirmText: string;
+  setConfirmText: (v: string) => void;
+}) {
+  const { t } = useI18n();
+  const canConfirm = confirmText === "DELETE" && !busy;
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  const content = (
+    <>
+      <div className="fixed inset-0 z-[70] bg-black/50" />
+      <div className="fixed inset-0 z-[71] overflow-y-auto">
+        <div className="min-h-full flex items-center justify-center p-4">
+          <div className="bg-paper border border-line rounded-[20px] w-full max-w-[420px] p-5 md:p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-[19px] font-bold font-display text-[#DC2626]">
+                🗑 {t("set.deleteTitle")}
+              </div>
+              <button
+                type="button"
+                aria-label={t("common.cancel")}
+                onClick={onCancel}
+                disabled={busy}
+                className="w-8 h-8 flex-shrink-0 rounded-full bg-line/50 hover:bg-line flex items-center justify-center text-[15px] text-slate hover:text-ink"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-[12.5px] leading-relaxed text-slate mt-1 mb-4">
+              {t("set.deleteBody")}
+            </p>
+            <label className="text-[10.5px] font-semibold text-slate block mb-1">
+              {t("set.deleteType")}
+            </label>
+            <input
+              className="w-full bg-white border border-line rounded-[10px] px-3 py-2.5 text-[13px] font-mono mb-3"
+              placeholder="DELETE"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              autoFocus
+            />
+            {error && (
+              <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-2">
+                {error}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="!w-auto !px-4 !py-2 text-[12px]"
+                onClick={onCancel}
+                disabled={busy}
+              >
+                {t("set.deleteCancel")}
+              </Button>
+              <button
+                type="button"
+                disabled={!canConfirm}
+                onClick={onConfirm}
+                className="flex-1 rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-center inline-flex items-center justify-center gap-2 bg-[#DC2626] text-white transition-opacity disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
+              >
+                {busy ? t("set.deleteBusy") : t("set.deleteConfirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (typeof window === "undefined") return null;
+  return createPortal(content, document.body);
+}
+
 export default function SettingsPage() {
   const { t } = useI18n();
   const [loaded, setLoaded] = useState(false);
@@ -95,6 +212,29 @@ export default function SettingsPage() {
   const [scheduleMsg, setScheduleMsg] = useState("");
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isApproved, setIsApproved] = useState<boolean | null>(null);
+  const [uid, setUid] = useState("");
+  const [activeJobCount, setActiveJobCount] = useState(0);
+
+  // Switch Community → Runner (setup form)
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [setupServices, setSetupServices] = useState<Service[]>([]);
+  const [setupScheduleFrom, setSetupScheduleFrom] = useState("");
+  const [setupScheduleTo, setSetupScheduleTo] = useState("");
+  const [setupSaving, setSetupSaving] = useState(false);
+  const [setupError, setSetupError] = useState("");
+
+  // Switch Runner → Community (inline confirm)
+  const [confirmCommunity, setConfirmCommunity] = useState(false);
+  const [switchSaving, setSwitchSaving] = useState(false);
+  const [switchError, setSwitchError] = useState("");
+  const [switchMsg, setSwitchMsg] = useState("");
+
+  // Delete account (danger zone)
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -103,6 +243,7 @@ export default function SettingsPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      setUid(user.id);
       setEmail(user.email ?? "");
       const md = user.user_metadata ?? {};
       setRole((md.role ?? "community") as string);
@@ -110,6 +251,7 @@ export default function SettingsPage() {
       const profile = await getProfile();
       if (profile) {
         setIsAdmin(!!profile.is_admin);
+        setIsApproved(profile.is_approved ?? true);
         setUsername(profile.username ?? md.username ?? "");
         setWhatsapp(profile.whatsapp ?? md.whatsapp ?? "");
         setArea(profile.area ?? md.area ?? "");
@@ -119,6 +261,13 @@ export default function SettingsPage() {
         setStatus((profile.status as RunnerStatus) ?? "offline");
         setScheduleFrom(profile.schedule_from ?? "");
         setScheduleTo(profile.schedule_to ?? "");
+        setSetupScheduleFrom(profile.schedule_from ?? "");
+        setSetupScheduleTo(profile.schedule_to ?? "");
+        setSetupServices(
+          Array.isArray(profile.services)
+            ? (profile.services as Service[]).map((s) => ({ ...s, name: cleanServiceName(s.name) }))
+            : []
+        );
       } else {
         setUsername(md.username ?? "");
         setWhatsapp(md.whatsapp ?? "");
@@ -127,6 +276,10 @@ export default function SettingsPage() {
         setNoRumah(md.no_rumah ?? "");
         setBlock(md.block ?? "");
       }
+
+      const active = await fetchActiveJobs(user.id);
+      setActiveJobCount(active.length);
+
       setLoaded(true);
     })();
   }, []);
@@ -199,6 +352,114 @@ export default function SettingsPage() {
     }
     setScheduleMsg(t("set.scheduleSaved"));
     setTimeout(() => setScheduleMsg(""), 3000);
+  };
+
+  const updateSetupService = (id: string, patch: Partial<Service>) => {
+    setSetupServices((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...patch } : s))
+    );
+  };
+
+  const updateSetupPricing = (id: string, patch: Partial<Service["pricing"]>) => {
+    setSetupServices((prev) =>
+      prev.map((s) =>
+        s.id === id ? { ...s, pricing: { ...s.pricing, ...patch } } : s
+      )
+    );
+  };
+
+  // Switching to Runner: requires a priced service, saves the runner setup
+  // (services + schedule), flips the role in both stores and lands on the
+  // runner dashboard. Approval resets to pending — same as a new signup.
+  const confirmSwitchToRunner = async () => {
+    setSetupSaving(true);
+    setSetupError("");
+    const active = uid ? await fetchActiveJobs(uid) : [];
+    setActiveJobCount(active.length);
+    if (active.length > 0) {
+      setSetupError(t("set.switchActiveJobs"));
+      setSetupSaving(false);
+      return;
+    }
+    const hasPricedService = setupServices.some((s) =>
+      !s.name.trim()
+        ? false
+        : s.pricing.model === "custom"
+        ? !!s.pricing.description?.trim()
+        : typeof s.pricing.price === "number" && s.pricing.price > 0
+    );
+    if (!hasPricedService) {
+      setSetupError(t("set.runnerSetupNeedService"));
+      setSetupSaving(false);
+      return;
+    }
+    const cleaned = setupServices
+      .filter((s) => s.name.trim() !== "")
+      .map((s) => ({ ...s, name: titleCase(cleanServiceName(s.name)) }));
+    const saved = await updateProfile({
+      services: cleaned as unknown as ProfileRow["services"],
+      schedule_from: setupScheduleFrom,
+      schedule_to: setupScheduleTo,
+    });
+    if (!saved) {
+      setSetupError(t("set.switchError"));
+      setSetupSaving(false);
+      return;
+    }
+    const res = await switchRole("runner");
+    if (!res.ok) {
+      setSetupError(res.message ?? t("set.switchError"));
+      setSetupSaving(false);
+      return;
+    }
+    // Hard navigation so middleware + nav read the fresh role cookie.
+    window.location.href = "/dashboard";
+  };
+
+  const confirmSwitchToCommunity = async () => {
+    setSwitchError("");
+    const active = uid ? await fetchActiveJobs(uid) : [];
+    setActiveJobCount(active.length);
+    if (active.length > 0) {
+      setSwitchError(t("set.switchActiveJobs"));
+      return;
+    }
+    setSwitchSaving(true);
+    const res = await switchRole("community");
+    setSwitchSaving(false);
+    if (!res.ok) {
+      setSwitchError(res.message ?? t("set.switchError"));
+      return;
+    }
+    setConfirmCommunity(false);
+    setSwitchMsg(t("set.switchSuccess"));
+    window.location.href = "/dashboard";
+  };
+
+  const openDelete = () => {
+    setDeleteError("");
+    setDeleteConfirmText("");
+    if (activeJobCount > 0) {
+      setDeleteError(t("set.deleteActiveJobs"));
+      return;
+    }
+    setShowDelete(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirmText !== "DELETE" || deleteBusy) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    const res = await deleteAccount();
+    if (!res.ok) {
+      setDeleteBusy(false);
+      if (res.message === "active-jobs") setDeleteError(t("set.deleteActiveJobs"));
+      else if (res.message === "not-deployed") setDeleteError(t("set.deleteNotDeployed"));
+      else setDeleteError(t("set.deleteError"));
+      return;
+    }
+    await createClient().auth.signOut();
+    window.location.href = "/?deleted=1";
   };
 
   if (!loaded) {
@@ -321,6 +582,249 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Account type / role switch */}
+          <div className="text-[11px] font-mono uppercase tracking-wide text-ink mb-2">
+            {t("set.accountType")}
+          </div>
+          <div className="bg-white border border-line rounded-[12px] p-3.5 mb-4">
+            <div className="text-[13px] font-semibold">
+              {t("set.roleCurrent", { role: t(role === "runner" ? "role.runner" : "role.community") })}
+            </div>
+            <div className="text-[11px] text-slate mt-0.5">
+              {role === "runner" ? t("set.switchToCommunity") : t("set.switchToRunner")}
+            </div>
+
+            {switchMsg && (
+              <div className="text-[12px] text-teal font-semibold mt-2.5">{switchMsg}</div>
+            )}
+            {switchError && (
+              <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mt-2.5">
+                {switchError}
+              </div>
+            )}
+
+            {role === "community" ? (
+              !setupOpen ? (
+                <Button
+                  variant="secondary"
+                  className="!w-auto !px-4 !py-2 text-[12px] mt-3"
+                  onClick={() => {
+                    setSetupError("");
+                    setSetupOpen(true);
+                  }}
+                >
+                  🛵 {t("set.switchToRunnerBtn")}
+                </Button>
+              ) : (
+                <div className="mt-3 border border-teal/25 bg-[#F0F7F4] rounded-[10px] p-3">
+                  <div className="text-[12px] font-bold text-teal mb-0.5">
+                    {t("set.runnerSetupTitle")}
+                  </div>
+                  <div className="text-[11px] text-slate leading-snug mb-3">
+                    {t("set.runnerSetupSub")}
+                  </div>
+
+                  <div className="text-[10px] font-semibold text-slate mb-1.5">
+                    {t("dash.run.yourServices")}
+                  </div>
+                  <div className="space-y-2 mb-3">
+                    {setupServices.map((svc) => {
+                      const isOther = !SERVICE_PRESETS.some(
+                        (p) => p.toLowerCase() === svc.name.toLowerCase()
+                      );
+                      return (
+                        <div key={svc.id} className="bg-white border border-line rounded-[10px] p-2.5">
+                          <div className="mb-2">
+                            <label className="text-[10px] font-semibold text-slate block mb-1">
+                              {t("dash.run.serviceName")}
+                            </label>
+                            <ServicePicker
+                              value={
+                                isOther
+                                  ? OTHER_SERVICE
+                                  : (SERVICE_PRESETS.find(
+                                      (p) => p.toLowerCase() === svc.name.toLowerCase()
+                                    ) ?? svc.name)
+                              }
+                              onChange={(name) =>
+                                updateSetupService(svc.id, {
+                                  name: name === OTHER_SERVICE ? "" : name,
+                                })
+                              }
+                            />
+                            {isOther && (
+                              <input
+                                className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px] mt-1.5"
+                                placeholder={t("dash.run.writeOwn")}
+                                value={svc.name}
+                                onChange={(e) =>
+                                  updateSetupService(svc.id, { name: e.target.value })
+                                }
+                              />
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 items-start">
+                            <select
+                              className="bg-white border border-line rounded-[10px] px-2 py-2 text-[12px] max-w-full"
+                              value={svc.pricing.model}
+                              onChange={(e) =>
+                                updateSetupPricing(svc.id, {
+                                  model: e.target.value as Service["pricing"]["model"],
+                                })
+                              }
+                            >
+                              <option value="flat_rate">{t("dash.run.flatRate")}</option>
+                              <option value="per_item">{t("dash.run.perItem")}</option>
+                              <option value="custom">{t("dash.run.custom")}</option>
+                            </select>
+                            {svc.pricing.model === "custom" ? (
+                              <input
+                                className="flex-1 min-w-[120px] bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px]"
+                                placeholder={t("dash.run.customPlaceholder")}
+                                value={svc.pricing.description ?? ""}
+                                onChange={(e) =>
+                                  updateSetupPricing(svc.id, { description: e.target.value })
+                                }
+                              />
+                            ) : (
+                              <div className="flex-1 min-w-[100px] flex items-center gap-1.5 bg-white border border-line rounded-[10px] px-2.5">
+                                <span className="text-[12px] text-slate font-mono">RM</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  inputMode="decimal"
+                                  className="flex-1 bg-transparent py-2 text-[12.5px] min-w-0"
+                                  placeholder="0"
+                                  value={svc.pricing.price ?? ""}
+                                  onChange={(e) => {
+                                    const raw = e.target.value;
+                                    updateSetupPricing(svc.id, {
+                                      price: raw === "" ? undefined : Number(raw),
+                                    });
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <button
+                              onClick={() =>
+                                setSetupServices((prev) =>
+                                  prev.filter((s) => s.id !== svc.id)
+                                )
+                              }
+                              className="text-[11px] text-orange font-semibold px-2 py-2"
+                            >
+                              {t("common.remove")}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Button
+                      variant="outline"
+                      className="!w-auto !px-3 !py-1.5 text-[11px] rounded-lg"
+                      onClick={() => setSetupServices((prev) => [...prev, emptyService()])}
+                    >
+                      {t("dash.run.addService")}
+                    </Button>
+                  </div>
+
+                  <div className="text-[10px] font-semibold text-slate mb-1.5">
+                    {t("set.schedule")}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <TimePicker
+                      value={setupScheduleFrom}
+                      onChange={setSetupScheduleFrom}
+                      placeholder={t("picker.from")}
+                    />
+                    <TimePicker
+                      value={setupScheduleTo}
+                      onChange={setSetupScheduleTo}
+                      placeholder={t("picker.to")}
+                    />
+                  </div>
+
+                  {setupError && (
+                    <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-2">
+                      {setupError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      className="!w-auto !px-3.5 !py-2 text-[11.5px] rounded-lg"
+                      disabled={setupSaving}
+                      onClick={confirmSwitchToRunner}
+                    >
+                      {setupSaving ? t("common.saving") : t("set.confirmSwitch")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="!w-auto !px-3.5 !py-2 text-[11.5px] rounded-lg"
+                      disabled={setupSaving}
+                      onClick={() => setSetupOpen(false)}
+                    >
+                      {t("common.cancel")}
+                    </Button>
+                  </div>
+                  <div className="text-[10.5px] text-slate mt-2">
+                    {t("set.switchPendingApproval")}
+                  </div>
+                </div>
+              )
+            ) : (
+              <>
+                {isApproved === false && (
+                  <div className="text-[11.5px] text-[#8A6D00] bg-[#FDF6E3] border border-[#F0E0A8] rounded-[10px] px-3 py-2.5 mt-2.5">
+                    {t("set.runnerPendingNote")}
+                  </div>
+                )}
+                {!confirmCommunity ? (
+                  <Button
+                    variant="outline"
+                    className="!w-auto !px-4 !py-2 text-[12px] mt-3"
+                    onClick={() => {
+                      setSwitchError("");
+                      setConfirmCommunity(true);
+                    }}
+                  >
+                    🏠 {t("set.switchToCommunityBtn")}
+                  </Button>
+                ) : (
+                  <div className="mt-3 border border-orange/30 bg-[#FDEFE3] rounded-[10px] p-3">
+                    <div className="text-[12px] text-orange font-semibold mb-1">
+                      {t("set.switchCommunityTitle")}
+                    </div>
+                    <div className="text-[11.5px] text-slate leading-snug mb-2.5">
+                      {t("set.switchCommunityBody")}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        className="!w-auto !px-3.5 !py-2 text-[11.5px] rounded-lg"
+                        disabled={switchSaving}
+                        onClick={confirmSwitchToCommunity}
+                      >
+                        {switchSaving ? t("common.saving") : t("set.confirmCommunity")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="!w-auto !px-3.5 !py-2 text-[11.5px] rounded-lg"
+                        disabled={switchSaving}
+                        onClick={() => setConfirmCommunity(false)}
+                      >
+                        {t("set.cancelSwitch")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           {isAdmin && (
             <Link
               href="/admin"
@@ -423,6 +927,43 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Danger zone */}
+      <div className="mt-8">
+        <div className="text-[11px] font-mono uppercase tracking-wide text-[#DC2626]/80 mb-2">
+          {t("set.danger")}
+        </div>
+        <div className="bg-white border border-[#DC2626]/25 rounded-[12px] p-3.5">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="min-w-0">
+              <div className="text-[13px] font-semibold text-[#DC2626]">
+                🗑 {t("set.deleteAccount")}
+              </div>
+              <div className="text-[11px] text-slate mt-0.5">
+                {t("set.deleteAccountHint")}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={openDelete}
+              className="rounded-[10px] px-4 py-2.5 text-[12px] font-semibold text-white bg-[#DC2626] hover:bg-[#B91C1C] transition-colors"
+            >
+              {t("set.deleteAccount")}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showDelete && (
+        <DeleteAccountModal
+          onCancel={() => setShowDelete(false)}
+          onConfirm={confirmDelete}
+          busy={deleteBusy}
+          error={deleteError}
+          confirmText={deleteConfirmText}
+          setConfirmText={setDeleteConfirmText}
+        />
+      )}
     </PhoneFrame>
   );
 }

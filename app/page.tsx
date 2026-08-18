@@ -23,10 +23,13 @@ export default function LandingPage() {
   const [stats, setStats] = useState<LandingStats | null>(null);
 
   const [oauthError, setOauthError] = useState("");
+  const [deletedMsg, setDeletedMsg] = useState(false);
 
   useEffect(() => {
-    const err = new URLSearchParams(window.location.search).get("error");
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get("error");
     if (err) setOauthError(err);
+    if (params.get("deleted")) setDeletedMsg(true);
   }, []);
 
   useEffect(() => {
@@ -176,6 +179,11 @@ export default function LandingPage() {
 
   return (
     <div>
+      {deletedMsg && (
+        <div className="max-w-[460px] mx-auto mb-4 rounded-[10px] border border-teal/40 bg-[#E4F3EC] px-3.5 py-2.5 text-[12px] text-teal">
+          {t("home.deleted")}
+        </div>
+      )}
       {oauthError && (
         <div className="max-w-[460px] mx-auto mb-4 rounded-[10px] border border-orange/30 bg-[#FDEFE3] px-3.5 py-2.5 text-[12px] text-orange">
           <b>{t("home.signInError")}</b> {oauthError}

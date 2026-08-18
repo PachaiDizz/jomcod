@@ -738,3 +738,92 @@ export async function adminSetReportStatus(reportId: string, status: string): Pr
   });
   return !error;
 }
+
+// ---- Account management (Settings) ----
+
+// Jobs that are still in progress on EITHER side of the current user —
+// used to block role switches and account deletion until they're resolved.
+// RLS only lets a participant see these rows, so this is safe to query
+// straight from the client.
+export async function fetchActiveJobs(userId: string): Promise<JobRequest[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("*")
+    .or(`requester_id.eq.${userId},runner_id.eq.${userId}`)
+    .in("status", ["pending", "confirmed"])
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return (data ?? []).map((r) => jobFromRow(r as JobRow));
+}
+
+// Flip a user between Community ↔ Runner in BOTH stores the app reads:
+// the `profiles` row (directory visibility + approval state) and the auth
+// metadata that middleware / nav / dashboard use. Switching to runner is
+// treated like a fresh runner signup — it needs admin approval again.
+export async function switchRole(
+  newRole: "community" | "runner"
+): Promise<{ ok: boolean; message?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "You must be signed in." };
+
+  const oldRole = (user.user_metadata?.role as string) ?? "community";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_approved")
+    .eq("id", user.id)
+    .maybeSingle();
+  const oldApproved = (profile as { is_approved?: boolean } | null)?.is_approved;
+
+  const profilePatch: Partial<ProfileRow> = { role: newRole, status: "offline" };
+  if (newRole === "runner") profilePatch.is_approved = false;
+  const profileOk = await updateProfile(profilePatch);
+  if (!profileOk) return { ok: false, message: "Couldn't update your profile." };
+
+  const { error } = await supabase.auth.updateUser({ data: { role: newRole } });
+  if (error) {
+    // Roll back the profile change so both stores stay in sync.
+    const rollback: Partial<ProfileRow> = { role: oldRole };
+    if (oldApproved !== undefined) rollback.is_approved = oldApproved;
+    await updateProfile(rollback);
+    return { ok: false, message: error.message };
+  }
+
+  // Refresh the session so the fresh role is in the cookie for middleware.
+  await supabase.auth.refreshSession();
+  return { ok: true };
+}
+
+export interface AccountDeleteResult {
+  ok: boolean;
+  message?: string;
+}
+
+// Ask the delete-account edge function to remove this user. It re-checks the
+// active-jobs guard server-side, so a stale client check can't bypass it.
+export async function deleteAccount(): Promise<AccountDeleteResult> {
+  const supabase = createClient();
+  try {
+    const { error } = await supabase.functions.invoke("delete-account", {
+      method: "POST",
+      body: {},
+    });
+    if (error) {
+      const ctx = (error as { context?: { status?: number; data?: { error?: string } } }).context;
+      if (ctx?.status === 409 && ctx.data?.error === "active-jobs") {
+        return { ok: false, message: "active-jobs" };
+      }
+      if (ctx?.status === 404) {
+        return { ok: false, message: "not-deployed" };
+      }
+      return { ok: false, message: error.message };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "unknown" };
+  }
+}
