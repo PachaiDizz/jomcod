@@ -391,6 +391,12 @@ create policy "users can insert their own profile" on public.profiles
 create policy "users can update their own profile" on public.profiles
   for update using (auth.uid() = id);
 
+-- Trust flags (is_admin / is_approved / is_suspended) are NOT updatable by
+-- clients: `revoke insert/update (is_admin, is_approved, is_suspended) on
+-- public.profiles from anon, authenticated;` plus a profiles_trust_guard
+-- BEFORE UPDATE trigger (see 20260819_lock_trust_flags.sql). Only the admin
+-- RPCs (SECURITY DEFINER) and direct DB edits can raise them.
+
 -- jobs
 alter table public.jobs enable row level security;
 create policy "jobs readable by participants" on public.jobs

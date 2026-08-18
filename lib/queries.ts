@@ -762,6 +762,10 @@ export async function fetchActiveJobs(userId: string): Promise<JobRequest[]> {
 // the `profiles` row (directory visibility + approval state) and the auth
 // metadata that middleware / nav / dashboard use. Switching to runner is
 // treated like a fresh runner signup — it needs admin approval again.
+//
+// The profile change goes through the set_role() RPC (SECURITY DEFINER)
+// because the client no longer has UPDATE privilege on the trust columns
+// (is_admin / is_approved / is_suspended) — see 20260819_lock_trust_flags.sql.
 export async function switchRole(
   newRole: "community" | "runner"
 ): Promise<{ ok: boolean; message?: string }> {
@@ -772,25 +776,23 @@ export async function switchRole(
   if (!user) return { ok: false, message: "You must be signed in." };
 
   const oldRole = (user.user_metadata?.role as string) ?? "community";
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_approved")
-    .eq("id", user.id)
-    .maybeSingle();
-  const oldApproved = (profile as { is_approved?: boolean } | null)?.is_approved;
 
-  const profilePatch: Partial<ProfileRow> = { role: newRole, status: "offline" };
-  if (newRole === "runner") profilePatch.is_approved = false;
-  const profileOk = await updateProfile(profilePatch);
-  if (!profileOk) return { ok: false, message: "Couldn't update your profile." };
+  // Update auth metadata first (the store middleware / nav / dashboard read).
+  const { error: metadataError } = await supabase.auth.updateUser({
+    data: { role: newRole },
+  });
+  if (metadataError)
+    return { ok: false, message: "Couldn't update your account." };
 
-  const { error } = await supabase.auth.updateUser({ data: { role: newRole } });
-  if (error) {
-    // Roll back the profile change so both stores stay in sync.
-    const rollback: Partial<ProfileRow> = { role: oldRole };
-    if (oldApproved !== undefined) rollback.is_approved = oldApproved;
-    await updateProfile(rollback);
-    return { ok: false, message: error.message };
+  // Then flip the profile row server-side. set_role() also resets
+  // is_approved when switching to runner.
+  const { error: rpcError } = await supabase.rpc("set_role", {
+    p_role: newRole,
+  });
+  if (rpcError) {
+    // Roll the auth metadata back so both stores stay in sync.
+    await supabase.auth.updateUser({ data: { role: oldRole } });
+    return { ok: false, message: "Couldn't update your profile." };
   }
 
   // Refresh the session so the fresh role is in the cookie for middleware.

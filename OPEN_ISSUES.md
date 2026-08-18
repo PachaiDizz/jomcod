@@ -8,19 +8,24 @@
 
 ## 🔴 CRITICAL
 
-### 1. Any user can self-promote to admin (and self-approve as a runner)
+### 1. ~~Any user can self-promote to admin (and self-approve as a runner)~~ ✅ FIXED
 
-- **Where:** `is_admin` / `is_approved` / `is_suspended` are plain columns on
-  `profiles` (`supabase/migrations/20260813_phase3_trust_phase5_ux.sql:19-21`).
-  The profiles RLS update policy is only `for update using (auth.uid() = id)`
-  with no column restriction (see `PROJECT.md` §4), so anyone can run
-  `update profiles set is_admin = true where id = auth.uid()` and then use
-  every `admin_*` RPC.
-- **Exposed via client:** `lib/queries.ts` `updateProfile()` does a generic
-  `upsert` of any `Partial<ProfileRow>` column.
-- **Fix:** a `supabase/migrations/` file that either:
-  - `revoke update (is_admin, is_approved, is_suspended) on public.profiles from anon, authenticated;` (admin RPCs are `SECURITY DEFINER` and bypass column privileges), **or**
-  - adds a `profiles_trust_guard` BEFORE INSERT/UPDATE trigger that only lets an existing admin change those three columns.
+- **Fixed in:** `supabase/migrations/20260819_lock_trust_flags.sql` (run in the
+  SQL editor), plus `lib/queries.ts` `switchRole()`.
+- **What changed:**
+  - `revoke insert/update (is_admin, is_approved, is_suspended) on public.profiles
+    from anon, authenticated;` — admin RPCs are `SECURITY DEFINER` and bypass
+    column privileges; direct SQL-editor edits (postgres) still work, so the
+    one-time admin bootstrap is preserved.
+  - `profiles_trust_guard` BEFORE UPDATE trigger (defense in depth): non-admins
+    may de-escalate (`is_approved` true → false) but can never raise any trust
+    flag; `auth.uid() is null` (direct DB edits) is always allowed.
+  - `set_role()` `SECURITY DEFINER` RPC is now the only client path that changes
+    role + approval; `switchRole()` calls it instead of the generic
+    `updateProfile()` upsert.
+- **Verify:** apply the migration, then confirm `update profiles set is_admin = true
+  where id = auth.uid()` is rejected for a non-admin, and Settings → Switch role
+  still works (runner switch resets approval).
 
 ### 2. Real secrets committed to a PUBLIC repo (`PachaiDizz/jomcod`)
 
