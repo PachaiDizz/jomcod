@@ -3,6 +3,9 @@
 > Saved so we can work through these later. Bugs are listed by severity with
 > the exact file:line and the shape of the fix. Features already shipped
 > (Settings delete-account + switch role) are tracked in git commit `ae1374a`.
+>
+> **Status (Aug 19 2026):** #1 fixed + role switch simplified — see
+> `SESSION_20260819_SECURITY_ISSUES.md`. Remaining: #2 – #12 + the manual step.
 
 ---
 
