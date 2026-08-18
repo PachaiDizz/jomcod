@@ -86,6 +86,10 @@ export const en: Record<string, string> = {
     "🛵 Are you a runner who helps others? Choose {runner}.",
   "home.signingUpAsHint2":
     "🏠 Just need help with errands? Choose {community}.",
+  "home.roleStepTitle": "How do you want to use JomCOD?",
+  "home.roleStepSub": "Pick the side you'll join — you can change it later in Settings.",
+  "home.changeRole": "change",
+  "home.backToSignIn": "← Back to sign in",
   "home.roleCommunitySub": "Request errands & parcel pickups nearby",
   "home.roleRunnerSub": "Offer your service, set your price",
   "home.username": "Username",

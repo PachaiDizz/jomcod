@@ -19,6 +19,7 @@ export default function LandingPage() {
   const { t } = useI18n();
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [role, setRole] = useState<"community" | "runner">("community");
+  const [roleStep, setRoleStep] = useState(false);
 
   const [stats, setStats] = useState<LandingStats | null>(null);
 
@@ -40,7 +41,16 @@ export default function LandingPage() {
 
   const handleSignupTab = () => {
     setAuthMode("signup");
+    setRoleStep(true);
+  };
+
+  // Step 1 of sign-up: role selection. Picking a card locks the role in and
+  // moves to the actual form; the guide (role-specific) opens right after so
+  // it matches the role they actually chose.
+  const handleRoleSelected = (r: "community" | "runner") => {
+    setRole(r);
     if (!guideAccepted) setShowGuide(true);
+    setRoleStep(false);
   };
 
   const handleAcceptGuide = () => {
@@ -328,10 +338,50 @@ export default function LandingPage() {
               </button>
             </div>
           </PhoneFrame>
+        ) : roleStep ? (
+          <PhoneFrame className="max-w-[460px]">
+            <div className="text-[19px] font-bold mb-1 font-display">
+              {t("home.roleStepTitle")}
+            </div>
+            <div className="text-[12.5px] text-slate mb-4.5">
+              {t("home.roleStepSub")}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 mb-4">
+              <button
+                onClick={() => handleRoleSelected("community")}
+                className="border-[1.5px] border-line rounded-xl p-5 text-left bg-white hover:border-orange hover:bg-[#FDF3EE] transition-colors"
+              >
+                <div className="text-2xl mb-2">🏠</div>
+                <div className="font-bold text-[15px] mb-1">{t("role.community")}</div>
+                <div className="text-[12.5px] text-slate leading-snug">
+                  {t("home.roleCommunitySub")}
+                </div>
+              </button>
+              <button
+                onClick={() => handleRoleSelected("runner")}
+                className="border-[1.5px] border-line rounded-xl p-5 text-left bg-white hover:border-orange hover:bg-[#FDF3EE] transition-colors"
+              >
+                <div className="text-2xl mb-2">🛵</div>
+                <div className="font-bold text-[15px] mb-1">{t("role.runner")}</div>
+                <div className="text-[12.5px] text-slate leading-snug">
+                  {t("home.roleRunnerSub")}
+                </div>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setAuthMode("signin")}
+              className="w-full text-center text-xs text-slate mt-1.5 hover:text-teal transition-colors"
+            >
+              {t("home.backToSignIn")}
+            </button>
+          </PhoneFrame>
         ) : (
           <PhoneFrame className="max-w-[460px]">
             <div className="text-[19px] font-bold mb-1 font-display">{t("home.joinJomcod")}</div>
-            <div className="text-[12.5px] text-slate mb-4.5">
+            <div className="text-[12.5px] text-slate mb-3">
               {t("home.joinSub")}{" "}
               <button
                 type="button"
@@ -342,43 +392,28 @@ export default function LandingPage() {
               </button>
             </div>
 
+            {/* Pre-labeled chosen role + change link back to step 1 */}
+            <div className="flex items-center gap-2 bg-paper2 rounded-[10px] px-3 py-2.5 mb-4.5">
+              <span className="text-[11px] text-slate">{t("home.signingUpAs")}</span>
+              <span
+                className={`font-mono text-[10px] font-semibold rounded-full px-2 py-1 flex items-center gap-1 border whitespace-nowrap ${
+                  role === "runner"
+                    ? "bg-[#FDF6E3] text-[#8A6D00] border-[#F0E0A8]"
+                    : "bg-[#E4F3EC] text-teal border-[#C8E6DA]"
+                }`}
+              >
+                {role === "runner" ? "🛵" : "🏠"} {t(role === "runner" ? "role.runner" : "role.community")}
+              </span>
+              <button
+                type="button"
+                onClick={() => setRoleStep(true)}
+                className="text-[11px] text-teal font-semibold underline ml-auto"
+              >
+                {t("home.changeRole")}
+              </button>
+            </div>
+
             {googleButton}
-
-            <div className="mb-2">
-              <div className="text-xs font-semibold mb-1.5">{t("home.signingUpAs")}</div>
-              <div className="text-[11px] text-slate mb-3">
-                {t("home.signingUpAsHint1", { runner: t("role.runner") })}
-                <br />
-                {t("home.signingUpAsHint2", { community: t("role.community") })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 mb-4">
-              <button
-                onClick={() => setRole("community")}
-                className={`border-[1.5px] rounded-xl p-3.5 text-left transition-colors ${
-                  role === "community" ? "border-orange bg-[#FDF3EE]" : "border-line bg-white"
-                }`}
-              >
-                <div className="text-xl mb-1.5">🏠</div>
-                <div className="font-bold text-[13px] mb-1">{t("role.community")}</div>
-                <div className="text-[11px] text-slate leading-snug">
-                  {t("home.roleCommunitySub")}
-                </div>
-              </button>
-              <button
-                onClick={() => setRole("runner")}
-                className={`border-[1.5px] rounded-xl p-3.5 text-left transition-colors ${
-                  role === "runner" ? "border-orange bg-[#FDF3EE]" : "border-line bg-white"
-                }`}
-              >
-                <div className="text-xl mb-1.5">🛵</div>
-                <div className="font-bold text-[13px] mb-1">{t("role.runner")}</div>
-                <div className="text-[11px] text-slate leading-snug">
-                  {t("home.roleRunnerSub")}
-                </div>
-              </button>
-            </div>
 
             <div className="mb-3.5">
               <label className="text-xs font-semibold mb-1.5 block">
