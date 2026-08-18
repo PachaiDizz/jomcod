@@ -86,3 +86,4 @@ end $$;
 
 revoke execute on function public.set_role(text) from public;
 grant execute on function public.set_role(text) to authenticated;
+

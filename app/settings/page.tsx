@@ -8,16 +8,8 @@ import Button from "@/components/Button";
 import TimePicker from "@/components/TimePicker";
 import RoleBadge from "@/components/RoleBadge";
 import LoadingState from "@/components/LoadingState";
-import ServicePicker from "@/components/ServicePicker";
 import { createClient } from "@/lib/supabase/client";
-import {
-  cleanServiceName,
-  OTHER_SERVICE,
-  SERVICE_PRESETS,
-  titleCase,
-  normalizeWhatsApp,
-  isValidWhatsApp,
-} from "@/lib/constants";
+import { normalizeWhatsApp, isValidWhatsApp } from "@/lib/constants";
 import { useI18n } from "@/lib/i18n";
 import {
   deleteAccount,
@@ -27,7 +19,7 @@ import {
   updateProfile,
   type ProfileRow,
 } from "@/lib/queries";
-import type { RunnerStatus, Service } from "@/lib/types";
+import type { RunnerStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: { value: RunnerStatus; label: string; color: string }[] = [
   { value: "available", label: "Available", color: "#2E6E62" },
@@ -87,17 +79,6 @@ function ScheduleBanner({ from, to }: { from: string; to: string }) {
     </div>
   );
 }
-
-const newId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
-
-const emptyService = (): Service => ({
-  id: newId(),
-  name: SERVICE_PRESETS[0],
-  pricing: { model: "flat_rate", price: 8 },
-});
 
 // Two-step account deletion: typed confirmation + a separate confirm button,
 // so a single stray tap can never delete an account.
@@ -216,14 +197,6 @@ export default function SettingsPage() {
   const [uid, setUid] = useState("");
   const [activeJobCount, setActiveJobCount] = useState(0);
 
-  // Switch Community → Runner (setup form)
-  const [setupOpen, setSetupOpen] = useState(false);
-  const [setupServices, setSetupServices] = useState<Service[]>([]);
-  const [setupScheduleFrom, setSetupScheduleFrom] = useState("");
-  const [setupScheduleTo, setSetupScheduleTo] = useState("");
-  const [setupSaving, setSetupSaving] = useState(false);
-  const [setupError, setSetupError] = useState("");
-
   // Switch Runner → Community (inline confirm)
   const [confirmCommunity, setConfirmCommunity] = useState(false);
   const [switchSaving, setSwitchSaving] = useState(false);
@@ -261,13 +234,6 @@ export default function SettingsPage() {
         setStatus((profile.status as RunnerStatus) ?? "offline");
         setScheduleFrom(profile.schedule_from ?? "");
         setScheduleTo(profile.schedule_to ?? "");
-        setSetupScheduleFrom(profile.schedule_from ?? "");
-        setSetupScheduleTo(profile.schedule_to ?? "");
-        setSetupServices(
-          Array.isArray(profile.services)
-            ? (profile.services as Service[]).map((s) => ({ ...s, name: cleanServiceName(s.name) }))
-            : []
-        );
       } else {
         setUsername(md.username ?? "");
         setWhatsapp(md.whatsapp ?? "");
@@ -354,62 +320,23 @@ export default function SettingsPage() {
     setTimeout(() => setScheduleMsg(""), 3000);
   };
 
-  const updateSetupService = (id: string, patch: Partial<Service>) => {
-    setSetupServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...patch } : s))
-    );
-  };
-
-  const updateSetupPricing = (id: string, patch: Partial<Service["pricing"]>) => {
-    setSetupServices((prev) =>
-      prev.map((s) =>
-        s.id === id ? { ...s, pricing: { ...s.pricing, ...patch } } : s
-      )
-    );
-  };
-
-  // Switching to Runner: requires a priced service, saves the runner setup
-  // (services + schedule), flips the role in both stores and lands on the
-  // runner dashboard. Approval resets to pending — same as a new signup.
+  // Switching to Runner is a direct flip. The runner fills in their services
+  // and schedule on the runner dashboard, which shows a reminder until they
+  // do. Approval resets to pending — same as a new signup.
   const confirmSwitchToRunner = async () => {
-    setSetupSaving(true);
-    setSetupError("");
+    setSwitchSaving(true);
+    setSwitchError("");
     const active = uid ? await fetchActiveJobs(uid) : [];
     setActiveJobCount(active.length);
     if (active.length > 0) {
-      setSetupError(t("set.switchActiveJobs"));
-      setSetupSaving(false);
-      return;
-    }
-    const hasPricedService = setupServices.some((s) =>
-      !s.name.trim()
-        ? false
-        : s.pricing.model === "custom"
-        ? !!s.pricing.description?.trim()
-        : typeof s.pricing.price === "number" && s.pricing.price > 0
-    );
-    if (!hasPricedService) {
-      setSetupError(t("set.runnerSetupNeedService"));
-      setSetupSaving(false);
-      return;
-    }
-    const cleaned = setupServices
-      .filter((s) => s.name.trim() !== "")
-      .map((s) => ({ ...s, name: titleCase(cleanServiceName(s.name)) }));
-    const saved = await updateProfile({
-      services: cleaned as unknown as ProfileRow["services"],
-      schedule_from: setupScheduleFrom,
-      schedule_to: setupScheduleTo,
-    });
-    if (!saved) {
-      setSetupError(t("set.switchError"));
-      setSetupSaving(false);
+      setSwitchError(t("set.switchActiveJobs"));
+      setSwitchSaving(false);
       return;
     }
     const res = await switchRole("runner");
+    setSwitchSaving(false);
     if (!res.ok) {
-      setSetupError(res.message ?? t("set.switchError"));
-      setSetupSaving(false);
+      setSwitchError(res.message ?? t("set.switchError"));
       return;
     }
     // Hard navigation so middleware + nav read the fresh role cookie.
@@ -604,177 +531,19 @@ export default function SettingsPage() {
             )}
 
             {role === "community" ? (
-              !setupOpen ? (
+              <>
                 <Button
                   variant="secondary"
                   className="!w-auto !px-4 !py-2 text-[12px] mt-3"
-                  onClick={() => {
-                    setSetupError("");
-                    setSetupOpen(true);
-                  }}
+                  disabled={switchSaving}
+                  onClick={confirmSwitchToRunner}
                 >
-                  🛵 {t("set.switchToRunnerBtn")}
+                  {switchSaving ? t("common.saving") : `🛵 ${t("set.switchToRunnerBtn")}`}
                 </Button>
-              ) : (
-                <div className="mt-3 border border-teal/25 bg-[#F0F7F4] rounded-[10px] p-3">
-                  <div className="text-[12px] font-bold text-teal mb-0.5">
-                    {t("set.runnerSetupTitle")}
-                  </div>
-                  <div className="text-[11px] text-slate leading-snug mb-3">
-                    {t("set.runnerSetupSub")}
-                  </div>
-
-                  <div className="text-[10px] font-semibold text-slate mb-1.5">
-                    {t("dash.run.yourServices")}
-                  </div>
-                  <div className="space-y-2 mb-3">
-                    {setupServices.map((svc) => {
-                      const isOther = !SERVICE_PRESETS.some(
-                        (p) => p.toLowerCase() === svc.name.toLowerCase()
-                      );
-                      return (
-                        <div key={svc.id} className="bg-white border border-line rounded-[10px] p-2.5">
-                          <div className="mb-2">
-                            <label className="text-[10px] font-semibold text-slate block mb-1">
-                              {t("dash.run.serviceName")}
-                            </label>
-                            <ServicePicker
-                              value={
-                                isOther
-                                  ? OTHER_SERVICE
-                                  : (SERVICE_PRESETS.find(
-                                      (p) => p.toLowerCase() === svc.name.toLowerCase()
-                                    ) ?? svc.name)
-                              }
-                              onChange={(name) =>
-                                updateSetupService(svc.id, {
-                                  name: name === OTHER_SERVICE ? "" : name,
-                                })
-                              }
-                            />
-                            {isOther && (
-                              <input
-                                className="w-full bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px] mt-1.5"
-                                placeholder={t("dash.run.writeOwn")}
-                                value={svc.name}
-                                onChange={(e) =>
-                                  updateSetupService(svc.id, { name: e.target.value })
-                                }
-                              />
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-2 items-start">
-                            <select
-                              className="bg-white border border-line rounded-[10px] px-2 py-2 text-[12px] max-w-full"
-                              value={svc.pricing.model}
-                              onChange={(e) =>
-                                updateSetupPricing(svc.id, {
-                                  model: e.target.value as Service["pricing"]["model"],
-                                })
-                              }
-                            >
-                              <option value="flat_rate">{t("dash.run.flatRate")}</option>
-                              <option value="per_item">{t("dash.run.perItem")}</option>
-                              <option value="custom">{t("dash.run.custom")}</option>
-                            </select>
-                            {svc.pricing.model === "custom" ? (
-                              <input
-                                className="flex-1 min-w-[120px] bg-white border border-line rounded-[10px] px-3 py-2 text-[12.5px]"
-                                placeholder={t("dash.run.customPlaceholder")}
-                                value={svc.pricing.description ?? ""}
-                                onChange={(e) =>
-                                  updateSetupPricing(svc.id, { description: e.target.value })
-                                }
-                              />
-                            ) : (
-                              <div className="flex-1 min-w-[100px] flex items-center gap-1.5 bg-white border border-line rounded-[10px] px-2.5">
-                                <span className="text-[12px] text-slate font-mono">RM</span>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  inputMode="decimal"
-                                  className="flex-1 bg-transparent py-2 text-[12.5px] min-w-0"
-                                  placeholder="0"
-                                  value={svc.pricing.price ?? ""}
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    updateSetupPricing(svc.id, {
-                                      price: raw === "" ? undefined : Number(raw),
-                                    });
-                                  }}
-                                />
-                              </div>
-                            )}
-                            <button
-                              onClick={() =>
-                                setSetupServices((prev) =>
-                                  prev.filter((s) => s.id !== svc.id)
-                                )
-                              }
-                              className="text-[11px] text-orange font-semibold px-2 py-2"
-                            >
-                              {t("common.remove")}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Button
-                      variant="outline"
-                      className="!w-auto !px-3 !py-1.5 text-[11px] rounded-lg"
-                      onClick={() => setSetupServices((prev) => [...prev, emptyService()])}
-                    >
-                      {t("dash.run.addService")}
-                    </Button>
-                  </div>
-
-                  <div className="text-[10px] font-semibold text-slate mb-1.5">
-                    {t("set.schedule")}
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <TimePicker
-                      value={setupScheduleFrom}
-                      onChange={setSetupScheduleFrom}
-                      placeholder={t("picker.from")}
-                    />
-                    <TimePicker
-                      value={setupScheduleTo}
-                      onChange={setSetupScheduleTo}
-                      placeholder={t("picker.to")}
-                    />
-                  </div>
-
-                  {setupError && (
-                    <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-2">
-                      {setupError}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      className="!w-auto !px-3.5 !py-2 text-[11.5px] rounded-lg"
-                      disabled={setupSaving}
-                      onClick={confirmSwitchToRunner}
-                    >
-                      {setupSaving ? t("common.saving") : t("set.confirmSwitch")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="!w-auto !px-3.5 !py-2 text-[11.5px] rounded-lg"
-                      disabled={setupSaving}
-                      onClick={() => setSetupOpen(false)}
-                    >
-                      {t("common.cancel")}
-                    </Button>
-                  </div>
-                  <div className="text-[10.5px] text-slate mt-2">
-                    {t("set.switchPendingApproval")}
-                  </div>
+                <div className="text-[10.5px] text-slate mt-2">
+                  {t("set.switchPendingApproval")}
                 </div>
-              )
+              </>
             ) : (
               <>
                 {isApproved === false && (
