@@ -4,9 +4,9 @@
 > the exact file:line and the shape of the fix. Features already shipped
 > (Settings delete-account + switch role) are tracked in git commit `ae1374a`.
 >
-> **Status (Aug 19 2026):** #1, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12 fixed +
-> role switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md` and
-> `CHANGELOG.md`. Remaining: #2 (secrets — rotation) + the manual step.
+> **Status (Aug 19 2026):** all issues #1–#12 fixed + role switch simplified +
+> push restored + delete-account deployed — see `SESSION_20260819_SECURITY_ISSUES.md`
+> and `CHANGELOG.md`. Remaining: **#2 (secret rotation)**.
 
 ---
 
@@ -167,8 +167,4 @@
 
 ## 🛠 Manual step (not code)
 
-- **Deploy the delete-account edge function** so Settings → Delete Account works:
-  ```
-  supabase functions deploy delete-account
-  ```
-  Until then the button shows "Account deletion isn't ready yet…".
+- ✅ **Delete-account edge function deployed** (`supabase functions deploy delete-account`) — Settings → Delete Account now works.
