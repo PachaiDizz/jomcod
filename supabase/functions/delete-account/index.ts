@@ -51,10 +51,13 @@ Deno.serve(async (req) => {
     return json({ error: "Not signed in" }, 401);
   }
 
+  // getUser() expects the raw JWT, not the "Bearer <token>" header value.
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser(authHeader);
+  } = await supabase.auth.getUser(token);
   if (userError || !user) {
     return json({ error: "Not signed in" }, 401);
   }
