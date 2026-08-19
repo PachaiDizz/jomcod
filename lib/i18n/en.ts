@@ -606,6 +606,8 @@ export const en: Record<string, string> = {
   "set.saveFailed": "Couldn't save — please try again.",
   "set.profileSaveFailed": "Couldn't save your profile. Please try again.",
   "set.aboutHint": "About JomCOD, our story, and how to get in touch.",
+  "set.whatsNew": "What's new",
+  "set.whatsNewHint": "v{version} — see the latest updates and fixes.",
   "set.adminHint": "Approve runners, moderate jobs, and review reports.",
   "set.loading": "Loading settings…",
 

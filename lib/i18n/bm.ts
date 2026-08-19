@@ -602,6 +602,8 @@ export const bm: Record<string, string> = {
   "set.saveFailed": "Tidak dapat menyimpan — sila cuba lagi.",
   "set.profileSaveFailed": "Tidak dapat menyimpan profil anda. Sila cuba lagi.",
   "set.aboutHint": "Tentang JomCOD, kisah kami, dan cara menghubungi kami.",
+  "set.whatsNew": "Apa yang baru",
+  "set.whatsNewHint": "v{version} — lihat kemas kini dan pembetulan terkini.",
   "set.adminHint": "Luluskan runner, sederhanakan tugasan, dan semak laporan.",
   "set.loading": "Memuatkan tetapan…",
 

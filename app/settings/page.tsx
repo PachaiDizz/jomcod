@@ -19,6 +19,7 @@ import {
   updateProfile,
   type ProfileRow,
 } from "@/lib/queries";
+import { APP_VERSION } from "@/lib/version";
 import type { RunnerStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: { value: RunnerStatus; label: string; color: string }[] = [
@@ -606,6 +607,19 @@ export default function SettingsPage() {
               <span className="text-slate">→</span>
             </Link>
           )}
+
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("jomcod:show-update"))}
+            className="w-full flex items-center justify-between gap-2 bg-white border border-line rounded-[12px] p-3.5 mb-4 text-left hover:border-teal/50 transition-colors"
+          >
+            <div>
+              <div className="text-[13px] font-semibold text-teal">🆕 {t("set.whatsNew")}</div>
+              <div className="text-[11px] text-slate mt-0.5">
+                {t("set.whatsNewHint", { version: APP_VERSION })}
+              </div>
+            </div>
+            <span className="text-slate">→</span>
+          </button>
 
           {error && (
             <div className="text-[12px] text-orange bg-[#FDEFE3] rounded-[10px] px-3 py-2 mb-3">

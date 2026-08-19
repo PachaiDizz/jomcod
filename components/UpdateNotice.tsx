@@ -17,6 +17,13 @@ export default function UpdateNotice() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    // Reopenable on demand (e.g. Settings → "What's new").
+    const show = () => setVisible(true);
+    window.addEventListener("jomcod:show-update", show);
+    return () => window.removeEventListener("jomcod:show-update", show);
+  }, []);
+
+  useEffect(() => {
     try {
       if (localStorage.getItem(noticeKey()) === "1") return;
     } catch {
