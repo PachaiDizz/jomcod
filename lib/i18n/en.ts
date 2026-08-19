@@ -240,10 +240,10 @@ export const en: Record<string, string> = {
   // ── Update notice ─────────────────────────────────────────────────────────
   "update.title": "What's new in JomCOD · v{version}",
   "update.sub": "Updates and fixes since launch:",
-  "update.item1": "Change role anytime — registered as the wrong type? Switch between Community ↔ Runner in Settings.",
-  "update.item2": "Delete account — created it by mistake? Remove your account + data from Settings.",
-  "update.item4": "Private requests — once a runner accepts, only you and that runner see the job details.",
-  "update.item5": "Fair pricing — job totals are now set from the runner's listed price; no one can quietly change the agreed amount.",
+  "update.item1": "**Change role anytime** — registered as the wrong type? Switch between Community ↔ Runner in Settings.",
+  "update.item2": "**Delete account** — created it by mistake? Remove your account + data from Settings.",
+  "update.item4": "**Private requests** — once a runner accepts, only you and that runner see the job details.",
+  "update.item5": "**Fair pricing** — job totals are now set from the runner's listed price; no one can quietly change the agreed amount.",
   "update.gotIt": "Got it",
 
   // ── QR share card ─────────────────────────────────────────────────────────

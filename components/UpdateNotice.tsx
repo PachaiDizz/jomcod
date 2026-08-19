@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Md from "@/components/Md";
 import { useI18n } from "@/lib/i18n";
 import { APP_VERSION } from "@/lib/version";
 
@@ -49,7 +50,9 @@ export default function UpdateNotice() {
               <span className="w-6 h-6 flex-shrink-0 rounded-full bg-orange text-white text-[11px] font-bold flex items-center justify-center">
                 ✓
               </span>
-              <span>{t(key)}</span>
+              <span className="leading-snug">
+                <Md text={t(key)} />
+              </span>
             </li>
           ))}
         </ul>
