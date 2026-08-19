@@ -4,9 +4,10 @@
 > the exact file:line and the shape of the fix. Features already shipped
 > (Settings delete-account + switch role) are tracked in git commit `ae1374a`.
 >
-> **Status (Aug 19 2026):** #1, #3, #4, #5 fixed (migrations ready to apply) +
-> role switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md`. Remaining:
-> #2, #6 – #12 + the manual step.
+> **Status (Aug 19 2026):** #1, #3, #4, #5, #6, #8, #9, #10, #11, #12 fixed +
+> role switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md` and
+> `CHANGELOG.md`. Remaining: #2 (secrets), #7 (hardcoded config) + the manual
+> step.
 
 ---
 
@@ -98,13 +99,19 @@
 
 ## 🟡 MEDIUM
 
-### 6. Dashboard monolith + N+1 queries
+### 6. ~~Dashboard monolith + N+1 queries~~ ✅ FIXED (apply migration)
 
-- **Where:** `app/dashboard/page.tsx` (1,938 lines). The 8s poll calls
-  `loadContacts()` → one `get_user_contact` RPC per job, plus `fetchReviewForJob`
-  per done job, on top of realtime.
-- **Fix:** batch contacts/reviews into single queries; reduce poll frequency; split
-  the page into role components.
+- **Fixed in:** `supabase/migrations/20260819_batch_contacts.sql` (run in the SQL
+  editor) + `lib/queries.ts` + `app/dashboard/page.tsx`.
+- **What changed:** contacts now resolve via ONE batch RPC
+  (`get_user_contacts(uuid[])`) instead of one `get_user_contact` call per job;
+  reviews for completed jobs load in a single `.in(job_id)` query; the fallback
+  poll dropped 8s → 15s.
+- **Still open (maintainability, not perf):** the page is still one large
+  `app/dashboard/page.tsx`; splitting it into role components is a future
+  refactor.
+- **Verify:** after applying, open the dashboard — one `get_user_contacts` call
+  (not N) and one reviews query (not N).
 
 ### 7. Hardcoded config that hides env drift
 
@@ -114,39 +121,43 @@
 - **Fix:** read from `process.env.NEXT_PUBLIC_SUPABASE_URL`; fail loudly if VAPID
   env keys are missing in production instead of silently falling back.
 
-### 8. No CSP / security headers
+### 8. ~~No CSP / security headers~~ ✅ FIXED
 
-- **Where:** `next.config.js` has no `headers()` config.
-- **Fix:** add security headers (CSP, X-Frame-Options, X-Content-Type-Options,
-  Referrer-Policy, Permissions-Policy) via `next.config.js`.
+- **Fixed in:** `next.config.js` `headers()`.
+- **What changed:** CSP (script/style inline, Supabase connect + wss, rss2json),
+  `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`
+  (camera/mic/geolocation/payment blocked).
 
-### 9. ESLint never configured
+### 9. ~~ESLint never configured~~ ✅ FIXED
 
-- **Where:** `npm run lint` opens the interactive setup prompt (no `.eslintrc`).
-- **Fix:** add `eslint` + `eslint-config-next`, a config file, and a `lint`
-  script; only `tsc` guards the code today.
+- **Fixed in:** `.eslintrc.json` + devDeps `eslint` + `eslint-config-next`.
+- **What changed:** `npm run lint` works (`next/core-web-vitals`), zero warnings
+  or errors. Fixed the one error (TopNav comment textnode) + two hook-dep warnings.
 
-### 10. README.md is badly stale
+### 10. ~~README.md is badly stale~~ ✅ FIXED
 
-- **Where:** `README.md` still describes the app as mock/no-backend with the old
-  name, while `PROJECT.md` is current. Public repo → confusing for contributors.
-- **Fix:** rewrite or point it at `PROJECT.md`.
+- **Fixed in:** `README.md` rewritten — real Supabase-backed stack, scripts,
+  structure, pointers to `PROJECT.md` / `CHANGELOG.md` / `OPEN_ISSUES.md` /
+  `NEEDFIX.md`, and key RLS/security rules.
 
 ---
 
 ## 🟢 LOW
 
-### 11. Middleware dead code
+### 11. ~~Middleware dead code~~ ✅ FIXED
 
-- **Where:** `middleware.ts:43` `homeFor(role)` always returns `/dashboard` and
-  ignores its `role` arg.
-- **Fix:** remove the parameter or implement real role-based landing.
+- **Fixed in:** `middleware.ts` — `homeFor()` no longer takes an ignored `role`
+  arg (both roles land on `/dashboard`, which is role-aware).
 
-### 12. Name disclosure via get_user_contact()
+### 12. ~~Name disclosure via get_user_contact()~~ ✅ FIXED (apply migration)
 
-- **Where:** `supabase/migrations/20260813_phase1_security_phase2_reliability.sql:466-468`
-  returns the target's name to any signed-in caller even with no shared job.
-- **Fix:** return name only when a job relationship exists (like the WhatsApp gate).
+- **Fixed in:** `supabase/migrations/20260819_contact_privacy.sql` (run in the
+  SQL editor).
+- **What changed:** the fallback that returned a user's name to any signed-in
+  caller is gone — with no shared job the function returns NULL. The batch
+  variant `get_user_contacts()` applies the same relationship gate.
+- **Verify:** after applying, `get_user_contact(<unrelated id>)` returns null.
 
 ---
 

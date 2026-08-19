@@ -141,7 +141,7 @@ export default function TopNav() {
             JomCOD
           </span>
           <span className="font-mono text-[11px] md:text-[12px] text-slate tracking-wide hidden sm:block">
-            // community runners, near you
+            {"// community runners, near you"}
           </span>
         </Link>
 

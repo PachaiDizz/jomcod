@@ -459,6 +459,22 @@ export async function fetchContact(userId: string): Promise<Contact | null> {
   };
 }
 
+// Batch version for the dashboard — resolves many user ids in ONE RPC instead
+// of N. Same relationship gate as get_user_contact(); unrelated ids are simply
+// absent from the result.
+export async function fetchContacts(ids: Array<string | null | undefined>): Promise<Record<string, Contact>> {
+  const unique = Array.from(new Set(ids.filter((id): id is string => Boolean(id))));
+  if (unique.length === 0) return {};
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_user_contacts", { p_user_ids: unique });
+  if (error || !data) return {};
+  const out: Record<string, Contact> = {};
+  for (const r of data as Array<{ id: string; name?: string; whatsapp?: string }>) {
+    out[r.id] = { name: r.name ?? "Runner", whatsapp: r.whatsapp ?? "" };
+  }
+  return out;
+}
+
 interface ReviewRow {
   id: string;
   job_id: string;
@@ -506,6 +522,30 @@ export async function fetchReviewForJob(jobId: string): Promise<Review | null> {
     rating: row.rating,
     text: row.text ?? "",
   };
+}
+
+// Batch version for the dashboard — one query for all done jobs instead of
+// one per job. RLS still applies per row, same as fetchReviewForJob.
+export async function fetchReviewsForJobs(jobIds: string[]): Promise<Record<string, Review | null>> {
+  const unique = Array.from(new Set(jobIds));
+  if (unique.length === 0) return {};
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .in("job_id", unique);
+  const out: Record<string, Review | null> = {};
+  for (const id of unique) out[id] = null;
+  if (error || !data) return out;
+  for (const r of data as ReviewRow[]) {
+    out[r.job_id] = {
+      id: r.id,
+      authorName: r.author_name ?? "Community member",
+      rating: r.rating,
+      text: r.text ?? "",
+    };
+  }
+  return out;
 }
 
 export async function addReview(input: {

@@ -40,7 +40,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const homeFor = (role?: string) => "/dashboard";
+  // Both roles land on the dashboard — it's role-aware and shows the right
+  // view for community and runner, so there's no role-specific home yet.
+  const homeFor = () => "/dashboard";
 
   // Google (and older) users without a role must complete onboarding first.
   if (user && !user.user_metadata?.role && !isOnboarding) {
@@ -52,14 +54,14 @@ export async function middleware(request: NextRequest) {
   // Logged-in users with a role skip the landing page and go straight into the app.
   if (user && isLanding) {
     const url = request.nextUrl.clone();
-    url.pathname = homeFor(user.user_metadata?.role);
+    url.pathname = homeFor();
     return NextResponse.redirect(url);
   }
 
   // Already set up — never show onboarding again.
   if (user && isOnboarding && user.user_metadata?.role) {
     const url = request.nextUrl.clone();
-    url.pathname = homeFor(user.user_metadata?.role);
+    url.pathname = homeFor();
     return NextResponse.redirect(url);
   }
 

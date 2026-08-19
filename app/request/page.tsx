@@ -83,7 +83,7 @@ function RequestForm() {
         block: prev.block || p.block || "",
       }));
     });
-  }, []);
+  }, [params]);
 
   const serviceOptions =
     runner && runner.services.length > 0

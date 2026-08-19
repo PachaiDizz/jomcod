@@ -10,6 +10,29 @@ page and the "What's new" popup.
 
 ---
 
+## [1.1.1] — 2026-08-19
+
+### Added
+- **Security headers** — CSP, X-Frame-Options DENY, X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy via `next.config.js`.
+- **ESLint configured** — `eslint` + `eslint-config-next` (`next/core-web-vitals`),
+  `.eslintrc.json`, and the `npm run lint` script now works (zero warnings/errors).
+
+### Fixed
+- **Privacy:** `get_user_contact()` no longer leaks a user's name to callers with
+  no shared job (returns nothing instead). Batch variant `get_user_contacts()`
+  applies the same relationship gate.
+- **Performance (#6):** dashboard contacts now resolve in ONE batch RPC instead
+  of one per job; reviews for completed jobs load in a single query instead of
+  one per job; the fallback poll dropped from 8s → 15s.
+- **Middleware dead code:** `homeFor()` no longer takes an ignored role arg.
+
+### Changed
+- **README rewritten** to reflect the real (Supabase-backed) app and point at
+  `PROJECT.md` / `CHANGELOG.md` / `OPEN_ISSUES.md` / `NEEDFIX.md`.
+
+---
+
 ## [1.1.0] — 2026-08-19
 
 ### Added

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PhoneFrame from "@/components/PhoneFrame";
 import RoleBadge from "@/components/RoleBadge";
 import { createClient } from "@/lib/supabase/client";
@@ -19,11 +19,6 @@ export default function NewsPage() {
   const [error, setError] = useState("");
   const [role, setRole] = useState("");
 
-  const FALLBACK: NewsItem[] = [
-    { title: t("news.fallback1"), link: "/browse", source: "JomCOD", date: "" },
-    { title: t("news.fallback2"), link: "/", source: "JomCOD", date: "" },
-  ];
-
   useEffect(() => {
     createClient()
       .auth.getUser()
@@ -31,9 +26,13 @@ export default function NewsPage() {
       .catch(() => {});
   }, []);
 
-  const loadNews = async () => {
+  const loadNews = useCallback(async () => {
     setError("");
     setItems(null);
+    const fallback: NewsItem[] = [
+      { title: t("news.fallback1"), link: "/browse", source: "JomCOD", date: "" },
+      { title: t("news.fallback2"), link: "/", source: "JomCOD", date: "" },
+    ];
     try {
       const url = encodeURIComponent(
         "https://news.google.com/rss/search?q=malaysia+community&hl=en-MY&gl=MY&ceid=MY:en"
@@ -51,13 +50,13 @@ export default function NewsPage() {
         );
       } else {
         setError(t("news.loadError"));
-        setItems(FALLBACK);
+        setItems(fallback);
       }
     } catch {
       setError(t("news.loadError"));
-      setItems(FALLBACK);
+      setItems(fallback);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     let active = true;
@@ -68,7 +67,7 @@ export default function NewsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadNews]);
 
   return (
     <PhoneFrame>

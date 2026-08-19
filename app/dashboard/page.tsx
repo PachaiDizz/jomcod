@@ -18,11 +18,11 @@ import {
   cancelJob,
   claimBroadcast,
   declineJob,
-  fetchContact,
+  fetchContacts,
   fetchJobsForRequester,
   fetchJobsForRunner,
   fetchOpenBroadcasts,
-  fetchReviewForJob,
+  fetchReviewsForJobs,
   fetchReviewsForRunner,
   fetchRunners,
   getProfile,
@@ -408,14 +408,8 @@ export default function DashboardPage() {
   }, [toast]);
 
   const loadContacts = async (ids: Array<string | null | undefined>) => {
-    const unique = Array.from(new Set(ids.filter((id): id is string => Boolean(id))));
-    const entries = await Promise.all(
-      unique.map(async (id) => {
-        const c = await fetchContact(id);
-        return [id, { name: c?.name ?? "Runner", whatsapp: c?.whatsapp ?? "" }] as const;
-      })
-    );
-    setContacts((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+    const entries = await fetchContacts(ids);
+    setContacts((prev) => ({ ...prev, ...entries }));
   };
 
   useEffect(() => {
@@ -500,10 +494,8 @@ export default function DashboardPage() {
             );
           }
 
-          const reviewEntries = await Promise.all(
-            done.map(async (j) => [j.id, await fetchReviewForJob(j.id)] as const)
-          );
-          setReviews(Object.fromEntries(reviewEntries));
+          const reviewEntries = await fetchReviewsForJobs(done.map((j) => j.id));
+          setReviews(reviewEntries);
         } else {
           const list = await fetchJobsForRequester(user.id);
           setMyJobs(list);
@@ -513,13 +505,8 @@ export default function DashboardPage() {
           );
           // Load existing reviews for completed jobs.
           const done = list.filter((j) => j.status === "done");
-          const reviewEntries = await Promise.all(
-            done.map(async (j) => {
-              const r = await fetchReviewForJob(j.id);
-              return [j.id, r] as const;
-            })
-          );
-          setReviews(Object.fromEntries(reviewEntries));
+          const reviewEntries = await fetchReviewsForJobs(done.map((j) => j.id));
+          setReviews(reviewEntries);
         }
       }
       setLoaded(true);
@@ -679,7 +666,7 @@ export default function DashboardPage() {
           setOpenJobs(opens);
           setJobs(list);
           loadContacts(list.map((j) => j.requesterId));
-        }, 8000);
+        }, 15000);
       } else {
         const my = supabase
           .channel(name)
