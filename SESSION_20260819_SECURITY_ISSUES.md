@@ -88,3 +88,61 @@ Still open in `OPEN_ISSUES.md`:
 - 🟢 **#11** Middleware dead code.
 - 🟢 **#12** Name disclosure via `get_user_contact()`.
 - 🛠 **Manual** — deploy the delete-account edge function.
+
+---
+
+## 4. ✅ Issue #3 FIXED — Broadcast open-board privacy
+
+**Commit:** `2b41c89` · **Migration:** `20260819_broadcast_open_policy.sql` (applied).
+
+The `"runners can read open broadcasts"` policy had no status filter, so approved
+runners could read every historical cancelled/expired broadcast (incl. community
+pickup/delivery addresses). Now requires `status = 'pending'` + `runner_id is null`
++ approved runner. Claimed jobs stay participants-only; stale broadcast
+notification links land on "Job not found" (consistent with the Aug 14 privacy fix).
+
+## 5. ✅ Issue #4 FIXED — Server-side job total (anti-tampering)
+
+**Commit:** `1ba7bcc` · **Migration:** `20260819_server_side_job_total.sql` (applied) ·
+client (deleted `lib/estimate.ts`).
+
+The `Total: RM…` line was client-written; `set_job_total` let either party rewrite
+it. Now computed **server-side** from the assigned runner's stored service pricing:
+- `create_request()` strips any client `Total:` line and prices the job when a
+  runner is chosen; broadcasts are priced on claim.
+- `set_job_total(job_id)` — new signature, **no value param** — returns the computed
+  "RM…" value; old `(uuid,text)` overload dropped.
+- Custom-priced / unmatched services → no Total line (parties agree on WhatsApp).
+
+## 6. ✅ Issue #5 FIXED — Maintenance jobs are pg_cron-only
+
+**Commit:** `81876ee` · **Migration:** `20260819_cron_only_maintenance.sql` (applied) ·
+client (`lib/queries.ts`, `app/dashboard`, `app/browse`).
+
+`get_landing_stats()` no longer calls `refresh_availability()` (anon visitors never
+write). `refresh_availability()` / `expire_stale_jobs()` revoked from anon +
+authenticated; they run **only** via pg_cron every minute (re-asserted). Client-side
+calls removed. ⚠️ pg_cron must stay enabled in Supabase.
+
+## 7. ✅ Email/password sign-in enabled (no code change)
+
+**Where:** Supabase Dashboard → Authentication → Providers → Email →
+**"Confirm email" turned OFF** (2026-08-19).
+
+Email signups were stuck behind the confirmation link (inbox/spam). Now new email
+signups get an instant session and can log in directly. The app code already
+handled both states (`app/page.tsx` `handleSignUp`: no session → "check your inbox";
+session → straight into the app). No pending accounts needed unlocking
+(`update auth.users set email_confirmed_at = now() ...` → 0 rows).
+
+## 8. Remaining (as of 2026-08-19)
+
+- 🔴 **#2** Real secrets committed to a PUBLIC repo (VAPID private key, push secret, anon JWT).
+- 🟡 **#6** Dashboard monolith + N+1 queries.
+- 🟡 **#7** Hardcoded config that hides env drift.
+- 🟡 **#8** No CSP / security headers.
+- 🟡 **#9** ESLint never configured.
+- 🟡 **#10** README.md badly stale.
+- 🟢 **#11** Middleware dead code.
+- 🟢 **#12** Name disclosure via `get_user_contact()`.
+- 🛠 **Manual** — deploy the delete-account edge function.
