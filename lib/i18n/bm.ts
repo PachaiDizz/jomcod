@@ -388,6 +388,9 @@ export const bm: Record<string, string> = {
   "dash.run.awaitingApproval": "🕐 Menunggu kelulusan",
   "dash.run.awaitingApprovalBody":
     "Profil runner anda belum kelihatan di Semak. Admin perlu meluluskannya — anda akan aktif sebaik sahaja selesai.",
+  "dash.run.lockedTitle": "Menunggu kelulusan admin",
+  "dash.run.lockedBody":
+    "Anda belum boleh buat apa-apa lagi. Sebaik admin meluluskan profil runner anda, semua ciri terbuka — anda boleh sediakan perkhidmatan, pergi 'available', dan terima permintaan.",
   "dash.run.openRequests": "Permintaan terbuka daripada komuniti",
   "dash.run.noBroadcasts": "Tiada siaran terbuka",
   "dash.run.noBroadcastsBody":

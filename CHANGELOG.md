@@ -10,6 +10,19 @@ page and the "What's new" popup.
 
 ---
 
+## [1.1.3] — 2026-08-19
+
+### Changed
+- **Runner onboarding locked until approval:** a brand-new (or just-switched)
+  runner lands on the dashboard but sees only a "waiting for admin approval"
+  lock screen — services, pricing, and schedule editing are blocked until an
+  admin approves them. After approval, everything unlocks as before.
+- Enforced in the database too: an unapproved runner can't change their
+  `services` / `schedule_*` even via the API
+  (`20260819_runner_setup_guard.sql`); admins and direct DB edits unaffected.
+
+---
+
 ## [1.1.2] — 2026-08-19
 
 ### Changed

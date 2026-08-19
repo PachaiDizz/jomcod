@@ -1169,6 +1169,23 @@ export default function DashboardPage() {
   }
 
   // ---------- Runner view ----------
+  // Until an admin approves, a runner can't do anything on this dashboard.
+  if (role === "runner" && approved === false) {
+    return (
+      <PhoneFrame>
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <div className="text-[19px] md:text-[24px] font-bold font-display">{t("dash.run.awaitingApproval")}</div>
+          <RoleBadge role="runner" />
+        </div>
+        <div className="bg-[#FDF6E3] border border-[#F0E0A8] rounded-card px-4 py-6 mt-3 text-center">
+          <div className="text-[30px] mb-2">🔒</div>
+          <div className="text-[14px] font-bold text-[#8A6D00] mb-1.5">{t("dash.run.lockedTitle")}</div>
+          <div className="text-[12px] text-slate leading-relaxed">{t("dash.run.lockedBody")}</div>
+        </div>
+      </PhoneFrame>
+    );
+  }
+
   const doneCount = jobs.filter((j) => j.status === "done").length;
   const closedCount = jobs.filter((j) => j.status === "done" || j.status === "expired").length;
   const completionRate = closedCount > 0 ? Math.round((doneCount / closedCount) * 100) : null;

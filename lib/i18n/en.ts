@@ -390,6 +390,9 @@ export const en: Record<string, string> = {
   "dash.run.awaitingApproval": "🕐 Awaiting approval",
   "dash.run.awaitingApprovalBody":
     "Your runner profile isn't visible in Browse yet. An admin needs to approve it — you'll go live as soon as it's done.",
+  "dash.run.lockedTitle": "Waiting for admin approval",
+  "dash.run.lockedBody":
+    "You can't do anything yet. Once an admin approves your runner profile, all features unlock — you can set up your services, go available, and accept requests.",
   "dash.run.openRequests": "Open requests from the community",
   "dash.run.noBroadcasts": "No open broadcasts",
   "dash.run.noBroadcastsBody":
