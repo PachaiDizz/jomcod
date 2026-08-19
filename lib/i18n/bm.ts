@@ -235,6 +235,15 @@ export const bm: Record<string, string> = {
   "install.gotIt": "Faham",
   "install.later": "Bukan sekarang",
 
+  // ── Update notice ─────────────────────────────────────────────────────────
+  "update.title": "Apa yang baru di JomCOD",
+  "update.sub": "Kemas kini dan pembetulan sejak pelancaran:",
+  "update.item1": "Tukar peranan bila-bila masa — tersalah daftar? Tukar antara Komuniti ↔ Runner dalam Tetapan.",
+  "update.item2": "Padam akaun — tersalah buat? Padam akaun + data anda dari Tetapan.",
+  "update.item4": "Permintaan peribadi — selepas runner terima, hanya anda dan runner itu sahaja yang nampak butiran.",
+  "update.item5": "Harga adil — jumlah tugasan kini berdasarkan harga yang ditetapkan runner; tiada siapa boleh ubah secara senyap.",
+  "update.gotIt": "Faham",
+
   // ── QR share card ─────────────────────────────────────────────────────────
   "qr.title": "Kongsi JomCOD",
   "qr.body": "Imbas kod ini dengan kamera telefon anda untuk membuka JomCOD serta-merta.",

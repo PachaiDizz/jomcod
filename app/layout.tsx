@@ -4,6 +4,7 @@ import "./globals.css";
 import TopNav from "@/components/TopNav";
 import InstallPrompt from "@/components/InstallPrompt";
 import PushBanner from "@/components/PushBanner";
+import UpdateNotice from "@/components/UpdateNotice";
 import { I18nProvider } from "@/lib/i18n";
 
 const spaceGrotesk = Space_Grotesk({
@@ -56,6 +57,7 @@ export default function RootLayout({
           </div>
           <InstallPrompt />
           <PushBanner />
+          <UpdateNotice />
         </I18nProvider>
       </body>
     </html>

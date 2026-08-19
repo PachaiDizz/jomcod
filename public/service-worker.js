@@ -5,7 +5,7 @@
 //    files never change for a given build (the hash is in the URL), so
 //    serving them from cache is always correct.
 // Bump CACHE_NAME whenever you make big changes to clear old caches.
-const CACHE_NAME = "jomcod-cache-v8";
+const CACHE_NAME = "jomcod-cache-v9";
 // NOTE: no "/index.html" here — it redirects (307) on Vercel/Next.js, and
 // iOS Safari's cache.addAll rejects redirects, which would fail the whole
 // install and leave the service worker inactive.
