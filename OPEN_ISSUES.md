@@ -4,8 +4,9 @@
 > the exact file:line and the shape of the fix. Features already shipped
 > (Settings delete-account + switch role) are tracked in git commit `ae1374a`.
 >
-> **Status (Aug 19 2026):** #1 fixed + role switch simplified — see
-> `SESSION_20260819_SECURITY_ISSUES.md`. Remaining: #2 – #12 + the manual step.
+> **Status (Aug 19 2026):** #1, #3 fixed (migrations ready to apply) + role
+> switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md`. Remaining:
+> #2, #4 – #12 + the manual step.
 
 ---
 
@@ -45,17 +46,18 @@
 
 ## 🟠 HIGH
 
-### 3. Broadcast privacy regression
+### 3. ~~Broadcast privacy regression~~ ✅ FIXED (apply migration)
 
-- **Where:** `supabase/migrations/20260814_broadcast_visibility.sql:21-22`
-  `"runners can read open broadcasts"` policy = `auth.uid() is not null and runner_id is null`
-  with **no status filter**.
-- **Impact:** runners can read every historical cancelled/expired broadcast,
-  including community pickup/delivery addresses.
-- **Fix:** keep the widened read only for notification-linked jobs (the existing
-  `"users can read jobs they were notified about"` policy), and restore
-  `status = 'pending'` to the open-board policy. Verify the Open-requests board
-  + broadcast notification links still resolve.
+- **Fixed in:** `supabase/migrations/20260819_broadcast_open_policy.sql` (run in
+  the SQL editor).
+- **What changed:** the `"runners can read open broadcasts"` policy now requires
+  `status = 'pending'` in addition to `runner_id is null` + approved runner, so
+  cancelled/expired broadcasts (with community addresses) are no longer readable.
+  Claimed broadcasts stay participants-only; notification links for stale
+  broadcast notices now land on the job "not found" page (consistent with the
+  Aug 14 notification-privacy fix).
+- **Verify:** after applying, the Open-requests board still lists pending
+  broadcasts, and a cancelled/expired broadcast returns no row for a runner.
 
 ### 4. Price-total tampering
 
