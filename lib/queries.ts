@@ -852,10 +852,12 @@ export async function deleteAccount(): Promise<AccountDeleteResult> {
       if (ctx?.status === 404) {
         return { ok: false, message: "not-deployed" };
       }
-      return { ok: false, message: error.message };
+      // Surface the real server reason so Settings can show it instead of a
+      // generic message (helps diagnose e.g. a stale session or an FK issue).
+      return { ok: false, message: ctx?.data?.error || error.message || "unknown" };
     }
     return { ok: true };
-  } catch {
-    return { ok: false, message: "unknown" };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "unknown" };
   }
 }

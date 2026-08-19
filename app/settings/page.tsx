@@ -382,7 +382,7 @@ export default function SettingsPage() {
       setDeleteBusy(false);
       if (res.message === "active-jobs") setDeleteError(t("set.deleteActiveJobs"));
       else if (res.message === "not-deployed") setDeleteError(t("set.deleteNotDeployed"));
-      else setDeleteError(t("set.deleteError"));
+      else setDeleteError(res.message || t("set.deleteError"));
       return;
     }
     await createClient().auth.signOut();
