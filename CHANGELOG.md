@@ -25,6 +25,12 @@ page and the "What's new" popup.
   real name (it had been deleted; the old `hyper-api` URL was stale), secrets set
   (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `PUSH_SECRET`), and the DB trigger
   now points at `/functions/v1/send-push` (`20260819_fix_push_trigger_url.sql`).
+- **Delete account fixed for runners:** deleting an account that was the assigned
+  runner on a job failed with "Runner of a job cannot be changed" (the auth delete
+  cascaded `jobs.runner_id` to NULL and tripped the guard trigger). The guard now
+  only blocks runner changes while the old runner's account still exists
+  (`20260819_jobs_guard_cascade.sql`). Also fixed the `delete-account` edge
+  function passing the `"Bearer "` prefix into `getUser()`.
 
 ---
 
