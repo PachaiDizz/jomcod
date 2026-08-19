@@ -135,7 +135,44 @@ handled both states (`app/page.tsx` `handleSignUp`: no session → "check your i
 session → straight into the app). No pending accounts needed unlocking
 (`update auth.users set email_confirmed_at = now() ...` → 0 rows).
 
-## 8. Remaining (as of 2026-08-19)
+## 8. 🎨 New PWA icon — cutout logo (transparent background)
+
+**Commits:** part of `92a5659` · **Source:** `Downloads/JomCOD2.png` (306×308).
+
+- Cut the orange + white logo out of the dark tile (luminance keying via
+  PowerShell/System.Drawing), centered with safe-zone padding.
+- Generated `public/icon-512.png`, `public/icon-192.png`, `app/icon.png`.
+- Service-worker cache bumped **v8 → v9** so installed PWAs refetch the icons.
+- ⚠️ Installed PWAs keep the old home-screen icon until removed & re-added (iOS).
+
+## 9. 🆕 "What's new" update popup + versioning
+
+**Commits:** `92a5659`, `58cc440`, `3ce5b1d`, `3c5e7ae`, `158f5a6`.
+
+- `components/UpdateNotice.tsx` — modal shown **once per browser per version**
+  (localStorage key `jomcod_update_<APP_VERSION>`), items rendered through `Md`
+  so the main point of each note is **bold**.
+- Items shipped (v1.1.0): Change role anytime · Delete account · Private requests
+  · Fair pricing (EN + BM).
+- Reopenable anytime via a `jomcod:show-update` custom event — entry placed on
+  the **About page** (under App Information → version row), after initially being
+  tried in Settings.
+- **Versioning:** `lib/version.ts` (`APP_VERSION = "1.1.0"`) is the single source
+  of truth; About page renders "Version **1.1.0**" from it; `package.json` synced.
+  Bump the constant per release → the popup reappears automatically.
+
+## 10. 📄 CHANGELOG.md — versioned release notes
+
+**Commit:** `a98658c`.
+
+- New `CHANGELOG.md` is the single home for all updates/fixes/additions, grouped
+  by version: **v1.1.0** (Aug 19: role switch, delete account, instant email
+  sign-up, popup + versioning, new icon, server-side pricing, broadcast privacy,
+  trust-flag security) and **v1.0.0** (launch baseline).
+- Header documents the release workflow: bump `APP_VERSION` → add a `## [x.y.z]`
+  entry → deploy.
+
+## 11. Remaining (as of 2026-08-19)
 
 - 🔴 **#2** Real secrets committed to a PUBLIC repo (VAPID private key, push secret, anon JWT).
 - 🟡 **#6** Dashboard monolith + N+1 queries.
