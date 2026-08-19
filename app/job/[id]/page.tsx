@@ -23,7 +23,6 @@ import {
   markJobDone,
   setJobTotal,
 } from "@/lib/queries";
-import { estimateJobTotal } from "@/lib/estimate";
 import { useI18n } from "@/lib/i18n";
 import type { JobRequest, Review } from "@/lib/types";
 
@@ -108,7 +107,6 @@ export default function JobDetailPage() {
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [claiming, setClaiming] = useState(false);
-  const [myServices, setMyServices] = useState<import("@/lib/types").Service[]>([]);
   const [rating, setRating] = useState(0);
   const [ratingText, setRatingText] = useState("");
   const [savingRating, setSavingRating] = useState(false);
@@ -142,17 +140,6 @@ export default function JobDetailPage() {
       const r = await fetchReviewForJob(j.id);
       if (active) setReview(r);
 
-      // A runner viewing this page needs their own services to price a
-      // broadcast they're about to claim.
-      if ((user?.user_metadata?.role as string) === "runner") {
-        const { getProfile } = await import("@/lib/queries");
-        const profile = await getProfile();
-        if (active && profile) {
-          setMyServices(
-            (Array.isArray(profile.services) ? (profile.services as import("@/lib/types").Service[]) : [])
-          );
-        }
-      }
       setLoaded(true);
     })();
     return () => {
@@ -197,9 +184,20 @@ export default function JobDetailPage() {
     setClaiming(true);
     const res = await claimBroadcast(job.id);
     if (res.ok) {
-      const total = estimateJobTotal(job.serviceType, job.notes ?? "", myServices, job.takeFrom);
-      if (total) await setJobTotal(job.id, total);
-      setJob({ ...job, status: "confirmed", notes: job.notes ?? "" });
+      // The server prices the job from the claiming runner's stored services
+      // so the stored total can't be tampered with.
+      const totalRes = await setJobTotal(job.id);
+      if (totalRes.ok && totalRes.total) {
+        setJob({
+          ...job,
+          status: "confirmed",
+          notes: (job.notes ?? "").includes("Total:")
+            ? job.notes
+            : `${job.notes ?? ""}\nTotal: ${totalRes.total}`,
+        });
+      } else {
+        setJob({ ...job, status: "confirmed", notes: job.notes ?? "" });
+      }
       setClaiming(false);
     } else {
       setClaiming(false);

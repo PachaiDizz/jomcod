@@ -36,7 +36,6 @@ import {
   updateProfile,
   type ProfileRow,
 } from "@/lib/queries";
-import { estimateJobTotal } from "@/lib/estimate";
 import { useI18n } from "@/lib/i18n";
 
 const greeting = (t: (k: string) => string) => {
@@ -559,20 +558,17 @@ export default function DashboardPage() {
       setJobs((prev) => [claimed, ...prev]);
       setToast({ kind: "claimed", job: claimed });
       // Price the broadcast now that THIS runner is assigned: the community
-      // pays the claiming runner's price, so write it into the job notes so
-      // both sides see the same total.
-      const total = estimateJobTotal(claimed.serviceType, claimed.notes ?? "", services, claimed.takeFrom);
-      if (total) {
-        const res = await setJobTotal(claimed.id, total);
-        if (res.ok) {
-          const updated: JobRequest = {
-            ...claimed,
-            notes: (claimed.notes ?? "").includes("Total:")
-              ? claimed.notes
-              : `${claimed.notes ?? ""}\nTotal: ${total}`,
-          };
-          setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
-        }
+      // pays the claiming runner's price, so the server computes it from the
+      // runner's stored services and writes the same total for both sides.
+      const res = await setJobTotal(claimed.id);
+      if (res.ok && res.total) {
+        const updated: JobRequest = {
+          ...claimed,
+          notes: (claimed.notes ?? "").includes("Total:")
+            ? claimed.notes
+            : `${claimed.notes ?? ""}\nTotal: ${res.total}`,
+        };
+        setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
       }
     } else {
       // Someone else got it first, or the runner already has an active job.

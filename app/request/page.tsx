@@ -10,7 +10,6 @@ import RequestFields, {
   buildDeliverTo,
   buildNotes,
   buildTakeFrom,
-  estimateTotal,
 } from "@/components/RequestFields";
 import { cleanServiceName, formatRM } from "@/lib/constants";
 import { pricingLabel } from "@/lib/mockData";
@@ -95,11 +94,8 @@ function RequestForm() {
     runner?.services.find((s) => cleanServiceName(s.name) === serviceType)?.pricing;
 
   // The dropdown defaults to the first service option before the user touches
-  // it — calculate against that effective choice so the total is never RM0.
+  // it — use that effective choice for the notes.
   const effectiveService = details.serviceType || serviceOptions[0];
-  const estimate = runner
-    ? estimateTotal({ ...details, serviceType: effectiveService }, pricingFor)
-    : 0;
 
   const sendRequest = async () => {
     setError("");
@@ -124,7 +120,7 @@ function RequestForm() {
       serviceType,
       takeFrom,
       deliverTo,
-      notes: buildNotes({ ...details, serviceType: effectiveService }, estimate),
+      notes: buildNotes({ ...details, serviceType: effectiveService }),
       runnerId: runner.id,
     });
     setSending(false);

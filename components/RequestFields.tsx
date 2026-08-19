@@ -161,7 +161,7 @@ function itemsToText(items: RequestItem[]): string {
     .join(", ");
 }
 
-export function buildNotes(d: RequestDetails, estimate?: number | null): string {
+export function buildNotes(d: RequestDetails): string {
   const lines: string[] = [];
 
   if (isItemListService(d.serviceType)) {
@@ -183,7 +183,9 @@ export function buildNotes(d: RequestDetails, estimate?: number | null): string 
     }
   }
 
-  if (estimate && estimate > 0) lines.push(`Total: ${formatRM(estimate)}`);
+  // No "Total:" line here — the server prices the job from the runner's
+  // stored services (see 20260819_server_side_job_total.sql) so the stored
+  // total can't be tampered with by either party.
 
   lines.push(`Needed By: ${neededBy(d)}`);
   return lines.join("\n");

@@ -4,9 +4,9 @@
 > the exact file:line and the shape of the fix. Features already shipped
 > (Settings delete-account + switch role) are tracked in git commit `ae1374a`.
 >
-> **Status (Aug 19 2026):** #1, #3 fixed (migrations ready to apply) + role
+> **Status (Aug 19 2026):** #1, #3, #4 fixed (migrations ready to apply) + role
 > switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md`. Remaining:
-> #2, #4 – #12 + the manual step.
+> #2, #5 – #12 + the manual step.
 
 ---
 
@@ -59,17 +59,24 @@
 - **Verify:** after applying, the Open-requests board still lists pending
   broadcasts, and a cancelled/expired broadcast returns no row for a runner.
 
-### 4. Price-total tampering
+### 4. ~~Price-total tampering~~ ✅ FIXED (apply migration)
 
-- **Where:** `supabase/migrations/20260814_broadcast_visibility.sql:38-77`
-  `set_job_total()` lets the requester OR the assigned runner rewrite the
-  `Total: RM…` line in `jobs.notes`; the initial estimate is also client-computed
-  and stored in `notes` by `create_request`.
-- **Impact:** either party can change what the other side sees ("You pay RM…")
-  and what the runner's "Est. earned" sums.
-- **Fix:** server-side integrity — e.g. recompute the total from the runner's
-  stored service pricing inside a `SECURITY DEFINER` function instead of trusting
-  client `notes`, or store `total` as its own column set only by that function.
+- **Fixed in:** `supabase/migrations/20260819_server_side_job_total.sql` (run in
+  the SQL editor) + client changes (`lib/queries.ts`, `app/dashboard`,
+  `app/job/[id]`, `app/request`, `components/RequestFields.tsx`; deleted
+  `lib/estimate.ts`).
+- **What changed:** the total is now computed **server-side** from the assigned
+  runner's stored service pricing:
+  - `create_request()` strips any client-sent `Total:` line and prices the job
+    when a runner is chosen; broadcasts stay unpriced until claimed.
+  - `set_job_total(job_id)` (new signature — no value param) re-prices a claimed
+    job and returns the new "RM…" value; either party calling it always gets the
+    same server-computed number.
+  - Custom-priced services / unmatched services → no Total line at all (parties
+    agree on WhatsApp). Client no longer supplies or trusts a total anywhere.
+- **Verify:** after applying, a direct request to a runner stores the
+  server-computed total; `set_job_total(<id>, 'RM1')` no longer exists, and a
+  custom-priced broadcast keeps no Total line.
 
 ### 5. Anon-triggered DB writes / write amplification
 

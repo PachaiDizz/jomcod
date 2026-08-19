@@ -383,16 +383,16 @@ export async function markJobDone(jobId: string): Promise<JobActionResult> {
   return { ok: data === true };
 }
 
-// Writes/refreshes the "Total: RM…" line on a job's notes. Used to price a
-// broadcast after a runner claims it (broadcast pricing varies by runner).
-export async function setJobTotal(jobId: string, total: string): Promise<JobActionResult> {
+// Re-prices a job server-side from the assigned runner's stored services and
+// returns the new "Total: RM…" value (null when nothing is computable, e.g. a
+// custom-priced service). Neither party supplies the number anymore.
+export async function setJobTotal(
+  jobId: string
+): Promise<JobActionResult & { total?: string | null }> {
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("set_job_total", {
-    p_job_id: jobId,
-    p_total: total,
-  });
+  const { data, error } = await supabase.rpc("set_job_total", { p_job_id: jobId });
   if (error) return { ok: false, message: error.message };
-  return { ok: data === true };
+  return { ok: true, total: data != null ? String(data) : null };
 }
 
 export async function cancelJob(jobId: string): Promise<JobActionResult> {
