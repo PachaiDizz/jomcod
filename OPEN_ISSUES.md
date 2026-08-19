@@ -4,10 +4,9 @@
 > the exact file:line and the shape of the fix. Features already shipped
 > (Settings delete-account + switch role) are tracked in git commit `ae1374a`.
 >
-> **Status (Aug 19 2026):** #1, #3, #4, #5, #6, #8, #9, #10, #11, #12 fixed +
+> **Status (Aug 19 2026):** #1, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12 fixed +
 > role switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md` and
-> `CHANGELOG.md`. Remaining: #2 (secrets), #7 (hardcoded config) + the manual
-> step.
+> `CHANGELOG.md`. Remaining: #2 (secrets — rotation) + the manual step.
 
 ---
 
@@ -113,13 +112,18 @@
 - **Verify:** after applying, open the dashboard — one `get_user_contacts` call
   (not N) and one reviews query (not N).
 
-### 7. Hardcoded config that hides env drift
+### 7. ~~Hardcoded config that hides env drift~~ ✅ FIXED
 
-- **Where:** `app/layout.tsx:40` hardcodes the Supabase origin for preconnect;
-  `lib/push.ts:5` and `supabase/functions/send-push/index.ts:41-46` fall back to
-  hardcoded VAPID keys.
-- **Fix:** read from `process.env.NEXT_PUBLIC_SUPABASE_URL`; fail loudly if VAPID
-  env keys are missing in production instead of silently falling back.
+- **Fixed in:** `app/layout.tsx`, `lib/push.ts`, `supabase/functions/send-push/index.ts`.
+- **What changed:** the Supabase preconnect origin reads `NEXT_PUBLIC_SUPABASE_URL`
+  (fallback only when unset); the client VAPID public key comes from
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (push not offered when missing); the `send-push`
+  edge function requires `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` env secrets and
+  returns 500 instead of using the embedded keys (which also removes the private
+  key from the repo — the remaining piece is rotation, tracked in #2).
+- **Deploy requirements:** set `NEXT_PUBLIC_VAPID_PUBLIC_KEY` in Vercel and the
+  two VAPID secrets on the `send-push` edge function, or web push stops working
+  (in-app notifications unaffected).
 
 ### 8. ~~No CSP / security headers~~ ✅ FIXED
 

@@ -10,6 +10,20 @@ page and the "What's new" popup.
 
 ---
 
+## [1.1.2] — 2026-08-19
+
+### Changed
+- **Hardcoded config removed (#7):** the Supabase preconnect origin is now read
+  from `NEXT_PUBLIC_SUPABASE_URL`; the client VAPID public key comes from
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (push is simply not offered when missing); the
+  `send-push` edge function requires `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`
+  env secrets and returns 500 instead of falling back to embedded keys.
+- ⚠️ **Deploy requirements:** set `NEXT_PUBLIC_VAPID_PUBLIC_KEY` in Vercel and
+  `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` on the `send-push` edge function, or
+  web push stops working (in-app notifications are unaffected).
+
+---
+
 ## [1.1.1] — 2026-08-19
 
 ### Added

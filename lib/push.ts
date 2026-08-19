@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/client";
 
 // The VAPID public key is intentionally public (sent to every browser when
-// subscribing). Hardcoded so it works even without a Vercel env var.
-const VAPID_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ??
-  "BLKb3BCfXiAhrtHxohH0mr17C1rm8O6d3bWYcadoZDFDys1X-qfvFrFfWL-NN1etl0WHxtaAj7XLEo7ZHWsEJTc";
+// subscribing). It comes from env so a key rotation can't silently leave the
+// client on a stale key — if it's missing, push is simply not offered
+// (pushSupported() returns false).
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);

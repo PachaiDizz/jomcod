@@ -38,7 +38,11 @@ export const viewport: Viewport = {
 };
 
 // Preconnect to Supabase so API calls don't wait on the DNS/TLS handshake.
-const SUPABASE_ORIGIN = "https://vjanzunjalhrghikqzsy.supabase.co";
+// Read from env so the hint follows the real project; fall back to the current
+// origin only when .env.local isn't present (local dev).
+const SUPABASE_ORIGIN = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  : "https://vjanzunjalhrghikqzsy.supabase.co";
 
 export default function RootLayout({
   children,

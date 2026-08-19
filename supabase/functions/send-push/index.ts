@@ -35,15 +35,17 @@ Deno.serve(async (req) => {
     return new Response("Bad Request", { status: 400 });
   }
 
-  // VAPID keys: use env vars if set, otherwise fall back to the project's
-  // generated keys (embedded here so the function always works even when the
-  // dashboard secret store isn't picked up by the running deployment).
-  const publicKey =
-    Deno.env.get("VAPID_PUBLIC_KEY") ??
-    "BLKb3BCfXiAhrtHxohH0mr17C1rm8O6d3bWYcadoZDFDys1X-qfvFrFfWL-NN1etl0WHxtaAj7XLEo7ZHWsEJTc";
-  const privateKey =
-    Deno.env.get("VAPID_PRIVATE_KEY") ??
-    "BujH04qAIlAWEgqL3NaToKeMaH3djboeU6OuV2Jw3Nk";
+  // VAPID keys come from the function's env only — no embedded fallbacks, so a
+  // stale/rotated key can't silently linger in the repo. Missing keys = 500
+  // (fire-and-forget calls, so this never blocks the job/notification trigger).
+  const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+  const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+  if (!publicKey || !privateKey) {
+    return new Response(
+      "Push is not configured — set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY on this function.",
+      { status: 500 }
+    );
+  }
   webpush.setVapidDetails("mailto:admin@jomcod.app", publicKey, privateKey);
 
   const { data: subs } = await supabase
