@@ -602,8 +602,6 @@ export const bm: Record<string, string> = {
   "set.saveFailed": "Tidak dapat menyimpan — sila cuba lagi.",
   "set.profileSaveFailed": "Tidak dapat menyimpan profil anda. Sila cuba lagi.",
   "set.aboutHint": "Tentang JomCOD, kisah kami, dan cara menghubungi kami.",
-  "set.whatsNew": "Apa yang baru",
-  "set.whatsNewHint": "v{version} — lihat kemas kini dan pembetulan terkini.",
   "set.adminHint": "Luluskan runner, sederhanakan tugasan, dan semak laporan.",
   "set.loading": "Memuatkan tetapan…",
 
@@ -751,6 +749,8 @@ export const bm: Record<string, string> = {
   "about.appInfo": "Maklumat Aplikasi",
   "about.appName": "JomCOD",
   "about.version": "Versi **{version}**",
+  "about.whatsNew": "Apa yang baru",
+  "about.whatsNewHint": "v{version} — lihat kemas kini dan pembetulan terkini.",
   "about.copyright": "© 2026 JomCOD",
   "about.madeWith": "Dibuat dengan ❤️ untuk komuniti kami.",
 

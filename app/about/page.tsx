@@ -118,7 +118,19 @@ export default function AboutPage() {
             <Md text={t("about.version", { version: APP_VERSION })} />
           </span>
         </div>
-        <div className="flex items-center justify-between text-[13px]">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("jomcod:show-update"))}
+          className="w-full flex items-center justify-between gap-2 text-left py-2.5 border-b border-line hover:text-teal transition-colors"
+        >
+          <div>
+            <div className="text-[13px] font-semibold text-ink">🆕 {t("about.whatsNew")}</div>
+            <div className="text-[11px] text-slate mt-0.5">
+              {t("about.whatsNewHint", { version: APP_VERSION })}
+            </div>
+          </div>
+          <span className="text-slate">→</span>
+        </button>
+        <div className="flex items-center justify-between text-[13px] pt-2.5">
           <span className="text-slate">{t("about.copyright")}</span>
           <span className="text-teal font-semibold">{t("about.madeWith")}</span>
         </div>
