@@ -238,7 +238,7 @@ export const en: Record<string, string> = {
   "install.later": "Not now",
 
   // ── Update notice ─────────────────────────────────────────────────────────
-  "update.title": "What's new in JomCOD",
+  "update.title": "What's new in JomCOD · v{version}",
   "update.sub": "Updates and fixes since launch:",
   "update.item1": "Change role anytime — registered as the wrong type? Switch between Community ↔ Runner in Settings.",
   "update.item2": "Delete account — created it by mistake? Remove your account + data from Settings.",
@@ -751,7 +751,7 @@ export const en: Record<string, string> = {
   "about.reportProblem": "Report a Problem",
   "about.appInfo": "App Information",
   "about.appName": "JomCOD",
-  "about.version": "Version **1.0.0**",
+  "about.version": "Version **{version}**",
   "about.copyright": "© 2026 JomCOD",
   "about.madeWith": "Made with ❤️ for our community.",
 

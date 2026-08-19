@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { APP_VERSION } from "@/lib/version";
 
-// One-time "what's new" popup. Shown once per browser after the update that
-// shipped the Aug 19 fixes (role switch, delete account, request privacy,
-// fair pricing). A permanent flag stops it from reappearing.
-const NOTICE_KEY = "jomcod_update_v1";
+// One-time "what's new" popup, shown once per browser PER APP VERSION. Bump
+// APP_VERSION in lib/version.ts on every release and this re-appears with the
+// new notes; the flag key includes the version so older flags don't block it.
+const noticeKey = () => `jomcod_update_${APP_VERSION}`;
 
 const ITEMS = ["update.item1", "update.item2", "update.item4", "update.item5"];
 
@@ -16,7 +17,7 @@ export default function UpdateNotice() {
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(NOTICE_KEY) === "1") return;
+      if (localStorage.getItem(noticeKey()) === "1") return;
     } catch {
       return;
     }
@@ -28,7 +29,7 @@ export default function UpdateNotice() {
 
   const dismiss = () => {
     try {
-      localStorage.setItem(NOTICE_KEY, "1");
+      localStorage.setItem(noticeKey(), "1");
     } catch {
       // ignore storage errors
     }
@@ -38,7 +39,9 @@ export default function UpdateNotice() {
   return (
     <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
       <div className="bg-paper border border-line rounded-[18px] w-full max-w-[360px] p-5 shadow-2xl">
-        <div className="text-[16px] font-bold font-display mb-1">{t("update.title")}</div>
+        <div className="text-[16px] font-bold font-display mb-1">
+          {t("update.title", { version: APP_VERSION })}
+        </div>
         <div className="text-[12px] text-slate mb-3.5 leading-snug">{t("update.sub")}</div>
         <ul className="space-y-3 text-[13px] text-ink">
           {ITEMS.map((key) => (

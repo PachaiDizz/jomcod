@@ -3,6 +3,7 @@
 import PhoneFrame from "@/components/PhoneFrame";
 import Md from "@/components/Md";
 import { useI18n } from "@/lib/i18n";
+import { APP_VERSION } from "@/lib/version";
 
 export default function AboutPage() {
   const { t } = useI18n();
@@ -114,7 +115,7 @@ export default function AboutPage() {
         <div className="flex items-center justify-between text-[13px] border-b border-line pb-2.5 mb-2.5">
           <span className="text-slate">{t("about.appName")}</span>
           <span className="font-mono font-bold text-ink">
-            <Md text={t("about.version")} />
+            <Md text={t("about.version", { version: APP_VERSION })} />
           </span>
         </div>
         <div className="flex items-center justify-between text-[13px]">

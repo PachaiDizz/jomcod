@@ -236,7 +236,7 @@ export const bm: Record<string, string> = {
   "install.later": "Bukan sekarang",
 
   // ── Update notice ─────────────────────────────────────────────────────────
-  "update.title": "Apa yang baru di JomCOD",
+  "update.title": "Apa yang baru di JomCOD · v{version}",
   "update.sub": "Kemas kini dan pembetulan sejak pelancaran:",
   "update.item1": "Tukar peranan bila-bila masa — tersalah daftar? Tukar antara Komuniti ↔ Runner dalam Tetapan.",
   "update.item2": "Padam akaun — tersalah buat? Padam akaun + data anda dari Tetapan.",
@@ -748,7 +748,7 @@ export const bm: Record<string, string> = {
   "about.reportProblem": "Laporkan Masalah",
   "about.appInfo": "Maklumat Aplikasi",
   "about.appName": "JomCOD",
-  "about.version": "Versi **1.0.0**",
+  "about.version": "Versi **{version}**",
   "about.copyright": "© 2026 JomCOD",
   "about.madeWith": "Dibuat dengan ❤️ untuk komuniti kami.",
 
