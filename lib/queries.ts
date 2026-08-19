@@ -416,16 +416,6 @@ export async function setAvailability(status: RunnerStatus): Promise<JobActionRe
   return { ok: true };
 }
 
-export async function refreshAvailability(): Promise<void> {
-  const supabase = createClient();
-  await supabase.rpc("refresh_availability");
-}
-
-export async function expireStaleJobs(): Promise<void> {
-  const supabase = createClient();
-  await supabase.rpc("expire_stale_jobs");
-}
-
 export async function fetchJobsForRequester(requesterId: string): Promise<JobRequest[]> {
   const supabase = createClient();
   const { data, error } = await supabase

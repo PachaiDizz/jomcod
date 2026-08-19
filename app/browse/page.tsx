@@ -6,7 +6,7 @@ import PhoneFrame from "@/components/PhoneFrame";
 import RunnerCard from "@/components/RunnerCard";
 import RoleBadge from "@/components/RoleBadge";
 import LoadingState from "@/components/LoadingState";
-import { fetchRunners, refreshAvailability } from "@/lib/queries";
+import { fetchRunners } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import type { Runner } from "@/lib/types";
@@ -42,8 +42,8 @@ export default function BrowsePage() {
 
   useEffect(() => {
     (async () => {
-      // Auto-offline stale "available" runners before showing the list.
-      await refreshAvailability();
+      // Stale "available" runners are auto-offlined by pg_cron every minute,
+      // so browse no longer triggers a DB write on every load.
       const list = await fetchRunners();
       setRunners(list);
       setLoaded(true);

@@ -18,7 +18,6 @@ import {
   cancelJob,
   claimBroadcast,
   declineJob,
-  expireStaleJobs,
   fetchContact,
   fetchJobsForRequester,
   fetchJobsForRunner,
@@ -29,7 +28,6 @@ import {
   getProfile,
   jobFromRow,
   markJobDone,
-  refreshAvailability,
   setAvailability,
   setJobTotal,
   touchAvailability,
@@ -423,11 +421,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const supabase = createClient();
     (async () => {
-      // Housekeeping: expire stale broadcasts + auto-offline stale
-      // "available" runners so the board and browse stay honest.
-      refreshAvailability();
-      expireStaleJobs();
-
       const {
         data: { user },
       } = await supabase.auth.getUser();

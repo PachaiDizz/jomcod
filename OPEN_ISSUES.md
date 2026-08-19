@@ -4,9 +4,9 @@
 > the exact file:line and the shape of the fix. Features already shipped
 > (Settings delete-account + switch role) are tracked in git commit `ae1374a`.
 >
-> **Status (Aug 19 2026):** #1, #3, #4 fixed (migrations ready to apply) + role
-> switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md`. Remaining:
-> #2, #5 – #12 + the manual step.
+> **Status (Aug 19 2026):** #1, #3, #4, #5 fixed (migrations ready to apply) +
+> role switch simplified — see `SESSION_20260819_SECURITY_ISSUES.md`. Remaining:
+> #2, #6 – #12 + the manual step.
 
 ---
 
@@ -78,16 +78,21 @@
   server-computed total; `set_job_total(<id>, 'RM1')` no longer exists, and a
   custom-priced broadcast keeps no Total line.
 
-### 5. Anon-triggered DB writes / write amplification
+### 5. ~~Anon-triggered DB writes / write amplification~~ ✅ FIXED (apply migration)
 
-- **Where:** `get_landing_stats()` (granted to `anon`) calls
-  `refresh_availability()` which UPDATEs `profiles`; `refresh_availability()`
-  and `expire_stale_jobs()` are also granted to all `authenticated` and called on
-  every dashboard load.
-- **Impact:** every anonymous landing visitor triggers a DB write; cheap
-  DoS/write-amplification vector at scale.
-- **Fix:** run these from pg_cron only, and drop the client-side calls (or keep a
-  lightweight authenticated-only version).
+- **Fixed in:** `supabase/migrations/20260819_cron_only_maintenance.sql` (run in
+  the SQL editor) + client changes (`lib/queries.ts`, `app/dashboard`,
+  `app/browse`).
+- **What changed:** `get_landing_stats()` no longer calls
+  `refresh_availability()` — it's read-only now, so anonymous landing visitors
+  never trigger a DB write. `refresh_availability()` and `expire_stale_jobs()`
+  are revoked from anon + authenticated; they run **only** via pg_cron every
+  minute (re-asserted in the migration). Client-side calls removed.
+- **Requires:** pg_cron enabled in Supabase (Database → Extensions). Board +
+  availability are now up to ~1 minute stale instead of instant, which is fine.
+- **Verify:** after applying, a signed-out landing visit does not UPDATE
+  `profiles`; `refresh_availability` / `expire_stale_jobs` RPC calls fail for
+  clients.
 
 ---
 
