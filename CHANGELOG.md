@@ -21,6 +21,10 @@ page and the "What's new" popup.
 - ⚠️ **Deploy requirements:** set `NEXT_PUBLIC_VAPID_PUBLIC_KEY` in Vercel and
   `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` on the `send-push` edge function, or
   web push stops working (in-app notifications are unaffected).
+- **Web push restored:** the `send-push` edge function was re-deployed under its
+  real name (it had been deleted; the old `hyper-api` URL was stale), secrets set
+  (`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `PUSH_SECRET`), and the DB trigger
+  now points at `/functions/v1/send-push` (`20260819_fix_push_trigger_url.sql`).
 
 ---
 
